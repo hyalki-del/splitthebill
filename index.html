@@ -6,7 +6,10 @@
     <title>Settlr - Group Expense Splitter</title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
+            background-color: #f2f2f0;
+        }
         @keyframes knightRider {
             0% { left: 0%; }
             50% { left: calc(100% - 35px); }
@@ -16,87 +19,94 @@
             position: relative;
             width: 35px;
             height: 4px;
-            background-color: #ef4444;
-            box-shadow: 0 0 8px #ef4444;
+            background-color: #e11d48;
+            box-shadow: 0 0 8px #e11d48;
             animation: knightRider 0.6s infinite ease-in-out;
         }
     </style>
 </head>
-<body class="bg-neutral-100 text-neutral-900 min-h-screen p-4 sm:p-8 antialiased">
-    <div class="max-w-5xl mx-auto space-y-6">
+<body class="text-neutral-900 min-h-screen p-3 sm:p-8 antialiased">
+    <div class="max-w-5xl mx-auto space-y-5">
         
         <!-- Header -->
-        <header class="flex justify-between items-center border-b border-neutral-300 pb-4 gap-2">
+        <header class="flex justify-between items-center border-b border-neutral-300 pb-3 gap-2">
             <div>
-                <h1 class="text-2xl font-semibold tracking-tight">Settlr</h1>
+                <h1 class="text-2xl font-bold tracking-tight text-neutral-900">Settlr</h1>
                 <p id="viewModeIndicator" class="text-xs text-neutral-500 font-mono mt-0.5">Mode: Awaiting Authentication...</p>
             </div>
             <div class="flex items-center gap-2">
-                <button onclick="openWelcomeModal()" class="text-xs bg-neutral-200 hover:bg-neutral-300 text-neutral-800 px-3 py-1 font-medium transition">Switch Ledger</button>
-                <div id="statusMsg" class="text-xs font-mono text-neutral-600 bg-neutral-200 px-2.5 py-1 rounded">Idle</div>
+                <button onclick="openWelcomeModal()" class="text-xs bg-neutral-200 hover:bg-neutral-300 text-neutral-800 px-3 py-1 font-medium rounded-xs transition">Switch Ledger</button>
+                <div id="statusMsg" class="text-xs font-mono text-neutral-600 bg-neutral-200 px-2.5 py-1 rounded-xs">Idle</div>
             </div>
         </header>
 
         <!-- Top Row -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <section class="bg-white border border-neutral-300 p-5 space-y-3 flex flex-col justify-between">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+            
+            <!-- Frame 1: Active Ledger Info (Soft Warm Neutral) -->
+            <section class="bg-[#f9f8f6] border border-neutral-300 p-5 rounded-xs space-y-3 flex flex-col justify-between shadow-xs">
                 <div>
-                    <div class="flex justify-between items-center">
-                        <h2 class="text-sm font-semibold uppercase tracking-wider text-neutral-700">Active Confidential Ledger</h2>
-                        <div class="flex items-center gap-1.5">
-                            <button id="shareBtn" onclick="openShareModal()" class="hidden text-xs bg-neutral-900 hover:bg-neutral-800 text-white px-2.5 py-1 font-medium rounded-xs transition">Share Link</button>
-                            <button id="deleteLedgerBtn" onclick="deleteActiveLedger()" class="hidden text-xs bg-red-600 hover:bg-red-700 text-white px-2.5 py-1 font-medium rounded-xs transition">Delete</button>
+                    <div class="flex justify-between items-start gap-2">
+                        <div>
+                            <h2 class="text-xs font-bold uppercase tracking-wider text-neutral-500">Active Confidential Ledger</h2>
+                            <p id="activeTabNameDisplay" class="text-base font-mono font-bold text-neutral-900 mt-0.5">No Ledger Loaded</p>
+                        </div>
+                        
+                        <!-- Currency Selector Moved Here -->
+                        <div class="flex items-center gap-1 bg-white border border-neutral-300 px-2 py-0.5 rounded-xs">
+                            <label class="text-[10px] font-bold text-neutral-500 uppercase">CURR:</label>
+                            <select id="currencySelect" onchange="changeCurrency()" class="bg-transparent text-xs font-mono font-bold focus:outline-none text-neutral-800">
+                                <option value="USD">USD ($)</option>
+                                <option value="EUR">EUR (€)</option>
+                                <option value="TRY">TRY (₺)</option>
+                            </select>
                         </div>
                     </div>
-                    <p id="activeTabNameDisplay" class="text-base font-mono font-semibold text-neutral-900 mt-1">No Ledger Loaded</p>
                 </div>
-                <p class="text-xs text-neutral-500">Self-contained encrypted snapshot tab.</p>
+                
+                <div class="flex justify-between items-center pt-2 border-t border-neutral-200/80">
+                    <p class="text-[11px] text-neutral-500">Isolated encrypted tab</p>
+                    <div class="flex items-center gap-1.5">
+                        <button id="shareBtn" onclick="openShareModal()" class="hidden text-xs bg-neutral-900 hover:bg-neutral-800 text-white px-2.5 py-1 font-medium rounded-xs transition">Share Link</button>
+                        <button id="deleteLedgerBtn" onclick="deleteActiveLedger()" class="hidden text-xs bg-rose-700 hover:bg-rose-800 text-white px-2.5 py-1 font-medium rounded-xs transition">Delete</button>
+                    </div>
+                </div>
             </section>
 
-            <section class="bg-white border border-neutral-300 p-5 space-y-4 flex flex-col justify-between">
-                <div class="flex justify-between items-center">
-                    <div>
-                        <h2 class="text-sm font-semibold uppercase tracking-wider text-neutral-700">Participants</h2>
-                        <p class="text-xs text-neutral-500 mt-0.5">Add or remove participants.</p>
-                    </div>
-                    <!-- Currency Dropdown -->
-                    <div class="flex items-center gap-1.5">
-                        <label class="text-xs font-semibold text-neutral-500 uppercase">Currency:</label>
-                        <select id="currencySelect" onchange="changeCurrency()" class="bg-neutral-50 border border-neutral-300 px-2 py-1 text-xs font-mono font-bold focus:outline-none focus:border-neutral-900">
-                            <option value="USD">USD ($)</option>
-                            <option value="EUR">EUR (€)</option>
-                            <option value="TRY">TRY (₺)</option>
-                        </select>
-                    </div>
+            <!-- Frame 2: Participants (Soft Cool Slate Tint) -->
+            <section class="bg-[#f3f4f6] border border-neutral-300 p-5 rounded-xs space-y-4 flex flex-col justify-between shadow-xs">
+                <div>
+                    <h2 class="text-xs font-bold uppercase tracking-wider text-neutral-500">Participants</h2>
+                    <p class="text-[11px] text-neutral-500 mt-0.5">Add or remove people from this group.</p>
                 </div>
                 <div class="space-y-3">
                     <div class="flex gap-2">
-                        <input type="text" id="memberName" placeholder="Name..." class="flex-1 bg-neutral-50 border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:border-neutral-900">
-                        <button onclick="addMember()" class="bg-neutral-900 text-white px-4 py-2 text-sm font-medium hover:bg-neutral-800 transition">Add</button>
+                        <input type="text" id="memberName" placeholder="Name..." class="flex-1 bg-white border border-neutral-300 px-3 py-1.5 text-sm focus:outline-none focus:border-neutral-900 rounded-xs">
+                        <button onclick="addMember()" class="bg-neutral-900 text-white px-4 py-1.5 text-xs font-semibold hover:bg-neutral-800 rounded-xs transition">Add</button>
                     </div>
                     <div id="memberList" class="text-sm text-neutral-700 flex flex-wrap gap-1.5 pt-1"></div>
                 </div>
             </section>
         </div>
 
-        <!-- Middle Row: Expense Form -->
-        <section id="expenseFormSection" class="bg-white border border-neutral-300 p-5 space-y-4 transition-colors duration-200">
+        <!-- Middle Row: Expense Form (Soft Light Sage/Warm Tint) -->
+        <section id="expenseFormSection" class="bg-[#f7f7f2] border border-neutral-300 p-5 rounded-xs space-y-4 shadow-xs transition-colors duration-200">
             <div>
-                <h2 id="expenseFormTitle" class="text-sm font-semibold uppercase tracking-wider text-neutral-700">New Expense</h2>
-                <p id="expenseFormSub" class="text-xs text-neutral-500 mt-0.5">Log a transaction to split.</p>
+                <h2 id="expenseFormTitle" class="text-xs font-bold uppercase tracking-wider text-neutral-500">New Expense</h2>
+                <p id="expenseFormSub" class="text-[11px] text-neutral-500 mt-0.5">Log a transaction to split.</p>
             </div>
             
             <div class="grid grid-cols-1 sm:grid-cols-5 gap-3">
-                <!-- Date Selector (First in line, default to today) -->
+                <!-- Date Selector -->
                 <div>
-                    <label class="text-[10px] uppercase font-bold text-neutral-500 block mb-0.5">Date</label>
-                    <input type="date" id="expenseDate" class="w-full bg-neutral-50 border border-neutral-300 px-2 py-1.5 text-xs focus:outline-none focus:border-neutral-900 font-mono">
+                    <label class="text-[10px] font-bold uppercase tracking-wider text-neutral-500 block mb-1">Date</label>
+                    <input type="date" id="expenseDate" class="w-full bg-white border border-neutral-300 px-2 py-1.5 text-xs focus:outline-none focus:border-neutral-900 font-mono rounded-xs">
                 </div>
 
                 <!-- Category Selector -->
                 <div>
-                    <label class="text-[10px] uppercase font-bold text-neutral-500 block mb-0.5">Category</label>
-                    <select id="expenseCategory" class="w-full bg-neutral-50 border border-neutral-300 px-2 py-1.5 text-xs focus:outline-none focus:border-neutral-900">
+                    <label class="text-[10px] font-bold uppercase tracking-wider text-neutral-500 block mb-1">Category</label>
+                    <select id="expenseCategory" class="w-full bg-white border border-neutral-300 px-2 py-1.5 text-xs focus:outline-none focus:border-neutral-900 rounded-xs">
                         <option value="General">General</option>
                         <option value="Food & Dining">Food & Dining</option>
                         <option value="Transportation">Transportation</option>
@@ -110,70 +120,72 @@
 
                 <!-- Description -->
                 <div>
-                    <label class="text-[10px] uppercase font-bold text-neutral-500 block mb-0.5">Description</label>
-                    <input type="text" id="expenseDesc" placeholder="e.g. Dinner" class="w-full bg-neutral-50 border border-neutral-300 px-2 py-1.5 text-xs focus:outline-none focus:border-neutral-900">
+                    <label class="text-[10px] font-bold uppercase tracking-wider text-neutral-500 block mb-1">Description</label>
+                    <input type="text" id="expenseDesc" placeholder="e.g. Dinner" class="w-full bg-white border border-neutral-300 px-2 py-1.5 text-xs focus:outline-none focus:border-neutral-900 rounded-xs">
                 </div>
 
                 <!-- Amount -->
                 <div>
-                    <label class="text-[10px] uppercase font-bold text-neutral-500 block mb-0.5">Amount (<span class="currencySymbol">$</span>)</label>
-                    <input type="number" id="expenseAmount" placeholder="0.00" class="w-full bg-neutral-50 border border-neutral-300 px-2 py-1.5 text-xs focus:outline-none focus:border-neutral-900 font-mono">
+                    <label class="text-[10px] font-bold uppercase tracking-wider text-neutral-500 block mb-1">Amount (<span class="currencySymbol">$</span>)</label>
+                    <input type="number" id="expenseAmount" placeholder="0.00" class="w-full bg-white border border-neutral-300 px-2 py-1.5 text-xs focus:outline-none focus:border-neutral-900 font-mono rounded-xs">
                 </div>
 
                 <!-- Paid By -->
                 <div>
-                    <label class="text-[10px] uppercase font-bold text-neutral-500 block mb-0.5">Paid By</label>
-                    <select id="expensePaidBy" class="w-full bg-neutral-50 border border-neutral-300 px-2 py-1.5 text-xs focus:outline-none focus:border-neutral-900"></select>
+                    <label class="text-[10px] font-bold uppercase tracking-wider text-neutral-500 block mb-1">Paid By</label>
+                    <select id="expensePaidBy" class="w-full bg-white border border-neutral-300 px-2 py-1.5 text-xs focus:outline-none focus:border-neutral-900 rounded-xs"></select>
                 </div>
             </div>
 
-            <div class="space-y-1.5 pt-2 border-t border-neutral-200">
+            <div class="space-y-1.5 pt-2 border-t border-neutral-300/60">
                 <div class="flex justify-between items-center">
-                    <label class="text-xs font-medium text-neutral-600 uppercase tracking-wider">Split Between:</label>
-                    <button type="button" onclick="toggleSelectAll(true)" class="text-xs text-neutral-500 hover:underline">Select All</button>
+                    <label class="text-[10px] font-bold uppercase tracking-wider text-neutral-500">Split Between:</label>
+                    <button type="button" onclick="toggleSelectAll(true)" class="text-[11px] text-neutral-500 hover:underline">Select All</button>
                 </div>
-                <div id="splitCheckboxes" class="flex flex-wrap gap-3 pt-1 text-sm text-neutral-700">
+                <div id="splitCheckboxes" class="flex flex-wrap gap-2 pt-1 text-xs text-neutral-800">
                     <span class="text-neutral-400 text-xs italic">Add participants first.</span>
                 </div>
             </div>
 
             <div id="expenseFormButtons">
-                <button onclick="addExpense()" class="w-full bg-neutral-900 text-white py-2 text-sm font-medium hover:bg-neutral-800 transition">Record Expense</button>
+                <button onclick="addExpense()" class="w-full bg-neutral-900 text-white py-2 text-xs font-semibold hover:bg-neutral-800 rounded-xs transition">Record Expense</button>
             </div>
         </section>
 
         <!-- Bottom Row -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <!-- Settlement Matrix -->
-            <section class="bg-white border border-neutral-300 p-5 space-y-4">
-                <div class="flex justify-between items-center">
-                    <h2 class="text-sm font-semibold uppercase tracking-wider text-neutral-700">Settlement Matrix</h2>
-                    <button onclick="copySettlementSummary()" class="text-xs bg-neutral-100 border border-neutral-300 hover:bg-neutral-200 text-neutral-800 px-2.5 py-1 font-medium rounded-xs transition">Copy Summary</button>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+            
+            <!-- Frame 4: Settlement Matrix (Soft Sand Tint) -->
+            <section class="bg-[#fbfaf5] border border-neutral-300 p-5 rounded-xs space-y-4 shadow-xs">
+                <div class="flex justify-between items-center border-b border-neutral-200/80 pb-2">
+                    <h2 class="text-xs font-bold uppercase tracking-wider text-neutral-500">Settlement Matrix</h2>
+                    <button onclick="copySettlementSummary()" class="text-[11px] bg-white border border-neutral-300 hover:bg-neutral-100 text-neutral-800 px-2.5 py-1 font-medium rounded-xs transition">Copy Summary</button>
                 </div>
-                <div id="settlementList" class="space-y-2 text-sm font-mono min-h-[100px]">
-                    <p class="text-neutral-400 italic font-sans">Awaiting ledger input...</p>
+                <div id="settlementList" class="space-y-2 text-xs font-mono min-h-[100px]">
+                    <p class="text-neutral-400 italic font-sans text-xs">Awaiting ledger input...</p>
                 </div>
             </section>
 
-            <!-- Ledger History -->
-            <section class="bg-white border border-neutral-300 p-5 space-y-4">
-                <div class="flex justify-between items-center">
-                    <h2 class="text-sm font-semibold uppercase tracking-wider text-neutral-700">Ledger History</h2>
+            <!-- Frame 5: Ledger History (Muted Soft Ash Tint) -->
+            <section class="bg-[#f5f5f3] border border-neutral-300 p-5 rounded-xs space-y-4 shadow-xs">
+                <div class="flex justify-between items-center border-b border-neutral-200/80 pb-2">
                     <div class="flex items-center gap-2">
-                        <span class="text-[10px] text-neutral-400 italic">Click to edit</span>
-                        <button onclick="generateReport()" class="text-xs bg-neutral-900 hover:bg-neutral-800 text-white px-2.5 py-1 font-medium rounded-xs transition">Generate Report</button>
+                        <h2 class="text-xs font-bold uppercase tracking-wider text-neutral-500">Ledger History</h2>
+                        <span class="text-[10px] text-neutral-400 italic">(Click item to edit)</span>
                     </div>
+                    <button onclick="generateReport()" class="text-xs bg-neutral-900 hover:bg-neutral-800 text-white px-2.5 py-1 font-medium rounded-xs transition">Generate Report</button>
                 </div>
-                <ul id="expenseHistory" class="space-y-2 text-sm min-h-[100px] max-h-[300px] overflow-y-auto"></ul>
+                <ul id="expenseHistory" class="space-y-2 text-xs min-h-[100px] max-h-[300px] overflow-y-auto pr-1"></ul>
             </section>
+            
         </div>
     </div>
 
     <!-- WELCOME MODAL -->
     <div id="welcomeModal" class="fixed inset-0 bg-neutral-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4">
-        <div class="bg-white border border-neutral-300 p-6 sm:p-8 max-w-md w-full space-y-6 shadow-2xl">
+        <div class="bg-[#fafaf9] border border-neutral-300 p-6 sm:p-8 max-w-md w-full space-y-6 shadow-2xl rounded-xs">
             <div class="border-b border-neutral-200 pb-3">
-                <h2 class="text-xl font-semibold tracking-tight">Settlr</h2>
+                <h2 class="text-xl font-bold tracking-tight text-neutral-900">Settlr</h2>
                 <p class="text-xs text-neutral-500 mt-1">Create or open a confidential ledger.</p>
             </div>
 
@@ -186,56 +198,56 @@
             <div id="createSection" class="space-y-4">
                 <div class="space-y-1">
                     <label class="text-xs font-medium text-neutral-600">Ledger Name</label>
-                    <input type="text" id="newLedgerName" placeholder="e.g. dinner-club" class="w-full bg-neutral-50 border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:border-neutral-900">
+                    <input type="text" id="newLedgerName" placeholder="e.g. dinner-club" class="w-full bg-white border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:border-neutral-900 rounded-xs">
                 </div>
                 <div class="space-y-1">
                     <label class="text-xs font-medium text-neutral-600">Set 4-Digit PIN</label>
-                    <input type="text" id="newLedgerPin" maxlength="4" placeholder="1234" class="w-full bg-neutral-50 border border-neutral-300 px-3 py-2 text-sm font-mono focus:outline-none focus:border-neutral-900">
+                    <input type="text" id="newLedgerPin" maxlength="4" placeholder="1234" class="w-full bg-white border border-neutral-300 px-3 py-2 text-sm font-mono focus:outline-none focus:border-neutral-900 rounded-xs">
                 </div>
-                <button onclick="createNewLedger()" class="w-full bg-neutral-900 text-white py-2.5 text-sm font-medium hover:bg-neutral-800 transition">Initialize Ledger</button>
+                <button onclick="createNewLedger()" class="w-full bg-neutral-900 text-white py-2.5 text-xs font-semibold hover:bg-neutral-800 transition rounded-xs">Initialize Ledger</button>
             </div>
 
             <!-- Recall Existing Form -->
             <div id="recallSection" class="space-y-4 hidden">
                 <div id="archiveDropdownContainer" class="space-y-1">
                     <label class="text-xs font-medium text-neutral-600">Select Archive</label>
-                    <select id="archiveSelect" class="w-full bg-neutral-50 border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:border-neutral-900">
+                    <select id="archiveSelect" class="w-full bg-white border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:border-neutral-900 rounded-xs">
                         <option value="">Select archive...</option>
                     </select>
                 </div>
                 <div id="directTabDisplay" class="hidden space-y-1">
                     <label class="text-xs font-medium text-neutral-600">Accessing Shared Ledger</label>
-                    <input type="text" id="directTabName" readonly class="w-full bg-neutral-200 border border-neutral-300 px-3 py-2 text-sm font-mono font-semibold text-neutral-800">
+                    <input type="text" id="directTabName" readonly class="w-full bg-neutral-200 border border-neutral-300 px-3 py-2 text-sm font-mono font-semibold text-neutral-800 rounded-xs">
                 </div>
                 <div class="space-y-1">
                     <label class="text-xs font-medium text-neutral-600">Enter 4-Digit PIN</label>
-                    <input type="text" id="recallLedgerPin" maxlength="4" placeholder="1234" class="w-full bg-neutral-50 border border-neutral-300 px-3 py-2 text-sm font-mono focus:outline-none focus:border-neutral-900">
+                    <input type="text" id="recallLedgerPin" maxlength="4" placeholder="1234" class="w-full bg-white border border-neutral-300 px-3 py-2 text-sm font-mono focus:outline-none focus:border-neutral-900 rounded-xs">
                 </div>
-                <button onclick="recallLedger()" class="w-full bg-neutral-900 text-white py-2.5 text-sm font-medium hover:bg-neutral-800 transition">Access Ledger</button>
+                <button onclick="recallLedger()" class="w-full bg-neutral-900 text-white py-2.5 text-xs font-semibold hover:bg-neutral-800 transition rounded-xs">Access Ledger</button>
             </div>
         </div>
     </div>
 
     <!-- SHARE LINK POPUP MODAL -->
     <div id="shareModal" class="hidden fixed inset-0 bg-neutral-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4">
-        <div class="bg-white border border-neutral-300 p-6 max-w-md w-full space-y-4 shadow-2xl">
+        <div class="bg-white border border-neutral-300 p-6 max-w-md w-full space-y-4 shadow-2xl rounded-xs">
             <div class="flex justify-between items-center border-b border-neutral-200 pb-2">
-                <h3 class="text-sm font-semibold uppercase tracking-wider text-neutral-800">Share Ledger Link</h3>
+                <h3 class="text-xs font-bold uppercase tracking-wider text-neutral-800">Share Ledger Link</h3>
                 <button onclick="closeShareModal()" class="text-neutral-400 hover:text-neutral-900 text-lg font-bold">×</button>
             </div>
             <p class="text-xs text-neutral-500">Anyone with this link will only need to enter the 4-digit PIN to access this ledger.</p>
             <div class="flex gap-2">
-                <input type="text" id="shareLinkInput" readonly class="flex-1 bg-neutral-50 border border-neutral-300 px-3 py-2 text-xs font-mono focus:outline-none">
-                <button onclick="copyShareLink()" class="bg-neutral-900 text-white px-4 py-2 text-xs font-medium hover:bg-neutral-800 transition">Copy</button>
+                <input type="text" id="shareLinkInput" readonly class="flex-1 bg-neutral-50 border border-neutral-300 px-3 py-2 text-xs font-mono focus:outline-none rounded-xs">
+                <button onclick="copyShareLink()" class="bg-neutral-900 text-white px-4 py-2 text-xs font-semibold hover:bg-neutral-800 transition rounded-xs">Copy</button>
             </div>
         </div>
     </div>
 
     <!-- Processing Indicator -->
     <div id="recordingModal" class="hidden fixed inset-0 bg-neutral-900/40 backdrop-blur-xs flex items-center justify-center z-50">
-        <div class="bg-white border border-neutral-300 p-6 shadow-2xl space-y-3 w-64 text-center">
-            <p class="text-xs font-semibold uppercase tracking-widest text-neutral-700 font-mono">Processing...</p>
-            <div class="h-2 bg-neutral-100 border border-neutral-200 overflow-hidden relative rounded-xs">
+        <div class="bg-white border border-neutral-300 p-6 shadow-2xl space-y-3 w-64 text-center rounded-xs">
+            <p class="text-xs font-bold uppercase tracking-widest text-neutral-700 font-mono">Processing...</p>
+            <div class="h-1.5 bg-neutral-100 border border-neutral-200 overflow-hidden relative rounded-xs">
                 <div class="scanner-bar"></div>
             </div>
         </div>
@@ -279,11 +291,20 @@
             }
         }
 
+        // Formats "2026-08-12" or "2026/08/12" to "20260812"
+        function formatDateYYYYMMDD(rawDateStr) {
+            if (!rawDateStr) return '-';
+            const digitsOnly = rawDateStr.replace(/\D/g, '');
+            if (digitsOnly.length === 8) {
+                return digitsOnly;
+            }
+            return rawDateStr;
+        }
+
         function openWelcomeModal() {
             document.getElementById('welcomeModal').classList.remove('hidden');
             fetchArchivesList();
             
-            // Check for direct URL Hash (Direct Share Link)
             const hash = window.location.hash.replace('#', '').trim();
             if (hash) {
                 switchModalTab('recall');
@@ -674,7 +695,7 @@
             if (!currentTab || !state.expenses) return;
 
             const reportWindow = window.open('', '_blank');
-            const dateToday = new Date().toISOString().split('T')[0];
+            const dateToday = formatDateYYYYMMDD(new Date().toISOString().split('T')[0]);
             const sym = getCurrencySymbol();
 
             let totalSpent = 0;
@@ -693,14 +714,14 @@
             <head>
                 <title>Report - ${currentTab}</title>
                 <style>
-                    body { font-family: 'Courier New', Courier, monospace; background: #fff; color: #000; padding: 40px; max-w: 800px; margin: 0 auto; }
-                    h1 { font-size: 20px; text-transform: uppercase; border-b: 2px solid #000; padding-b: 5px; margin-b: 5px; }
+                    body { font-family: 'Courier New', Courier, monospace; background: #fff; color: #000; padding: 40px; max-width: 800px; margin: 0 auto; }
+                    h1 { font-size: 20px; text-transform: uppercase; border-bottom: 2px solid #000; padding-bottom: 5px; margin-bottom: 5px; }
                     .meta { font-size: 12px; margin-bottom: 30px; text-transform: uppercase; }
                     table { width: 100%; border-collapse: collapse; margin-bottom: 30px; text-align: left; font-size: 13px; }
                     th, td { border-bottom: 1px solid #ccc; padding: 8px 4px; }
                     th { border-bottom: 2px solid #000; text-transform: uppercase; }
-                    .total-box { border-t: 2px solid #000; border-b: 2px solid #000; padding: 10px 0; margin-bottom: 30px; font-weight: bold; font-size: 14px; }
-                    .category-section { border-t: 1px dashed #000; padding-top: 15px; font-size: 12px; }
+                    .total-box { border-top: 2px solid #000; border-bottom: 2px solid #000; padding: 10px 0; margin-bottom: 30px; font-weight: bold; font-size: 14px; }
+                    .category-section { border-top: 1px dashed #000; padding-top: 15px; font-size: 12px; }
                     .category-row { display: flex; justify-content: space-between; padding: 3px 0; }
                     @media print { body { padding: 0; } }
                 </style>
@@ -729,7 +750,7 @@
             (state.expenses || []).forEach(e => {
                 html += `
                     <tr>
-                        <td>${e.date || '-'}</td>
+                        <td>${formatDateYYYYMMDD(e.date)}</td>
                         <td>${e.category || 'General'}</td>
                         <td>${e.desc}</td>
                         <td>${e.paidBy}</td>
@@ -797,22 +818,22 @@
                 formSub.innerText = "Modifying selected entry. Click Update or Delete below.";
                 formButtons.innerHTML = `
                     <div class="flex flex-col sm:flex-row gap-2 pt-1">
-                        <button onclick="updateExpenseFromForm()" class="flex-1 bg-neutral-900 text-white py-2 text-sm font-medium hover:bg-neutral-800 transition">Update Expense</button>
-                        <button onclick="deleteExpenseFromForm()" class="bg-red-600 text-white px-4 py-2 text-sm font-medium hover:bg-red-700 transition">Delete</button>
-                        <button onclick="resetExpenseForm()" class="bg-neutral-200 text-neutral-800 px-4 py-2 text-sm font-medium hover:bg-neutral-300 transition">Cancel</button>
+                        <button onclick="updateExpenseFromForm()" class="flex-1 bg-neutral-900 text-white py-2 text-xs font-semibold hover:bg-neutral-800 rounded-xs transition">Update Expense</button>
+                        <button onclick="deleteExpenseFromForm()" class="bg-rose-700 text-white px-4 py-2 text-xs font-semibold hover:bg-rose-800 rounded-xs transition">Delete</button>
+                        <button onclick="resetExpenseForm()" class="bg-neutral-200 text-neutral-800 px-4 py-2 text-xs font-semibold hover:bg-neutral-300 rounded-xs transition">Cancel</button>
                     </div>
                 `;
             } else {
                 formTitle.innerText = "New Expense";
                 formSub.innerText = "Log a transaction to split.";
                 formButtons.innerHTML = `
-                    <button onclick="addExpense()" class="w-full bg-neutral-900 text-white py-2 text-sm font-medium hover:bg-neutral-800 transition">Record Expense</button>
+                    <button onclick="addExpense()" class="w-full bg-neutral-900 text-white py-2 text-xs font-semibold hover:bg-neutral-800 rounded-xs transition">Record Expense</button>
                 `;
             }
 
             // Members List
             document.getElementById('memberList').innerHTML = (state.members || []).map(m => `
-                <span class="bg-neutral-100 border border-neutral-200 px-2.5 py-1 rounded text-xs font-medium flex items-center gap-1.5">
+                <span class="bg-white border border-neutral-300 px-2.5 py-1 rounded-xs text-xs font-medium flex items-center gap-1.5 shadow-2xs">
                     ${m}
                     <button onclick="removeMember('${m}')" class="text-neutral-400 hover:text-red-600 font-bold">×</button>
                 </span>
@@ -824,7 +845,7 @@
             const splitCheckboxesContainer = document.getElementById('splitCheckboxes');
             if (state.members && state.members.length > 0 && !editingExpenseId) {
                 splitCheckboxesContainer.innerHTML = state.members.map(m => `
-                    <label class="flex items-center gap-1.5 cursor-pointer bg-neutral-50 border border-neutral-200 px-2.5 py-1 rounded">
+                    <label class="flex items-center gap-1.5 cursor-pointer bg-white border border-neutral-300 px-2.5 py-1 rounded-xs shadow-2xs">
                         <input type="checkbox" value="${m}" class="split-checkbox accent-neutral-900" checked>
                         <span>${m}</span>
                     </label>
@@ -833,36 +854,37 @@
                 splitCheckboxesContainer.innerHTML = '<span class="text-neutral-400 text-xs italic">Add participants first.</span>';
             }
 
-            // Expense History
+            // Expense History with YYYYMMDD Date Display
             const sym = getCurrencySymbol();
             document.getElementById('expenseHistory').innerHTML = (state.expenses || []).map(exp => {
                 const isSelected = editingExpenseId === exp.id;
                 const activeSplit = exp.splitWith ? exp.splitWith.filter(m => state.members.includes(m)) : state.members;
                 const isPayerActive = state.members.includes(exp.paidBy);
+                const formattedDate = formatDateYYYYMMDD(exp.date);
 
                 return `
-                    <li onclick="selectExpenseForEdit('${exp.id}')" title="Click to edit" class="border-b border-neutral-100 py-2.5 flex justify-between items-center cursor-pointer hover:bg-neutral-50 px-2 rounded-xs transition ${isSelected ? 'bg-amber-50/80 border-l-4 border-l-amber-500 font-medium' : ''}">
+                    <li onclick="selectExpenseForEdit('${exp.id}')" title="Click to edit" class="border-b border-neutral-200/80 py-2 flex justify-between items-center cursor-pointer hover:bg-white/80 px-2 rounded-xs transition ${isSelected ? 'bg-amber-100/80 border-l-4 border-l-amber-600 font-medium' : ''}">
                         <div>
-                            <div class="flex items-center gap-2">
-                                <span class="text-[10px] bg-neutral-200 font-mono text-neutral-700 px-1 py-0.2 rounded">${exp.date || 'No Date'}</span>
-                                <span class="text-[10px] bg-neutral-100 border border-neutral-200 text-neutral-600 px-1 py-0.2 rounded">${exp.category || 'General'}</span>
-                                <p class="font-medium ${isSelected ? 'text-amber-950' : ''}">${exp.desc}</p>
+                            <div class="flex items-center gap-1.5 flex-wrap">
+                                <span class="text-[10px] bg-neutral-200/80 font-mono text-neutral-800 px-1 py-0.2 rounded-xs font-semibold">${formattedDate}</span>
+                                <span class="text-[10px] bg-white border border-neutral-300 text-neutral-700 px-1 py-0.2 rounded-xs font-medium">${exp.category || 'General'}</span>
+                                <p class="font-semibold text-neutral-900 ${isSelected ? 'text-amber-950' : ''}">${exp.desc}</p>
                             </div>
-                            <p class="text-xs text-neutral-500 mt-0.5">Paid by ${exp.paidBy} ${!isPayerActive ? '(Removed)' : ''} (Split: ${activeSplit.length > 0 ? activeSplit.join(', ') : 'None'})</p>
+                            <p class="text-[11px] text-neutral-500 mt-0.5">Paid by ${exp.paidBy} ${!isPayerActive ? '(Removed)' : ''} (Split: ${activeSplit.length > 0 ? activeSplit.join(', ') : 'None'})</p>
                         </div>
                         <div class="flex items-center gap-2">
-                            <span class="font-mono font-semibold">${sym}${Number(exp.amount).toFixed(2)}</span>
-                            ${isSelected ? '<span class="text-[10px] bg-amber-200 text-amber-900 px-1.5 py-0.5 rounded font-mono uppercase font-bold">Editing</span>' : ''}
+                            <span class="font-mono font-bold text-neutral-900">${sym}${Number(exp.amount).toFixed(2)}</span>
+                            ${isSelected ? '<span class="text-[10px] bg-amber-200 text-amber-900 px-1.5 py-0.5 rounded-xs font-mono uppercase font-bold">Editing</span>' : ''}
                         </div>
                     </li>
                 `;
-            }).join('') || '<span class="text-neutral-400 italic">No expense entries.</span>';
+            }).join('') || '<span class="text-neutral-400 italic text-xs">No expense entries.</span>';
 
             // Settlements
             const settlements = calculateSettlements();
             document.getElementById('settlementList').innerHTML = settlements.length > 0
-                ? settlements.map(s => `<div class="bg-neutral-50 border border-neutral-200 p-2 text-xs">→ ${s}</div>`).join('')
-                : '<span class="text-neutral-400 italic">All accounts balanced.</span>';
+                ? settlements.map(s => `<div class="bg-white border border-neutral-300 p-2 text-xs rounded-xs font-medium shadow-2xs">→ ${s}</div>`).join('')
+                : '<span class="text-neutral-400 italic font-sans text-xs">All accounts balanced.</span>';
         }
 
         initApp();

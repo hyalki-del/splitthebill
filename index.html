@@ -62,17 +62,29 @@
 
         </div>
 
-        <!-- MIDDLE ROW: New Expense (Full Width Column) -->
+        <!-- MIDDLE ROW: New Expense (Full Width Column with Selective Split Checkboxes) -->
         <section class="bg-white border border-neutral-300 p-5 space-y-4">
             <div>
                 <h2 class="text-sm font-semibold uppercase tracking-wider text-neutral-700">New Expense</h2>
-                <p class="text-xs text-neutral-500 mt-0.5">Log a transaction to be split equally among all participants.</p>
+                <p class="text-xs text-neutral-500 mt-0.5">Log a transaction and choose who shares the cost.</p>
             </div>
-            <div class="grid grid-cols-1 sm:grid-cols-4 gap-3">
-                <input type="text" id="expenseDesc" placeholder="Description (e.g., Dinner)" class="bg-neutral-50 border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:border-neutral-900 sm:col-span-2">
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <input type="text" id="expenseDesc" placeholder="Description (e.g., Dinner)" class="bg-neutral-50 border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:border-neutral-900">
                 <input type="number" id="expenseAmount" placeholder="Amount ($)" class="bg-neutral-50 border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:border-neutral-900">
                 <select id="expensePaidBy" class="bg-neutral-50 border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:border-neutral-900"></select>
             </div>
+
+            <!-- Selective Split Checkboxes -->
+            <div class="space-y-1.5 pt-2 border-t border-neutral-200">
+                <div class="flex justify-between items-center">
+                    <label class="text-xs font-medium text-neutral-600 uppercase tracking-wider">Split Between:</label>
+                    <button type="button" onclick="toggleSelectAll(true)" class="text-xs text-neutral-500 hover:underline">Select All</button>
+                </div>
+                <div id="splitCheckboxes" class="flex flex-wrap gap-3 pt-1 text-sm text-neutral-700">
+                    <span class="text-neutral-400 text-xs italic">Add participants first.</span>
+                </div>
+            </div>
+
             <button onclick="addExpense()" class="w-full bg-neutral-900 text-white py-2 text-sm font-medium hover:bg-neutral-800 transition">Record Expense</button>
         </section>
 
@@ -108,7 +120,6 @@
             document.getElementById('statusMsg').innerText = text;
         }
 
-        // Automatically load config.json before doing anything else
         async function initApp() {
             try {
                 const configRes = await fetch('config.json');
@@ -167,16 +178,28 @@
             sendAction({ action: "addMember", name });
         }
 
+        function toggleSelectAll(select) {
+            const checkboxes = document.querySelectorAll('.split-checkbox');
+            checkboxes.forEach(cb => cb.checked = select);
+        }
+
         function addExpense() {
             if (state.activeTab !== "Live") { alert("Cannot modify archived snapshots. Switch to Live."); return; }
             const desc = document.getElementById('expenseDesc').value.trim();
             const amount = parseFloat(document.getElementById('expenseAmount').value);
             const paidBy = document.getElementById('expensePaidBy').value;
 
-            if (!desc || isNaN(amount) || !paidBy) { alert('Invalid fields'); return; }
+            // Gather checked split members
+            const checkboxes = document.querySelectorAll('.split-checkbox:checked');
+            const splitWith = Array.from(checkboxes).map(cb => cb.value);
+
+            if (!desc || isNaN(amount) || !paidBy) { alert('Please check description and amount.'); return; }
+            if (splitWith.length === 0) { alert('Select at least one person to split the expense with.'); return; }
+
             document.getElementById('expenseDesc').value = '';
             document.getElementById('expenseAmount').value = '';
-            sendAction({ action: "addExpense", desc, amount, paidBy });
+            
+            sendAction({ action: "addExpense", desc, amount, paidBy, splitWith });
         }
 
         function resetLive() {
@@ -221,9 +244,17 @@
             state.members.forEach(m => balances[m] = 0);
 
             state.expenses.forEach(exp => {
-                const splitAmount = exp.amount / state.members.length;
+                const splitGroup = (exp.splitWith && exp.splitWith.length > 0) ? exp.splitWith : state.members;
+                if (splitGroup.length === 0) return;
+
+                const splitAmount = exp.amount / splitGroup.length;
                 balances[exp.paidBy] += exp.amount;
-                state.members.forEach(m => balances[m] -= splitAmount);
+                
+                splitGroup.forEach(m => {
+                    if (balances[m] !== undefined) {
+                        balances[m] -= splitAmount;
+                    }
+                });
             });
 
             let debtors = [], creditors = [];
@@ -250,30 +281,46 @@
             const isLive = !state.activeTab || state.activeTab === "Live";
             document.getElementById('viewModeIndicator').innerText = isLive ? "Mode: Live Working Ledger" : `Mode: Viewing Archive [${state.activeTab}]`;
             
+            // Populate archive dropdown with all historic sheet tabs
             const archiveSelect = document.getElementById('archiveSelect');
             archiveSelect.innerHTML = `<option value="">Select past archive...</option>` + 
                 (state.archives || []).map(a => `<option value="${a}" ${a === state.activeTab ? 'selected' : ''}>${a}</option>`).join('');
 
+            // Participants
             document.getElementById('memberList').innerHTML = state.members.map(m => `<span class="bg-neutral-100 border border-neutral-200 px-2 py-1 rounded text-xs font-medium">${m}</span>`).join('') || '<span class="text-neutral-400 text-xs italic">No participants added.</span>';
             document.getElementById('expensePaidBy').innerHTML = state.members.map(m => `<option value="${m}">${m}</option>`).join('') || '<option>Add participants first</option>';
 
+            // Split Checkboxes (Checked by default for convenience)
+            const splitCheckboxesContainer = document.getElementById('splitCheckboxes');
+            if (state.members.length > 0) {
+                splitCheckboxesContainer.innerHTML = state.members.map(m => `
+                    <label class="flex items-center gap-1.5 cursor-pointer bg-neutral-50 border border-neutral-200 px-2.5 py-1 rounded">
+                        <input type="checkbox" value="${m}" class="split-checkbox accent-neutral-900" checked>
+                        <span>${m}</span>
+                    </label>
+                `).join('');
+            } else {
+                splitCheckboxesContainer.innerHTML = '<span class="text-neutral-400 text-xs italic">Add participants first.</span>';
+            }
+
+            // History
             document.getElementById('expenseHistory').innerHTML = state.expenses.map(exp => `
                 <li class="border-b border-neutral-100 py-2 flex justify-between items-center">
                     <div>
                         <p class="font-medium">${exp.desc}</p>
-                        <p class="text-xs text-neutral-500">${exp.paidBy}</p>
+                        <p class="text-xs text-neutral-500">Paid by ${exp.paidBy} (Split: ${exp.splitWith ? exp.splitWith.join(', ') : 'All'})</p>
                     </div>
                     <span class="font-mono font-semibold">$${Number(exp.amount).toFixed(2)}</span>
                 </li>
             `).join('') || '<span class="text-neutral-400 italic">No expense entries.</span>';
 
+            // Settlements
             const settlements = calculateSettlements();
             document.getElementById('settlementList').innerHTML = settlements.length > 0
                 ? settlements.map(s => `<div class="bg-neutral-50 border border-neutral-200 p-2 text-xs">→ ${s}</div>`).join('')
                 : '<span class="text-neutral-400 italic">All accounts balanced.</span>';
         }
 
-        // Start initialization
         initApp();
     </script>
 </body>

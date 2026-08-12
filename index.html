@@ -28,14 +28,13 @@
 <body class="text-neutral-900 min-h-screen p-3 sm:p-8 antialiased">
     <div class="max-w-5xl mx-auto space-y-5">
         
-        <!-- Header with Doubled Logo -->
+        <!-- Header with Doubled Logo (Switch Ledger Button Removed) -->
         <header class="flex justify-between items-center border-b border-neutral-400 pb-4 gap-2">
-            <div class="flex items-center gap-4">
+            <div class="flex items-center gap-4 cursor-pointer" onclick="openWelcomeModal()" title="Switch or create ledger">
                 <img src="logo.png" alt="Settlr Logo" class="h-24 sm:h-28 w-auto object-contain">
                 <p id="viewModeIndicator" class="text-xs text-neutral-600 font-mono hidden sm:block border-l border-neutral-400 pl-4">Mode: Awaiting Authentication...</p>
             </div>
             <div class="flex items-center gap-2">
-                <button onclick="openWelcomeModal()" data-i18n="switchLedgerBtn" class="text-xs bg-neutral-300 hover:bg-neutral-400 text-neutral-900 px-3.5 py-2 font-medium rounded-xs transition">Switch Ledger</button>
                 <div id="statusMsg" class="text-xs font-mono text-neutral-700 bg-neutral-300 px-3 py-2 rounded-xs">Idle</div>
             </div>
         </header>
@@ -272,7 +271,6 @@
 
         const TRANSLATIONS = {
             en: {
-                switchLedgerBtn: "Switch Ledger",
                 activeLedgerTitle: "Active Confidential Ledger",
                 noLedgerLoaded: "No Ledger Loaded",
                 encryptedSub: "Isolated encrypted tab",
@@ -337,7 +335,6 @@
                 }
             },
             tr: {
-                switchLedgerBtn: "Defter Değiştir",
                 activeLedgerTitle: "Aktif Gizli Defter",
                 noLedgerLoaded: "Defter Yüklenmedi",
                 encryptedSub: "İzole edilmiş şifreli sekme",
@@ -402,7 +399,6 @@
                 }
             },
             de: {
-                switchLedgerBtn: "Buch Wechseln",
                 activeLedgerTitle: "Aktives Vertrauliches Buch",
                 noLedgerLoaded: "Kein Buch Geladen",
                 encryptedSub: "Isolierte verschlüsselte Kartei",
@@ -974,7 +970,7 @@
                     th { border-bottom: 2px solid #000; text-transform: uppercase; }
                     .total-box { border-top: 2px solid #000; border-bottom: 2px solid #000; padding: 10px 0; margin-bottom: 30px; font-weight: bold; font-size: 14px; }
                     .category-section { border-top: 1px dashed #000; padding-top: 15px; font-size: 12px; }
-                    .category-row { display: flex; justify-content: space-between; padding: 3px 0; }
+                    .category-row { display: flex; justify-between; padding: 3px 0; }
                     @media print { body { padding: 0; } }
                 </style>
             </head>

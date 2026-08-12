@@ -6,12 +6,11 @@
     <title>Split & Settle</title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <style>
-        /* Dieter Rams inspired touches: strict grid alignment, neutral tones, high legibility */
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
     </style>
 </head>
 <body class="bg-neutral-100 text-neutral-900 min-h-screen p-4 sm:p-8 antialiased">
-    <div class="max-w-4xl mx-auto space-y-6">
+    <div class="max-w-5xl mx-auto space-y-6">
         
         <!-- Header & Status Indicator -->
         <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-neutral-300 pb-4 gap-2">
@@ -22,89 +21,88 @@
             <div id="statusMsg" class="text-xs font-mono text-neutral-600 bg-neutral-200 px-2.5 py-1 rounded">Ready</div>
         </header>
 
-        <!-- ARCHIVE FRAME (Dieter Rams: Grouped, functional enclosure) -->
-        <section class="bg-white border border-neutral-300 p-4 sm:p-6 space-y-4">
-            <div class="border-b border-neutral-200 pb-2">
-                <h2 class="text-sm font-semibold uppercase tracking-wider text-neutral-700">Archive & Snapshot Control</h2>
-                <p class="text-xs text-neutral-500">Save current state permanently to Google Sheets or recall past archives.</p>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <!-- Save Snapshot -->
-                <div class="flex flex-col space-y-2">
-                    <label class="text-xs font-medium text-neutral-600">Save Current State</label>
+        <!-- TOP ROW: Archive Control (Left) & Participants (Right) -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            
+            <!-- Archive & Snapshot Control -->
+            <section class="bg-white border border-neutral-300 p-5 space-y-4 flex flex-col justify-between">
+                <div>
+                    <h2 class="text-sm font-semibold uppercase tracking-wider text-neutral-700">Archive Control</h2>
+                    <p class="text-xs text-neutral-500 mt-0.5">Save current state or recall past tabs.</p>
+                </div>
+                <div class="space-y-3">
                     <div class="flex gap-2">
-                        <input type="text" id="archiveName" placeholder="userdefinedtext (e.g., band-trip)" class="flex-1 bg-neutral-50 border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:border-neutral-900">
+                        <input type="text" id="archiveName" placeholder="archive name..." class="flex-1 bg-neutral-50 border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:border-neutral-900">
                         <button onclick="saveSnapshot()" class="bg-neutral-900 text-white px-4 py-2 text-sm font-medium hover:bg-neutral-800 transition">Save</button>
                     </div>
-                </div>
-
-                <!-- Recall Snapshot -->
-                <div class="flex flex-col space-y-2">
-                    <label class="text-xs font-medium text-neutral-600">Recall Past Archive</label>
                     <div class="flex gap-2">
                         <select id="archiveSelect" class="flex-1 bg-neutral-50 border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:border-neutral-900">
                             <option value="">Select past archive...</option>
                         </select>
-                        <button onclick="loadArchive()" class="bg-neutral-200 text-neutral-800 px-4 py-2 text-sm font-medium hover:bg-neutral-300 transition">Recall</button>
-                        <button onclick="returnToLive()" class="bg-neutral-100 text-neutral-600 px-3 py-2 text-xs border border-neutral-300 hover:bg-neutral-200 transition" title="Return to Live Ledger">Live</button>
+                        <button onclick="loadArchive()" class="bg-neutral-200 text-neutral-800 px-3 py-2 text-sm font-medium hover:bg-neutral-300 transition">Recall</button>
+                        <button onclick="returnToLive()" class="bg-neutral-100 text-neutral-600 px-3 py-2 text-xs border border-neutral-300 hover:bg-neutral-200 transition">Live</button>
                     </div>
                 </div>
-            </div>
-        </section>
+            </section>
 
-        <!-- MAIN INTERACTIVE GRID -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            
-            <!-- Left Column: Inputs (Members & Expenses) -->
-            <div class="md:col-span-1 space-y-6">
-                <!-- Add Members -->
-                <div class="bg-white border border-neutral-300 p-5 space-y-3">
+            <!-- Participants -->
+            <section class="bg-white border border-neutral-300 p-5 space-y-4 flex flex-col justify-between">
+                <div>
                     <h2 class="text-sm font-semibold uppercase tracking-wider text-neutral-700">Participants</h2>
+                    <p class="text-xs text-neutral-500 mt-0.5">Add people to split expenses with.</p>
+                </div>
+                <div class="space-y-3">
                     <div class="flex gap-2">
                         <input type="text" id="memberName" placeholder="Name..." class="flex-1 bg-neutral-50 border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:border-neutral-900">
-                        <button onclick="addMember()" class="bg-neutral-900 text-white px-3 py-2 text-sm font-medium hover:bg-neutral-800 transition">+</button>
+                        <button onclick="addMember()" class="bg-neutral-900 text-white px-4 py-2 text-sm font-medium hover:bg-neutral-800 transition">Add</button>
                     </div>
-                    <ul id="memberList" class="space-y-1 text-sm text-neutral-700 pt-2"></ul>
+                    <div id="memberList" class="text-sm text-neutral-700 flex flex-wrap gap-1.5 pt-1"></div>
                 </div>
-
-                <!-- Add Expense -->
-                <div class="bg-white border border-neutral-300 p-5 space-y-3">
-                    <h2 class="text-sm font-semibold uppercase tracking-wider text-neutral-700">New Expense</h2>
-                    <div class="space-y-2">
-                        <input type="text" id="expenseDesc" placeholder="Description" class="w-full bg-neutral-50 border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:border-neutral-900">
-                        <input type="number" id="expenseAmount" placeholder="Amount ($)" class="w-full bg-neutral-50 border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:border-neutral-900">
-                        <select id="expensePaidBy" class="w-full bg-neutral-50 border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:border-neutral-900"></select>
-                        <button onclick="addExpense()" class="w-full bg-neutral-900 text-white py-2 text-sm font-medium hover:bg-neutral-800 transition">Record Expense</button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Right Column: Results & History -->
-            <div class="md:col-span-2 space-y-6">
-                <!-- Settlement Plan -->
-                <div class="bg-white border border-neutral-300 p-5 space-y-3">
-                    <h2 class="text-sm font-semibold uppercase tracking-wider text-neutral-700">Settlement Matrix</h2>
-                    <div id="settlementList" class="space-y-2 text-sm font-mono">
-                        <p class="text-neutral-400 italic font-sans">Awaiting ledger input...</p>
-                    </div>
-                </div>
-
-                <!-- History -->
-                <div class="bg-white border border-neutral-300 p-5 space-y-3">
-                    <div class="flex justify-between items-center">
-                        <h2 class="text-sm font-semibold uppercase tracking-wider text-neutral-700">Ledger History</h2>
-                        <button onclick="resetLive()" class="text-xs text-red-600 hover:underline">Reset Live Sheet</button>
-                    </div>
-                    <ul id="expenseHistory" class="space-y-2 text-sm"></ul>
-                </div>
-            </div>
+            </section>
 
         </div>
+
+        <!-- MIDDLE ROW: New Expense (Full Width Column) -->
+        <section class="bg-white border border-neutral-300 p-5 space-y-4">
+            <div>
+                <h2 class="text-sm font-semibold uppercase tracking-wider text-neutral-700">New Expense</h2>
+                <p class="text-xs text-neutral-500 mt-0.5">Log a transaction to be split equally among all participants.</p>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-4 gap-3">
+                <input type="text" id="expenseDesc" placeholder="Description (e.g., Dinner)" class="bg-neutral-50 border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:border-neutral-900 sm:col-span-2">
+                <input type="number" id="expenseAmount" placeholder="Amount ($)" class="bg-neutral-50 border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:border-neutral-900">
+                <select id="expensePaidBy" class="bg-neutral-50 border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:border-neutral-900"></select>
+            </div>
+            <button onclick="addExpense()" class="w-full bg-neutral-900 text-white py-2 text-sm font-medium hover:bg-neutral-800 transition">Record Expense</button>
+        </section>
+
+        <!-- BOTTOM ROW: Settlement Matrix (Left) & Ledger History (Right) -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            
+            <!-- Settlement Matrix -->
+            <section class="bg-white border border-neutral-300 p-5 space-y-4">
+                <h2 class="text-sm font-semibold uppercase tracking-wider text-neutral-700">Settlement Matrix</h2>
+                <div id="settlementList" class="space-y-2 text-sm font-mono min-h-[100px]">
+                    <p class="text-neutral-400 italic font-sans">Awaiting ledger input...</p>
+                </div>
+            </section>
+
+            <!-- Ledger History -->
+            <section class="bg-white border border-neutral-300 p-5 space-y-4">
+                <div class="flex justify-between items-center">
+                    <h2 class="text-sm font-semibold uppercase tracking-wider text-neutral-700">Ledger History</h2>
+                    <button onclick="resetLive()" class="text-xs text-red-600 hover:underline">Reset Live Sheet</button>
+                </div>
+                <ul id="expenseHistory" class="space-y-2 text-sm min-h-[100px] max-h-[250px] overflow-y-auto"></ul>
+            </section>
+
+        </div>
+
     </div>
 
     <script>
-        const API_URL = "https://script.google.com/macros/s/AKfycbyA9QSZKFNWJMenmVJuaR56Ma1BnvZ2r3_AlceA8Mdgew-CUeqfSyZd0-VrPSjQL6eF8g/exec"
+        const API_URL = "https://script.google.com/macros/s/AKfycbyA9QSZKFNWJMenmVJuaR56Ma1BnvZ2r3_AlceA8Mdgew-CUeqfSyZd0-VrPSjQL6eF8g/exec";
+
         let state = { members: [], expenses: [], archives: [], activeTab: "Live" };
 
         function setStatus(text) {
@@ -230,17 +228,15 @@
         }
 
         function render() {
-            // Mode indicator
             const isLive = !state.activeTab || state.activeTab === "Live";
             document.getElementById('viewModeIndicator').innerText = isLive ? "Mode: Live Working Ledger" : `Mode: Viewing Archive [${state.activeTab}]`;
             
-            // Archive dropdown options
             const archiveSelect = document.getElementById('archiveSelect');
             archiveSelect.innerHTML = `<option value="">Select past archive...</option>` + 
                 (state.archives || []).map(a => `<option value="${a}" ${a === state.activeTab ? 'selected' : ''}>${a}</option>`).join('');
 
-            // Members
-            document.getElementById('memberList').innerHTML = state.members.map(m => `<li class="border-b border-neutral-100 py-1">${m}</li>`).join('') || '<span class="text-neutral-400">None</span>';
+            // Members as clean inline badges
+            document.getElementById('memberList').innerHTML = state.members.map(m => `<span class="bg-neutral-100 border border-neutral-200 px-2 py-1 rounded text-xs font-medium">${m}</span>`).join('') || '<span class="text-neutral-400 text-xs italic">No participants added.</span>';
             document.getElementById('expensePaidBy').innerHTML = state.members.map(m => `<option value="${m}">${m}</option>`).join('') || '<option>Add participants first</option>';
 
             // History
@@ -261,7 +257,6 @@
                 : '<span class="text-neutral-400 italic">All accounts balanced.</span>';
         }
 
-        // Initial load
         fetchData();
     </script>
 </body>

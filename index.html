@@ -16,9 +16,9 @@
         <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-neutral-300 pb-4 gap-2">
             <div>
                 <h1 class="text-2xl font-semibold tracking-tight">Split & Settle</h1>
-                <p id="viewModeIndicator" class="text-xs text-neutral-500 font-mono mt-0.5">Mode: Live Working Ledger</p>
+                <p id="viewModeIndicator" class="text-xs text-neutral-500 font-mono mt-0.5">Mode: Initializing...</p>
             </div>
-            <div id="statusMsg" class="text-xs font-mono text-neutral-600 bg-neutral-200 px-2.5 py-1 rounded">Ready</div>
+            <div id="statusMsg" class="text-xs font-mono text-neutral-600 bg-neutral-200 px-2.5 py-1 rounded">Loading Config</div>
         </header>
 
         <!-- TOP ROW: Archive Control (Left) & Participants (Right) -->
@@ -101,12 +101,31 @@
     </div>
 
     <script>
-        const API_URL = "https://script.google.com/macros/s/AKfycbyA9QSZKFNWJMenmVJuaR56Ma1BnvZ2r3_AlceA8Mdgew-CUeqfSyZd0-VrPSjQL6eF8g/exec";
-
+        let API_URL = "";
         let state = { members: [], expenses: [], archives: [], activeTab: "Live" };
 
         function setStatus(text) {
             document.getElementById('statusMsg').innerText = text;
+        }
+
+        // Automatically load config.json before doing anything else
+        async function initApp() {
+            try {
+                const configRes = await fetch('config.json');
+                const config = await configRes.json();
+                API_URL = config.API_URL;
+                
+                if (!API_URL || API_URL.includes("YOUR_GOOGLE_APPS_SCRIPT_URL")) {
+                    setStatus("Config Error");
+                    alert("Please update config.json with your actual Google Apps Script URL.");
+                    return;
+                }
+
+                await fetchData();
+            } catch (err) {
+                setStatus("Config Missing");
+                console.error("Failed to load config.json", err);
+            }
         }
 
         async function fetchData(tabName = "") {
@@ -235,11 +254,9 @@
             archiveSelect.innerHTML = `<option value="">Select past archive...</option>` + 
                 (state.archives || []).map(a => `<option value="${a}" ${a === state.activeTab ? 'selected' : ''}>${a}</option>`).join('');
 
-            // Members as clean inline badges
             document.getElementById('memberList').innerHTML = state.members.map(m => `<span class="bg-neutral-100 border border-neutral-200 px-2 py-1 rounded text-xs font-medium">${m}</span>`).join('') || '<span class="text-neutral-400 text-xs italic">No participants added.</span>';
             document.getElementById('expensePaidBy').innerHTML = state.members.map(m => `<option value="${m}">${m}</option>`).join('') || '<option>Add participants first</option>';
 
-            // History
             document.getElementById('expenseHistory').innerHTML = state.expenses.map(exp => `
                 <li class="border-b border-neutral-100 py-2 flex justify-between items-center">
                     <div>
@@ -250,14 +267,14 @@
                 </li>
             `).join('') || '<span class="text-neutral-400 italic">No expense entries.</span>';
 
-            // Settlements
             const settlements = calculateSettlements();
             document.getElementById('settlementList').innerHTML = settlements.length > 0
                 ? settlements.map(s => `<div class="bg-neutral-50 border border-neutral-200 p-2 text-xs">→ ${s}</div>`).join('')
                 : '<span class="text-neutral-400 italic">All accounts balanced.</span>';
         }
 
-        fetchData();
+        // Start initialization
+        initApp();
     </script>
 </body>
 </html>

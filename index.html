@@ -65,11 +65,11 @@
             </section>
         </div>
 
-        <!-- Middle Row: New Expense -->
-        <section class="bg-white border border-neutral-300 p-5 space-y-4">
+        <!-- Middle Row: Expense Form (Handles both New & Edit mode) -->
+        <section id="expenseFormSection" class="bg-white border border-neutral-300 p-5 space-y-4 transition-colors duration-200">
             <div>
-                <h2 class="text-sm font-semibold uppercase tracking-wider text-neutral-700">New Expense</h2>
-                <p class="text-xs text-neutral-500 mt-0.5">Log a transaction to split.</p>
+                <h2 id="expenseFormTitle" class="text-sm font-semibold uppercase tracking-wider text-neutral-700">New Expense</h2>
+                <p id="expenseFormSub" class="text-xs text-neutral-500 mt-0.5">Log a transaction to split.</p>
             </div>
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <input type="text" id="expenseDesc" placeholder="Description" class="bg-neutral-50 border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:border-neutral-900">
@@ -87,7 +87,9 @@
                 </div>
             </div>
 
-            <button onclick="addExpense()" class="w-full bg-neutral-900 text-white py-2 text-sm font-medium hover:bg-neutral-800 transition">Record Expense</button>
+            <div id="expenseFormButtons">
+                <button onclick="addExpense()" class="w-full bg-neutral-900 text-white py-2 text-sm font-medium hover:bg-neutral-800 transition">Record Expense</button>
+            </div>
         </section>
 
         <!-- Bottom Row -->
@@ -102,7 +104,7 @@
             <section class="bg-white border border-neutral-300 p-5 space-y-4">
                 <div class="flex justify-between items-center">
                     <h2 class="text-sm font-semibold uppercase tracking-wider text-neutral-700">Ledger History</h2>
-                    <span class="text-xs text-neutral-400 italic">Double-click item to edit</span>
+                    <span class="text-xs text-neutral-400 italic">Click item to edit</span>
                 </div>
                 <ul id="expenseHistory" class="space-y-2 text-sm min-h-[100px] max-h-[300px] overflow-y-auto"></ul>
             </section>
@@ -298,7 +300,6 @@
 
                 state.members = data.members || [];
                 state.expenses = data.expenses || [];
-                editingExpenseId = null;
                 setStatus("Idle");
                 render();
                 return true;
@@ -353,6 +354,7 @@
                     currentPin = "";
                     state.members = [];
                     state.expenses = [];
+                    resetExpenseForm();
                     render();
                     showLoading(false);
                     openWelcomeModal();
@@ -393,39 +395,69 @@
             if (!desc || isNaN(amount) || !paidBy) { alert('Please check description and amount.'); return; }
             if (splitWith.length === 0) { alert('Select at least one person to split the expense with.'); return; }
 
-            document.getElementById('expenseDesc').value = '';
-            document.getElementById('expenseAmount').value = '';
+            resetExpenseForm();
             sendAction({ action: "addExpense", desc, amount, paidBy, splitWith });
         }
 
-        function enableInlineEdit(id) {
-            editingExpenseId = id;
+        // --- SINGLE-CLICK EDIT & FORM MANAGEMENT ---
+
+        function selectExpenseForEdit(id) {
+            const exp = (state.expenses || []).find(e => e.id.toString() === id.toString());
+            if (!exp) return;
+
+            editingExpenseId = exp.id;
+
+            // Pre-fill inputs
+            document.getElementById('expenseDesc').value = exp.desc;
+            document.getElementById('expenseAmount').value = exp.amount;
+            document.getElementById('expensePaidBy').value = exp.paidBy;
+
+            // Pre-check split checkboxes
+            const activeSplit = exp.splitWith && exp.splitWith.length > 0 ? exp.splitWith : state.members;
+            const checkboxes = document.querySelectorAll('.split-checkbox');
+            checkboxes.forEach(cb => {
+                cb.checked = activeSplit.includes(cb.value);
+            });
+
             render();
+            
+            // Scroll smoothly to form
+            document.getElementById('expenseFormSection').scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
 
-        function cancelInlineEdit() {
-            editingExpenseId = null;
-            render();
-        }
+        function updateExpenseFromForm() {
+            if (!editingExpenseId) return;
 
-        function saveInlineEdit(id) {
-            const desc = document.getElementById(`editDesc_${id}`).value.trim();
-            const amount = parseFloat(document.getElementById(`editAmount_${id}`).value);
-            const paidBy = document.getElementById(`editPaidBy_${id}`).value;
+            const desc = document.getElementById('expenseDesc').value.trim();
+            const amount = parseFloat(document.getElementById('expenseAmount').value);
+            const paidBy = document.getElementById('expensePaidBy').value;
 
-            const checkboxes = document.querySelectorAll(`.edit-split-cb-${id}:checked`);
+            const checkboxes = document.querySelectorAll('.split-checkbox:checked');
             const splitWith = Array.from(checkboxes).map(cb => cb.value);
 
-            if (!desc || isNaN(amount) || !paidBy) { alert('Invalid input values.'); return; }
-            if (splitWith.length === 0) { alert('Select at least one participant to split with.'); return; }
+            if (!desc || isNaN(amount) || !paidBy) { alert('Please check description and amount.'); return; }
+            if (splitWith.length === 0) { alert('Select at least one person to split the expense with.'); return; }
 
-            sendAction({ action: "updateExpense", id, desc, amount, paidBy, splitWith });
+            const idToUpdate = editingExpenseId;
+            resetExpenseForm();
+            sendAction({ action: "updateExpense", id: idToUpdate, desc, amount, paidBy, splitWith });
         }
 
-        function deleteExpense(id) {
+        function deleteExpenseFromForm() {
+            if (!editingExpenseId) return;
             if (confirm("Delete this expense item?")) {
-                sendAction({ action: "deleteExpense", id });
+                const idToDelete = editingExpenseId;
+                resetExpenseForm();
+                sendAction({ action: "deleteExpense", id: idToDelete });
             }
+        }
+
+        function resetExpenseForm() {
+            editingExpenseId = null;
+            document.getElementById('expenseDesc').value = '';
+            document.getElementById('expenseAmount').value = '';
+            toggleSelectAll(true);
+            render();
         }
 
         function calculateSettlements() {
@@ -475,10 +507,29 @@
             document.getElementById('viewModeIndicator').innerText = currentTab ? `Mode: Active Ledger [${currentTab}]` : "Mode: Awaiting Authentication...";
 
             const deleteBtn = document.getElementById('deleteLedgerBtn');
-            if (currentTab) {
-                deleteBtn.classList.remove('hidden');
+            if (currentTab) deleteBtn.classList.remove('hidden'); else deleteBtn.classList.add('hidden');
+
+            // Render Form Title & Action Buttons based on New vs Edit mode
+            const formTitle = document.getElementById('expenseFormTitle');
+            const formSub = document.getElementById('expenseFormSub');
+            const formButtons = document.getElementById('expenseFormButtons');
+
+            if (editingExpenseId) {
+                formTitle.innerText = "Edit Expense";
+                formSub.innerText = "Modifying selected entry. Click Update or Delete below.";
+                formButtons.innerHTML = `
+                    <div class="flex flex-col sm:flex-row gap-2 pt-1">
+                        <button onclick="updateExpenseFromForm()" class="flex-1 bg-neutral-900 text-white py-2 text-sm font-medium hover:bg-neutral-800 transition">Update Expense</button>
+                        <button onclick="deleteExpenseFromForm()" class="bg-red-600 text-white px-4 py-2 text-sm font-medium hover:bg-red-700 transition">Delete</button>
+                        <button onclick="resetExpenseForm()" class="bg-neutral-200 text-neutral-800 px-4 py-2 text-sm font-medium hover:bg-neutral-300 transition">Cancel</button>
+                    </div>
+                `;
             } else {
-                deleteBtn.classList.add('hidden');
+                formTitle.innerText = "New Expense";
+                formSub.innerText = "Log a transaction to split.";
+                formButtons.innerHTML = `
+                    <button onclick="addExpense()" class="w-full bg-neutral-900 text-white py-2 text-sm font-medium hover:bg-neutral-800 transition">Record Expense</button>
+                `;
             }
 
             // Active Members
@@ -491,72 +542,34 @@
             
             document.getElementById('expensePaidBy').innerHTML = (state.members || []).map(m => `<option value="${m}">${m}</option>`).join('') || '<option>Add participants first</option>';
 
-            // Split Checkboxes for New Expense
+            // Split Checkboxes
             const splitCheckboxesContainer = document.getElementById('splitCheckboxes');
-            if (state.members && state.members.length > 0) {
+            if (state.members && state.members.length > 0 && !editingExpenseId) {
                 splitCheckboxesContainer.innerHTML = state.members.map(m => `
                     <label class="flex items-center gap-1.5 cursor-pointer bg-neutral-50 border border-neutral-200 px-2.5 py-1 rounded">
                         <input type="checkbox" value="${m}" class="split-checkbox accent-neutral-900" checked>
                         <span>${m}</span>
                     </label>
                 `).join('');
-            } else {
+            } else if (!state.members || state.members.length === 0) {
                 splitCheckboxesContainer.innerHTML = '<span class="text-neutral-400 text-xs italic">Add participants first.</span>';
             }
 
-            // Expense History
+            // Expense History (Single Click Selection)
             document.getElementById('expenseHistory').innerHTML = (state.expenses || []).map(exp => {
-                const isEditing = editingExpenseId === exp.id;
+                const isSelected = editingExpenseId === exp.id;
                 const activeSplit = exp.splitWith ? exp.splitWith.filter(m => state.members.includes(m)) : state.members;
                 const isPayerActive = state.members.includes(exp.paidBy);
 
-                if (isEditing) {
-                    return `
-                        <li class="border border-neutral-300 py-3 p-3 space-y-3 bg-neutral-50 rounded-xs">
-                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                                <div>
-                                    <label class="text-[10px] uppercase font-bold text-neutral-500">Desc</label>
-                                    <input type="text" id="editDesc_${exp.id}" value="${exp.desc}" class="w-full bg-white border border-neutral-300 px-2 py-1 text-xs">
-                                </div>
-                                <div>
-                                    <label class="text-[10px] uppercase font-bold text-neutral-500">Amount ($)</label>
-                                    <input type="number" id="editAmount_${exp.id}" value="${exp.amount}" class="w-full bg-white border border-neutral-300 px-2 py-1 text-xs">
-                                </div>
-                                <div>
-                                    <label class="text-[10px] uppercase font-bold text-neutral-500">Payer</label>
-                                    <select id="editPaidBy_${exp.id}" class="w-full bg-white border border-neutral-300 px-2 py-1 text-xs">
-                                        ${state.members.map(m => `<option value="${m}" ${m === exp.paidBy ? 'selected' : ''}>${m}</option>`).join('')}
-                                    </select>
-                                </div>
-                            </div>
-                            <div>
-                                <label class="text-[10px] uppercase font-bold text-neutral-500 block mb-1">Split Between</label>
-                                <div class="flex flex-wrap gap-2 text-xs">
-                                    ${state.members.map(m => `
-                                        <label class="flex items-center gap-1 bg-white border border-neutral-200 px-2 py-0.5 rounded cursor-pointer">
-                                            <input type="checkbox" value="${m}" class="edit-split-cb-${exp.id} accent-neutral-900" ${activeSplit.includes(m) ? 'checked' : ''}>
-                                            <span>${m}</span>
-                                        </label>
-                                    `).join('')}
-                                </div>
-                            </div>
-                            <div class="flex justify-end gap-2 text-xs pt-1 border-t border-neutral-200">
-                                <button onclick="saveInlineEdit('${exp.id}')" class="bg-neutral-900 text-white px-3 py-1 font-medium hover:bg-neutral-800 transition">Save</button>
-                                <button onclick="cancelInlineEdit()" class="bg-neutral-200 text-neutral-700 px-3 py-1 hover:bg-neutral-300 transition">Cancel</button>
-                            </div>
-                        </li>
-                    `;
-                }
-
                 return `
-                    <li ondblclick="enableInlineEdit('${exp.id}')" title="Double click to edit" class="border-b border-neutral-100 py-2 flex justify-between items-center cursor-pointer hover:bg-neutral-50/80 px-1 transition">
+                    <li onclick="selectExpenseForEdit('${exp.id}')" title="Click to edit in form above" class="border-b border-neutral-100 py-2.5 flex justify-between items-center cursor-pointer hover:bg-neutral-50 px-2 rounded-xs transition ${isSelected ? 'bg-amber-50/80 border-l-4 border-l-amber-500 font-medium' : ''}">
                         <div>
-                            <p class="font-medium">${exp.desc}</p>
+                            <p class="font-medium ${isSelected ? 'text-amber-950' : ''}">${exp.desc}</p>
                             <p class="text-xs text-neutral-500">Paid by ${exp.paidBy} ${!isPayerActive ? '(Removed)' : ''} (Split: ${activeSplit.length > 0 ? activeSplit.join(', ') : 'None'})</p>
                         </div>
-                        <div class="flex items-center gap-3">
+                        <div class="flex items-center gap-2">
                             <span class="font-mono font-semibold">$${Number(exp.amount).toFixed(2)}</span>
-                            <button onclick="deleteExpense('${exp.id}')" class="text-xs text-red-500 hover:underline">Remove</button>
+                            ${isSelected ? '<span class="text-[10px] bg-amber-200 text-amber-900 px-1.5 py-0.5 rounded font-mono uppercase font-bold">Editing</span>' : ''}
                         </div>
                     </li>
                 `;

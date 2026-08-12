@@ -172,24 +172,23 @@
         </div>
     </div>
 
-    <!-- WELCOME MODAL WITH LANG SELECTOR & LOGO -->
+    <!-- WELCOME MODAL WITH CENTERED LANGUAGE TEXT & LOGO -->
     <div id="welcomeModal" class="fixed inset-0 bg-neutral-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4">
         <div class="bg-[#eae8e3] border border-neutral-400 p-6 sm:p-8 max-w-md w-full space-y-6 shadow-2xl rounded-xs">
             
-            <div class="flex justify-end">
-                <div class="flex items-center gap-1.5 bg-white border border-neutral-400 px-2 py-1 rounded-xs shadow-2xs">
-                    <span class="text-[10px] font-bold text-neutral-500 uppercase">LANG:</span>
-                    <select id="languageSelect" onchange="switchLanguage(this.value)" class="bg-transparent text-xs font-semibold focus:outline-none text-neutral-800">
-                        <option value="en">English</option>
-                        <option value="tr">Türkçe</option>
-                        <option value="de">Deutsch</option>
-                    </select>
+            <div class="border-b border-neutral-300 pb-5 text-center space-y-2">
+                <img src="logo.png" alt="Settlr Logo" class="h-32 sm:h-40 mx-auto object-contain">
+                
+                <!-- Centered Capitalized Language Selector Directly Under Logo -->
+                <div class="text-xs font-bold tracking-widest text-neutral-700 flex justify-center items-center gap-2 pt-1 uppercase">
+                    <button id="lang-tr" onclick="switchLanguage('tr')" class="hover:text-neutral-900 cursor-pointer transition">TÜRKÇE</button>
+                    <span class="text-neutral-400 font-normal">|</span>
+                    <button id="lang-en" onclick="switchLanguage('en')" class="hover:text-neutral-900 cursor-pointer transition">ENGLISH</button>
+                    <span class="text-neutral-400 font-normal">|</span>
+                    <button id="lang-de" onclick="switchLanguage('de')" class="hover:text-neutral-900 cursor-pointer transition">DEUTSCH</button>
                 </div>
-            </div>
 
-            <div class="border-b border-neutral-300 pb-5 text-center">
-                <img src="logo.png" alt="Settlr Logo" class="h-32 sm:h-40 mx-auto object-contain mb-3">
-                <p data-i18n="modalSub" class="text-xs text-neutral-600">Create or open a confidential group ledger.</p>
+                <p data-i18n="modalSub" class="text-xs text-neutral-600 pt-1">Create or open a confidential group ledger.</p>
             </div>
 
             <div id="modalTabsHeader" class="flex border-b border-neutral-300">
@@ -510,7 +509,18 @@
         function switchLanguage(lang) {
             if (!TRANSLATIONS[lang]) return;
             currentLang = lang;
-            document.getElementById('languageSelect').value = lang;
+
+            // Highlight Active Language in Header Line
+            ['tr', 'en', 'de'].forEach(l => {
+                const btn = document.getElementById(`lang-${l}`);
+                if (btn) {
+                    if (l === lang) {
+                        btn.className = "hover:text-neutral-900 cursor-pointer transition text-neutral-900 border-b-2 border-neutral-900 pb-0.5";
+                    } else {
+                        btn.className = "hover:text-neutral-900 cursor-pointer transition text-neutral-500";
+                    }
+                }
+            });
 
             // Translate DOM Elements with data-i18n
             document.querySelectorAll('[data-i18n]').forEach(el => {

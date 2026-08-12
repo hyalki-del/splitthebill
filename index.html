@@ -25,35 +25,32 @@
 <body class="bg-neutral-100 text-neutral-900 min-h-screen p-4 sm:p-8 antialiased">
     <div class="max-w-5xl mx-auto space-y-6">
         
-        <!-- Header & Status Indicator -->
+        <!-- Header -->
         <header class="flex justify-between items-center border-b border-neutral-300 pb-4 gap-2">
             <div>
                 <h1 class="text-2xl font-semibold tracking-tight">Split & Settle</h1>
                 <p id="viewModeIndicator" class="text-xs text-neutral-500 font-mono mt-0.5">Mode: Awaiting Authentication...</p>
             </div>
             <div class="flex items-center gap-2">
-                <button onclick="openWelcomeModal()" class="text-xs bg-neutral-200 hover:bg-neutral-300 text-neutral-800 px-3 py-1 font-medium transition">Lock / Switch Ledger</button>
+                <button onclick="openWelcomeModal()" class="text-xs bg-neutral-200 hover:bg-neutral-300 text-neutral-800 px-3 py-1 font-medium transition">Switch Ledger</button>
                 <div id="statusMsg" class="text-xs font-mono text-neutral-600 bg-neutral-200 px-2.5 py-1 rounded">Idle</div>
             </div>
         </header>
 
-        <!-- TOP ROW: Participants & Ledger Info -->
+        <!-- Top Row -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            
-            <!-- Active Ledger Info -->
             <section class="bg-white border border-neutral-300 p-5 space-y-3 flex flex-col justify-between">
                 <div>
                     <h2 class="text-sm font-semibold uppercase tracking-wider text-neutral-700">Active Confidential Ledger</h2>
                     <p id="activeTabNameDisplay" class="text-base font-mono font-semibold text-neutral-900 mt-1">No Ledger Loaded</p>
                 </div>
-                <p class="text-xs text-neutral-500">All data in this view is written directly to its isolated Google Sheet tab.</p>
+                <p class="text-xs text-neutral-500">Self-contained encrypted snapshot tab.</p>
             </section>
 
-            <!-- Participants -->
             <section class="bg-white border border-neutral-300 p-5 space-y-4 flex flex-col justify-between">
                 <div>
                     <h2 class="text-sm font-semibold uppercase tracking-wider text-neutral-700">Participants</h2>
-                    <p class="text-xs text-neutral-500 mt-0.5">Add or remove people from this ledger.</p>
+                    <p class="text-xs text-neutral-500 mt-0.5">Add or remove participants.</p>
                 </div>
                 <div class="space-y-3">
                     <div class="flex gap-2">
@@ -63,22 +60,20 @@
                     <div id="memberList" class="text-sm text-neutral-700 flex flex-wrap gap-1.5 pt-1"></div>
                 </div>
             </section>
-
         </div>
 
-        <!-- MIDDLE ROW: New Expense -->
+        <!-- Middle Row: New Expense -->
         <section class="bg-white border border-neutral-300 p-5 space-y-4">
             <div>
                 <h2 class="text-sm font-semibold uppercase tracking-wider text-neutral-700">New Expense</h2>
-                <p class="text-xs text-neutral-500 mt-0.5">Log a transaction and choose who shares the cost.</p>
+                <p class="text-xs text-neutral-500 mt-0.5">Log a transaction to split.</p>
             </div>
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <input type="text" id="expenseDesc" placeholder="Description (e.g., Dinner)" class="bg-neutral-50 border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:border-neutral-900">
+                <input type="text" id="expenseDesc" placeholder="Description" class="bg-neutral-50 border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:border-neutral-900">
                 <input type="number" id="expenseAmount" placeholder="Amount ($)" class="bg-neutral-50 border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:border-neutral-900">
                 <select id="expensePaidBy" class="bg-neutral-50 border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:border-neutral-900"></select>
             </div>
 
-            <!-- Selective Split Checkboxes -->
             <div class="space-y-1.5 pt-2 border-t border-neutral-200">
                 <div class="flex justify-between items-center">
                     <label class="text-xs font-medium text-neutral-600 uppercase tracking-wider">Split Between:</label>
@@ -92,10 +87,8 @@
             <button onclick="addExpense()" class="w-full bg-neutral-900 text-white py-2 text-sm font-medium hover:bg-neutral-800 transition">Record Expense</button>
         </section>
 
-        <!-- BOTTOM ROW: Settlement Matrix & Ledger History -->
+        <!-- Bottom Row -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            
-            <!-- Settlement Matrix -->
             <section class="bg-white border border-neutral-300 p-5 space-y-4">
                 <h2 class="text-sm font-semibold uppercase tracking-wider text-neutral-700">Settlement Matrix</h2>
                 <div id="settlementList" class="space-y-2 text-sm font-mono min-h-[100px]">
@@ -103,35 +96,30 @@
                 </div>
             </section>
 
-            <!-- Ledger History -->
             <section class="bg-white border border-neutral-300 p-5 space-y-4">
                 <h2 class="text-sm font-semibold uppercase tracking-wider text-neutral-700">Ledger History</h2>
                 <ul id="expenseHistory" class="space-y-2 text-sm min-h-[100px] max-h-[250px] overflow-y-auto"></ul>
             </section>
-
         </div>
-
     </div>
 
-    <!-- WELCOME POPUP MODAL -->
+    <!-- Modal -->
     <div id="welcomeModal" class="fixed inset-0 bg-neutral-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4">
         <div class="bg-white border border-neutral-300 p-6 sm:p-8 max-w-md w-full space-y-6 shadow-2xl">
             <div class="border-b border-neutral-200 pb-3">
                 <h2 class="text-xl font-semibold tracking-tight">Split & Settle</h2>
-                <p class="text-xs text-neutral-500 mt-1">Select an option to access or create a confidential ledger.</p>
+                <p class="text-xs text-neutral-500 mt-1">Create or open a confidential ledger.</p>
             </div>
 
-            <!-- Mode Selector Buttons -->
             <div class="flex border-b border-neutral-200">
                 <button id="tabCreateBtn" onclick="switchModalTab('create')" class="flex-1 pb-2 text-xs font-semibold uppercase tracking-wider border-b-2 border-neutral-900 text-neutral-900">Create New</button>
                 <button id="tabRecallBtn" onclick="switchModalTab('recall')" class="flex-1 pb-2 text-xs font-semibold uppercase tracking-wider border-b-2 border-transparent text-neutral-400 hover:text-neutral-600">Recall Existing</button>
             </div>
 
-            <!-- CREATE NEW FORM -->
             <div id="createSection" class="space-y-4">
                 <div class="space-y-1">
                     <label class="text-xs font-medium text-neutral-600">Ledger Name</label>
-                    <input type="text" id="newLedgerName" placeholder="e.g. concert-trip" class="w-full bg-neutral-50 border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:border-neutral-900">
+                    <input type="text" id="newLedgerName" placeholder="e.g. dinner-club" class="w-full bg-neutral-50 border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:border-neutral-900">
                 </div>
                 <div class="space-y-1">
                     <label class="text-xs font-medium text-neutral-600">Set 4-Digit PIN</label>
@@ -140,10 +128,9 @@
                 <button onclick="createNewLedger()" class="w-full bg-neutral-900 text-white py-2.5 text-sm font-medium hover:bg-neutral-800 transition">Initialize Ledger</button>
             </div>
 
-            <!-- RECALL EXISTING FORM -->
             <div id="recallSection" class="space-y-4 hidden">
                 <div class="space-y-1">
-                    <label class="text-xs font-medium text-neutral-600">Select Existing Archive</label>
+                    <label class="text-xs font-medium text-neutral-600">Select Archive</label>
                     <select id="archiveSelect" class="w-full bg-neutral-50 border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:border-neutral-900">
                         <option value="">Select archive...</option>
                     </select>
@@ -157,7 +144,7 @@
         </div>
     </div>
 
-    <!-- KNIGHT RIDER LED RECORDING MODAL -->
+    <!-- Recording Indicator -->
     <div id="recordingModal" class="hidden fixed inset-0 bg-neutral-900/40 backdrop-blur-xs flex items-center justify-center z-50">
         <div class="bg-white border border-neutral-300 p-6 shadow-2xl space-y-3 w-64 text-center">
             <p class="text-xs font-semibold uppercase tracking-widest text-neutral-700 font-mono">Processing...</p>
@@ -173,24 +160,17 @@
         let currentPin = "";
         let state = { members: [], expenses: [], archives: [] };
 
-        function setStatus(text) {
-            document.getElementById('statusMsg').innerText = text;
-        }
-
+        function setStatus(text) { document.getElementById('statusMsg').innerText = text; }
         function showLoading(show) {
             const modal = document.getElementById('recordingModal');
-            if (show) modal.classList.remove('hidden');
-            else modal.classList.add('hidden');
+            if (show) modal.classList.remove('hidden'); else modal.classList.add('hidden');
         }
 
         function openWelcomeModal() {
             document.getElementById('welcomeModal').classList.remove('hidden');
             fetchArchivesList();
         }
-
-        function closeWelcomeModal() {
-            document.getElementById('welcomeModal').classList.add('hidden');
-        }
+        function closeWelcomeModal() { document.getElementById('welcomeModal').classList.add('hidden'); }
 
         function switchModalTab(mode) {
             const createBtn = document.getElementById('tabCreateBtn');
@@ -216,17 +196,9 @@
                 const configRes = await fetch('config.json');
                 const config = await configRes.json();
                 API_URL = config.API_URL;
-                
-                if (!API_URL || API_URL.includes("YOUR_GOOGLE_APPS_SCRIPT_URL")) {
-                    setStatus("Config Error");
-                    alert("Please update config.json with your actual Google Apps Script URL.");
-                    return;
-                }
-
                 openWelcomeModal();
             } catch (err) {
                 setStatus("Config Missing");
-                console.error("Failed to load config.json", err);
             }
         }
 
@@ -235,7 +207,6 @@
                 const response = await fetch(API_URL);
                 const data = await response.json();
                 state.archives = data.archives || [];
-                
                 const select = document.getElementById('archiveSelect');
                 select.innerHTML = `<option value="">Select archive...</option>` + 
                     state.archives.map(a => `<option value="${a}">${a}</option>`).join('');
@@ -253,24 +224,33 @@
 
             showLoading(true);
             try {
-                const res = await fetch(API_URL, {
+                await fetch(API_URL, {
                     method: "POST",
+                    mode: "no-cors",
+                    headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ action: "createLedger", name, pin })
                 });
-                const data = await res.json();
-                if (data.status === "success") {
-                    currentTab = data.tab;
-                    currentPin = pin;
-                    document.getElementById('newLedgerName').value = '';
-                    document.getElementById('newLedgerPin').value = '';
-                    closeWelcomeModal();
-                    await fetchLedgerData();
-                } else {
-                    alert("Failed to create ledger.");
-                }
+
+                // Wait 1.5 seconds for Google Sheets to finish tab creation, then authenticate directly
+                setTimeout(async () => {
+                    await fetchArchivesList();
+                    const createdTab = state.archives.find(a => a.includes(name.replace(/[\/\\?\*\[\]:]/g, "_")));
+                    
+                    if (createdTab) {
+                        currentTab = createdTab;
+                        currentPin = pin;
+                        document.getElementById('newLedgerName').value = '';
+                        document.getElementById('newLedgerPin').value = '';
+                        closeWelcomeModal();
+                        await fetchLedgerData();
+                    } else {
+                        alert("Creation finished. Please select your new tab from 'Recall Existing'.");
+                    }
+                    showLoading(false);
+                }, 1500);
+
             } catch (err) {
                 alert("Connection error.");
-            } finally {
                 showLoading(false);
             }
         }
@@ -300,13 +280,12 @@
         async function fetchLedgerData() {
             if (!currentTab || !currentPin) return false;
             setStatus("Syncing...");
-            
             try {
                 const response = await fetch(`${API_URL}?tab=${encodeURIComponent(currentTab)}&pin=${encodeURIComponent(currentPin)}`);
                 const data = await response.json();
                 
                 if (data.status === "error") {
-                    alert(data.message || "Incorrect PIN or access denied.");
+                    alert(data.message || "Incorrect PIN.");
                     setStatus("Access Denied");
                     return false;
                 }
@@ -318,7 +297,6 @@
                 return true;
             } catch (err) {
                 setStatus("Sync Error");
-                console.error(err);
                 return false;
             }
         }
@@ -332,13 +310,17 @@
                 
                 await fetch(API_URL, {
                     method: "POST",
+                    mode: "no-cors",
+                    headers: { "Content-Type": "application/json" },
                     body: JSON.stringify(payload)
                 });
-                await fetchLedgerData();
+                
+                setTimeout(async () => {
+                    await fetchLedgerData();
+                    showLoading(false);
+                }, 1000);
             } catch (err) {
                 alert("Action failed");
-                console.error(err);
-            } finally {
                 showLoading(false);
             }
         }
@@ -374,7 +356,6 @@
 
             document.getElementById('expenseDesc').value = '';
             document.getElementById('expenseAmount').value = '';
-            
             sendAction({ action: "addExpense", desc, amount, paidBy, splitWith });
         }
 
@@ -427,7 +408,6 @@
             document.getElementById('activeTabNameDisplay').innerText = currentTab || "No Ledger Loaded";
             document.getElementById('viewModeIndicator').innerText = currentTab ? `Mode: Active Ledger [${currentTab}]` : "Mode: Awaiting Authentication...";
 
-            // Members
             document.getElementById('memberList').innerHTML = (state.members || []).map(m => `
                 <span class="bg-neutral-100 border border-neutral-200 px-2.5 py-1 rounded text-xs font-medium flex items-center gap-1.5">
                     ${m}
@@ -437,7 +417,6 @@
             
             document.getElementById('expensePaidBy').innerHTML = (state.members || []).map(m => `<option value="${m}">${m}</option>`).join('') || '<option>Add participants first</option>';
 
-            // Split Checkboxes
             const splitCheckboxesContainer = document.getElementById('splitCheckboxes');
             if (state.members && state.members.length > 0) {
                 splitCheckboxesContainer.innerHTML = state.members.map(m => `
@@ -450,7 +429,6 @@
                 splitCheckboxesContainer.innerHTML = '<span class="text-neutral-400 text-xs italic">Add participants first.</span>';
             }
 
-            // Expense History
             document.getElementById('expenseHistory').innerHTML = (state.expenses || []).map(exp => `
                 <li class="border-b border-neutral-100 py-2 flex justify-between items-center">
                     <div>
@@ -464,7 +442,6 @@
                 </li>
             `).join('') || '<span class="text-neutral-400 italic">No expense entries.</span>';
 
-            // Settlements
             const settlements = calculateSettlements();
             document.getElementById('settlementList').innerHTML = settlements.length > 0
                 ? settlements.map(s => `<div class="bg-neutral-50 border border-neutral-200 p-2 text-xs">→ ${s}</div>`).join('')

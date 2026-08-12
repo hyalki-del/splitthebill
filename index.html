@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Split & Settle</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <style>
+        /* Dieter Rams inspired touches: strict grid alignment, neutral tones, high legibility */
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+    </style>
+</head>
+<body class="bg-neutral-100 text-neutral-900 min-h-screen p-4 sm:p-8 antialiased">
+    <div class="max-w-4xl mx-auto space-y-6">
+        
+        <!-- Header & Status Indicator -->
+        <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-neutral-300 pb-4 gap-2">
+            <div>
+                <h1 class="text-2xl font-semibold tracking-tight">Split & Settle</h1>
+                <p id="viewModeIndicator" class="text-xs text-neutral-500 font-mono mt-0.5">Mode: Live Working Ledger</p>
+            </div>
+            <div id="statusMsg" class="text-xs font-mono text-neutral-600 bg-neutral-200 px-2.5 py-1 rounded">Ready</div>
+        </header>
+
+        <!-- ARCHIVE FRAME (Dieter Rams: Grouped, functional enclosure) -->
+        <section class="bg-white border border-neutral-300 p-4 sm:p-6 space-y-4">
+            <div class="border-b border-neutral-200 pb-2">
+                <h2 class="text-sm font-semibold uppercase tracking-wider text-neutral-700">Archive & Snapshot Control</h2>
+                <p class="text-xs text-neutral-500">Save current state permanently to Google Sheets or recall past archives.</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Save Snapshot -->
+                <div class="flex flex-col space-y-2">
+                    <label class="text-xs font-medium text-neutral-600">Save Current State</label>
+                    <div class="flex gap-2">
+                        <input type="text" id="archiveName" placeholder="userdefinedtext (e.g., band-trip)" class="flex-1 bg-neutral-50 border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:border-neutral-900">
+                        <button onclick="saveSnapshot()" class="bg-neutral-900 text-white px-4 py-2 text-sm font-medium hover:bg-neutral-800 transition">Save</button>
+                    </div>
+                </div>
+
+                <!-- Recall Snapshot -->
+                <div class="flex flex-col space-y-2">
+                    <label class="text-xs font-medium text-neutral-600">Recall Past Archive</label>
+                    <div class="flex gap-2">
+                        <select id="archiveSelect" class="flex-1 bg-neutral-50 border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:border-neutral-900">
+                            <option value="">Select past archive...</option>
+                        </select>
+                        <button onclick="loadArchive()" class="bg-neutral-200 text-neutral-800 px-4 py-2 text-sm font-medium hover:bg-neutral-300 transition">Recall</button>
+                        <button onclick="returnToLive()" class="bg-neutral-100 text-neutral-600 px-3 py-2 text-xs border border-neutral-300 hover:bg-neutral-200 transition" title="Return to Live Ledger">Live</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- MAIN INTERACTIVE GRID -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            
+            <!-- Left Column: Inputs (Members & Expenses) -->
+            <div class="md:col-span-1 space-y-6">
+                <!-- Add Members -->
+                <div class="bg-white border border-neutral-300 p-5 space-y-3">
+                    <h2 class="text-sm font-semibold uppercase tracking-wider text-neutral-700">Participants</h2>
+                    <div class="flex gap-2">
+                        <input type="text" id="memberName" placeholder="Name..." class="flex-1 bg-neutral-50 border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:border-neutral-900">
+                        <button onclick="addMember()" class="bg-neutral-900 text-white px-3 py-2 text-sm font-medium hover:bg-neutral-800 transition">+</button>
+                    </div>
+                    <ul id="memberList" class="space-y-1 text-sm text-neutral-700 pt-2"></ul>
+                </div>
+
+                <!-- Add Expense -->
+                <div class="bg-white border border-neutral-300 p-5 space-y-3">
+                    <h2 class="text-sm font-semibold uppercase tracking-wider text-neutral-700">New Expense</h2>
+                    <div class="space-y-2">
+                        <input type="text" id="expenseDesc" placeholder="Description" class="w-full bg-neutral-50 border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:border-neutral-900">
+                        <input type="number" id="expenseAmount" placeholder="Amount ($)" class="w-full bg-neutral-50 border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:border-neutral-900">
+                        <select id="expensePaidBy" class="w-full bg-neutral-50 border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:border-neutral-900"></select>
+                        <button onclick="addExpense()" class="w-full bg-neutral-900 text-white py-2 text-sm font-medium hover:bg-neutral-800 transition">Record Expense</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Results & History -->
+            <div class="md:col-span-2 space-y-6">
+                <!-- Settlement Plan -->
+                <div class="bg-white border border-neutral-300 p-5 space-y-3">
+                    <h2 class="text-sm font-semibold uppercase tracking-wider text-neutral-700">Settlement Matrix</h2>
+                    <div id="settlementList" class="space-y-2 text-sm font-mono">
+                        <p class="text-neutral-400 italic font-sans">Awaiting ledger input...</p>
+                    </div>
+                </div>
+
+                <!-- History -->
+                <div class="bg-white border border-neutral-300 p-5 space-y-3">
+                    <div class="flex justify-between items-center">
+                        <h2 class="text-sm font-semibold uppercase tracking-wider text-neutral-700">Ledger History</h2>
+                        <button onclick="resetLive()" class="text-xs text-red-600 hover:underline">Reset Live Sheet</button>
+                    </div>
+                    <ul id="expenseHistory" class="space-y-2 text-sm"></ul>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        const API_URL = "https://script.google.com/macros/s/AKfycbyA9QSZKFNWJMenmVJuaR56Ma1BnvZ2r3_AlceA8Mdgew-CUeqfSyZd0-VrPSjQL6eF8g/exec";
+
+        let state = { members: [], expenses: [], archives: [], activeTab: "Live" };
+
+        function setStatus(text) {
+            document.getElementById('statusMsg').innerText = text;
+        }
+
+        async function fetchData(tabName = "") {
+            setStatus("Syncing...");
+            try {
+                let url = API_URL;
+                if (tabName) url += `?tab=${encodeURIComponent(tabName)}`;
+                
+                const response = await fetch(url);
+                state = await response.json();
+                
+                setStatus("Idle");
+                render();
+            } catch (err) {
+                setStatus("Sync Error");
+                console.error(err);
+            }
+        }
+
+        async function sendAction(payload) {
+            setStatus("Writing...");
+            try {
+                await fetch(API_URL, {
+                    method: "POST",
+                    body: JSON.stringify(payload)
+                });
+                await fetchData(state.activeTab === "Live" ? "" : state.activeTab);
+            } catch (err) {
+                setStatus("Write Error");
+                console.error(err);
+            }
+        }
+
+        function addMember() {
+            if (state.activeTab !== "Live") { alert("Cannot modify archived snapshots. Switch to Live."); return; }
+            const name = document.getElementById('memberName').value.trim();
+            if (!name) return;
+            document.getElementById('memberName').value = '';
+            sendAction({ action: "addMember", name });
+        }
+
+        function addExpense() {
+            if (state.activeTab !== "Live") { alert("Cannot modify archived snapshots. Switch to Live."); return; }
+            const desc = document.getElementById('expenseDesc').value.trim();
+            const amount = parseFloat(document.getElementById('expenseAmount').value);
+            const paidBy = document.getElementById('expensePaidBy').value;
+
+            if (!desc || isNaN(amount) || !paidBy) { alert('Invalid fields'); return; }
+            document.getElementById('expenseDesc').value = '';
+            document.getElementById('expenseAmount').value = '';
+            sendAction({ action: "addExpense", desc, amount, paidBy });
+        }
+
+        function resetLive() {
+            if (state.activeTab !== "Live") { alert("Switch to Live mode to reset."); return; }
+            if (confirm("Wipe live sheet contents?")) {
+                sendAction({ action: "reset" });
+            }
+        }
+
+        async function saveSnapshot() {
+            const userText = document.getElementById('archiveName').value.trim();
+            if (!userText) { alert("Please provide a name for the archive."); return; }
+            document.getElementById('archiveName').value = '';
+            
+            setStatus("Archiving...");
+            try {
+                const res = await fetch(API_URL, {
+                    method: "POST",
+                    body: JSON.stringify({ action: "saveSnapshot", name: userText })
+                });
+                const data = await res.json();
+                alert(`Successfully saved archive tab: ${data.tab}`);
+                await fetchData();
+            } catch (err) {
+                alert("Archive failed");
+            }
+        }
+
+        function loadArchive() {
+            const selectedTab = document.getElementById('archiveSelect').value;
+            if (!selectedTab) return;
+            fetchData(selectedTab);
+        }
+
+        function returnToLive() {
+            fetchData();
+        }
+
+        function calculateSettlements() {
+            if (state.members.length === 0) return [];
+            let balances = {};
+            state.members.forEach(m => balances[m] = 0);
+
+            state.expenses.forEach(exp => {
+                const splitAmount = exp.amount / state.members.length;
+                balances[exp.paidBy] += exp.amount;
+                state.members.forEach(m => balances[m] -= splitAmount);
+            });
+
+            let debtors = [], creditors = [];
+            for (let m in balances) {
+                let b = parseFloat(balances[m].toFixed(2));
+                if (b < -0.01) debtors.push({ name: m, amount: -b });
+                if (b > 0.01) creditors.push({ name: m, amount: b });
+            }
+
+            let transactions = [];
+            let i = 0, j = 0;
+            while (i < debtors.length && j < creditors.length) {
+                let d = debtors[i], c = creditors[j];
+                let amt = Math.min(d.amount, c.amount);
+                transactions.push(`${d.name} pays ${c.name} $${amt.toFixed(2)}`);
+                d.amount -= amt; c.amount -= amt;
+                if (d.amount < 0.01) i++;
+                if (c.amount < 0.01) j++;
+            }
+            return transactions;
+        }
+
+        function render() {
+            // Mode indicator
+            const isLive = !state.activeTab || state.activeTab === "Live";
+            document.getElementById('viewModeIndicator').innerText = isLive ? "Mode: Live Working Ledger" : `Mode: Viewing Archive [${state.activeTab}]`;
+            
+            // Archive dropdown options
+            const archiveSelect = document.getElementById('archiveSelect');
+            archiveSelect.innerHTML = `<option value="">Select past archive...</option>` + 
+                (state.archives || []).map(a => `<option value="${a}" ${a === state.activeTab ? 'selected' : ''}>${a}</option>`).join('');
+
+            // Members
+            document.getElementById('memberList').innerHTML = state.members.map(m => `<li class="border-b border-neutral-100 py-1">${m}</li>`).join('') || '<span class="text-neutral-400">None</span>';
+            document.getElementById('expensePaidBy').innerHTML = state.members.map(m => `<option value="${m}">${m}</option>`).join('') || '<option>Add participants first</option>';
+
+            // History
+            document.getElementById('expenseHistory').innerHTML = state.expenses.map(exp => `
+                <li class="border-b border-neutral-100 py-2 flex justify-between items-center">
+                    <div>
+                        <p class="font-medium">${exp.desc}</p>
+                        <p class="text-xs text-neutral-500">${exp.paidBy}</p>
+                    </div>
+                    <span class="font-mono font-semibold">$${Number(exp.amount).toFixed(2)}</span>
+                </li>
+            `).join('') || '<span class="text-neutral-400 italic">No expense entries.</span>';
+
+            // Settlements
+            const settlements = calculateSettlements();
+            document.getElementById('settlementList').innerHTML = settlements.length > 0
+                ? settlements.map(s => `<div class="bg-neutral-50 border border-neutral-200 p-2 text-xs">→ ${s}</div>`).join('')
+                : '<span class="text-neutral-400 italic">All accounts balanced.</span>';
+        }
+
+        // Initial load
+        fetchData();
+    </script>
+</body>
+</html>

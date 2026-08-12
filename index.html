@@ -28,15 +28,15 @@
 <body class="text-neutral-900 min-h-screen p-3 sm:p-8 antialiased">
     <div class="max-w-5xl mx-auto space-y-5">
         
-        <!-- Header -->
+        <!-- Header with Logo -->
         <header class="flex justify-between items-center border-b border-neutral-300 pb-3 gap-2">
-            <div>
-                <h1 class="text-2xl font-bold tracking-tight text-neutral-900">Settlr</h1>
-                <p id="viewModeIndicator" class="text-xs text-neutral-500 font-mono mt-0.5">Mode: Awaiting Authentication...</p>
+            <div class="flex items-center gap-3">
+                <img src="logo.png" alt="Settlr Logo" class="h-8 w-auto object-contain">
+                <p id="viewModeIndicator" class="text-xs text-neutral-500 font-mono hidden sm:block border-l border-neutral-300 pl-3">Mode: Awaiting Authentication...</p>
             </div>
             <div class="flex items-center gap-2">
-                <button onclick="openWelcomeModal()" class="text-xs bg-neutral-200 hover:bg-neutral-300 text-neutral-800 px-3 py-1 font-medium rounded-xs transition">Switch Ledger</button>
-                <div id="statusMsg" class="text-xs font-mono text-neutral-600 bg-neutral-200 px-2.5 py-1 rounded-xs">Idle</div>
+                <button onclick="openWelcomeModal()" class="text-xs bg-neutral-200 hover:bg-neutral-300 text-neutral-800 px-3 py-1.5 font-medium rounded-xs transition">Switch Ledger</button>
+                <div id="statusMsg" class="text-xs font-mono text-neutral-600 bg-neutral-200 px-2.5 py-1.5 rounded-xs">Idle</div>
             </div>
         </header>
 
@@ -181,12 +181,13 @@
         </div>
     </div>
 
-    <!-- WELCOME MODAL -->
+    <!-- WELCOME MODAL WITH LOGO -->
     <div id="welcomeModal" class="fixed inset-0 bg-neutral-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4">
         <div class="bg-[#fafaf9] border border-neutral-300 p-6 sm:p-8 max-w-md w-full space-y-6 shadow-2xl rounded-xs">
-            <div class="border-b border-neutral-200 pb-3">
-                <h2 class="text-xl font-bold tracking-tight text-neutral-900">Settlr</h2>
-                <p class="text-xs text-neutral-500 mt-1">Create or open a confidential ledger.</p>
+            
+            <div class="border-b border-neutral-200 pb-4 text-center">
+                <img src="logo.png" alt="Settlr Logo" class="h-10 mx-auto object-contain mb-2">
+                <p class="text-xs text-neutral-500">Create or open a confidential group ledger.</p>
             </div>
 
             <div id="modalTabsHeader" class="flex border-b border-neutral-200">
@@ -291,7 +292,6 @@
             }
         }
 
-        // Formats ISO timestamps ("2026-08-10T21:00:00.000Z"), standard dates ("2026-08-10"), or raw input to clean "20260810"
         function formatDateYYYYMMDD(rawDateStr) {
             if (!rawDateStr) return '-';
             const str = String(rawDateStr);

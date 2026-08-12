@@ -165,6 +165,392 @@
                     return;
                 }
 
+                // Explicitly load live view on startup
+                await returnToLive();
+            } catch (err) {
+                setStatus("Config Missing");
+                console.error("Failed to load config.json", err);
+            }
+        }
+
+        async function fetchData(tabName = "", pin = "") {
+            setStatus("Syncing...");
+            
+            try {
+                let url = API_URL;
+                if (tabName) {
+                    url += `?tab=${encodeURIComponent(tabName)}&pin=${encodeURIComponent(pin)}`;
+                }
+                
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                if (data.status === "error") {
+                    alert(data.message || "Access denied.");
+                    setStatus("Access Denied");
+                    return;
+                }
+                
+                state = data;
+                setStatus("Idle");
+                render();
+            } catch (err) {
+                setStatus("Sync Error");
+                console.error(err);
+            }
+        }
+
+        async function sendAction(payload) {
+            showLoading(true);
+            try {
+                await fetch(API_URL, {
+                    method: "POST",
+                    body: JSON.stringify(payload)
+                });
+                if (state.activeTab === "Live") {
+                    await returnToLive();
+                } else {
+                    await fetchData(state.activeTab);
+                }
+            } catch (err) {
+                alert("Action failed");
+                console.error(err);
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        function addMember() {
+            if (state.activeTab !== "Live") { alert("Cannot modify archived snapshots. Switch to Live."); return; }
+            const name = document.getElementById('memberName').value.trim();
+            if (!name) return;
+            document.getElementById('memberName').value = '';
+            sendAction({ action: "addMember", name });
+        }
+
+        function removeMember(name) {
+            if (state.activeTab !== "Live") { alert("Cannot modify archived snapshots. Switch to Live."); return; }
+            if (confirm(`Remove participant "${name}"?`)) {
+                sendAction({ action: "removeMember", name });
+            }
+        }
+
+        function toggleSelectAll(select) {
+            const checkboxes = document.querySelectorAll('.split-checkbox');
+            checkboxes.forEach(cb => cb.checked = select);
+        }
+
+        function addExpense() {
+            if (state.activeTab !== "Live") { alert("Cannot modify archived snapshots. Switch to Live."); return; }
+            const desc = document.getElementById('expenseDesc').value.trim();
+            const amount = parseFloat(document.getElementById('expenseAmount').value);
+            const paidBy = document.getElementById('expensePaidBy').value;
+
+            const checkboxes = document.querySelectorAll('.split-checkbox:checked');
+            const splitWith = Array.from(checkboxes).map(cb => cb.value);
+
+            if (!desc || isNaN(amount) || !paidBy) { alert('Please check description and amount.'); return; }
+            if (splitWith.length === 0) { alert('Select at least one person to split the expense with.'); return; }
+
+            document.getElementById('expenseDesc').value = '';
+            document.getElementById('expenseAmount').value = '';
+            
+            sendAction({ action: "addExpense", desc, amount, paidBy, splitWith });
+        }
+
+        function deleteExpense(id) {
+            if (state.activeTab !== "Live") { alert("Cannot modify archived snapshots. Switch to Live."); return; }
+            if (confirm("Delete this expense item?")) {
+                sendAction({ action: "deleteExpense", id });
+            }
+        }
+
+        function resetLive() {
+            if (state.activeTab !== "Live") { alert("Switch to Live mode to reset."); return; }
+            
+            const confirmed = confirm("WARNING: Everything on the live sheet will be permanently erased. Are you sure you want to proceed?");
+            if (confirmed) {
+                sendAction({ action: "reset" });
+            }
+        }
+
+        async function saveSnapshot() {
+            const userText = document.getElementById('archiveName').value.trim();
+            const userPin = document.getElementById('archivePin').value.trim();
+            
+            if (!userText) { alert("Please provide a name for the archive."); return; }
+            if (!/^\d{4}$/.test(userPin)) { alert("Please provide a valid 4-digit PIN."); return; }
+            
+            document.getElementById('archiveName').value = '';
+            document.getElementById('archivePin').value = '';
+            
+            showLoading(true);
+            try {
+                const res = await fetch(API_URL, {
+                    method: "POST",
+                    body: JSON.stringify({ action: "saveSnapshot", name: userText, pin: userPin })
+                });
+                const data = await res.json();
+                alert(`Successfully saved archive tab: ${data.tab}`);
+                await returnToLive();
+            } catch (err) {
+                alert("Archive failed");
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        function loadArchive() {
+            const selectedTab = document.getElementById('archiveSelect').value;
+            if (!selectedTab) return;
+            
+            const userPin = prompt(`Enter 4-digit PIN for archive "${selectedTab}":`);
+            if (userPin === null) return;
+            
+            fetchData(selectedTab, userPin);
+        }
+
+        async function returnToLive() {
+            // Force fetch explicitly targeting the live working sheets
+            setStatus("Syncing Live...");
+            try {
+                const response = await fetch(API_URL);
+                const data = await response.json();
+                state = {
+                    members: data.members || [],
+                    expenses: data.expenses || [],
+                    archives: data.archives || [],
+                    activeTab: "Live"
+                };
+                setStatus("Idle");
+                render();
+            } catch (err) {
+                setStatus("Sync Error");
+                console.error(err);
+            }
+        }
+
+        function calculateSettlements() {
+            if (state.members.length === 0) return [];
+            let balances = {};
+            state.members.forEach(m => balances[m] = 0);
+
+            state.expenses.forEach(exp => {
+                const splitGroup = (exp.splitWith && exp.splitWith.length > 0) ? exp.splitWith : state.members;
+                if (splitGroup.length === 0) return;
+
+                const splitAmount = exp.amount / splitGroup.length;
+                balances[exp.paidBy] += exp.amount;
+                
+                splitGroup.forEach(m => {
+                    if (balances[m] !== undefined) {
+                        balances[m] -= splitAmount;
+                    }
+                });
+            });
+
+            let debtors = [], creditors = [];
+            for (let m in balances) {
+                let b = parseFloat(balances[m].toFixed(2));
+                if (b < -0.01) debtors.push({ name: m, amount: -b });
+                if (b > 0.01) creditors.push({ name: m, amount: b });
+            }
+
+            let transactions = [];
+            let i = 0, j = 0;
+            while (i < debtors.length && j < creditors.length) {
+                let d = debtors[i], c = creditors[j];
+                let amt = Math.min(d.amount, c.amount);
+                transactions.push(`${d.name} pays ${c.name} $${amt.toFixed(2)}`);
+                d.amount -= amt; c.amount -= amt;
+                if (d.amount < 0.01) i++;
+                if (c.amount < 0.01) j++;
+            }
+            return transactions;
+        }
+
+        function render() {
+            const isLive = !state.activeTab || state.activeTab === "Live";
+            document.getElementById('viewModeIndicator').innerText = isLive ? "Mode: Live Working Ledger" : `Mode: Viewing Archive [${state.activeTab}]`;
+            
+            const archiveSelect = document.getElementById('archiveSelect');
+            archiveSelect.innerHTML = `<option value="">Select past archive...</option>` + 
+                (state.archives || []).map(a => `<option value="${a}" ${a === state.activeTab ? 'selected' : ''}>${a}</option>`).join('');
+
+            document.getElementById('memberList').innerHTML = (state.members || []).map(m => `
+                <span class="bg-neutral-100 border border-neutral-200 px-2.5 py-1 rounded text-xs font-medium flex items-center gap-1.5">
+                    ${m}
+                    ${isLive ? `<button onclick="removeMember('${m}')" class="text-neutral-400 hover:text-red-600 font-bold">×</button>` : ''}
+                </span>
+            `).join('') || '<span class="text-neutral-400 text-xs italic">No participants added.</span>';
+            
+            document.getElementById('expensePaidBy').innerHTML = (state.members || []).map(m => `<option value="${m}">${m}</option>`).join('') || '<option>Add participants first</option>';
+
+            const splitCheckboxesContainer = document.getElementById('splitCheckboxes');
+            if (state.members && state.members.length > 0) {
+                splitCheckboxesContainer.innerHTML = state.members.map(m => `
+                    <label class="flex items-center gap-1.5 cursor-pointer bg-neutral-50 border border-neutral-200 px-2.5 py-1 rounded">
+                        <input type="checkbox" value="${m}" class="split-checkbox accent-neutral-900" checked>
+                        <span>${m}</span>
+                    </label>
+                `).join('');
+            } else {
+                splitCheckboxesContainer.innerHTML = '<span class="text-neutral-400 text-xs italic">Add participants first.</span>';
+            }
+
+            document.getElementById('expenseHistory').innerHTML = (state.expenses || []).map(exp => `
+                <li class="border-b border-neutral-100 py-2 flex justify-between items-center">
+                    <div>
+                        <p class="font-medium">${exp.desc}</p>
+                        <p class="text-xs text-neutral-500">Paid by ${exp.paidBy} (Split: ${exp.splitWith ? exp.splitWith.join(', ') : 'All'})</p>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <span class="font-mono font-semibold">$${Number(exp.amount).toFixed(2)}</span>
+                        ${isLive ? `<button onclick="deleteExpense('${exp.id}')" class="text-xs text-red-500 hover:underline">Remove</button>` : ''}
+                    </div>
+                </li>
+            `).join('') || '<span class="text-neutral-400 italic">No expense entries.</span>';
+
+            const settlements = calculateSettlements();
+            document.getElementById('settlementList').innerHTML = settlements.length > 0
+                ? settlements.map(s => `<div class="bg-neutral-50 border border-neutral-200 p-2 text-xs">→ ${s}</div>`).join('')
+                : '<span class="text-neutral-400 italic">All accounts balanced.</span>';
+        }
+
+        initApp();
+    </script>
+</body>
+</html>        <!-- TOP ROW: Archive Control (Left) & Participants (Right) -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            
+            <!-- Archive & Snapshot Control -->
+            <section class="bg-white border border-neutral-300 p-5 space-y-4 flex flex-col justify-between">
+                <div>
+                    <h2 class="text-sm font-semibold uppercase tracking-wider text-neutral-700">Archive Control</h2>
+                    <p class="text-xs text-neutral-500 mt-0.5">Save current state with a 4-digit PIN or recall past tabs.</p>
+                </div>
+                <div class="space-y-3">
+                    <div class="flex gap-2">
+                        <input type="text" id="archiveName" placeholder="archive name..." class="flex-1 bg-neutral-50 border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:border-neutral-900">
+                        <input type="text" id="archivePin" maxlength="4" placeholder="PIN" class="w-16 bg-neutral-50 border border-neutral-300 px-3 py-2 text-sm text-center font-mono focus:outline-none focus:border-neutral-900">
+                        <button onclick="saveSnapshot()" class="bg-neutral-900 text-white px-4 py-2 text-sm font-medium hover:bg-neutral-800 transition">Save</button>
+                    </div>
+                    <div class="flex gap-2">
+                        <select id="archiveSelect" class="flex-1 bg-neutral-50 border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:border-neutral-900">
+                            <option value="">Select past archive...</option>
+                        </select>
+                        <button onclick="loadArchive()" class="bg-neutral-200 text-neutral-800 px-3 py-2 text-sm font-medium hover:bg-neutral-300 transition">Recall</button>
+                        <button onclick="returnToLive()" class="bg-neutral-100 text-neutral-600 px-3 py-2 text-xs border border-neutral-300 hover:bg-neutral-200 transition">Live</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Participants -->
+            <section class="bg-white border border-neutral-300 p-5 space-y-4 flex flex-col justify-between">
+                <div>
+                    <h2 class="text-sm font-semibold uppercase tracking-wider text-neutral-700">Participants</h2>
+                    <p class="text-xs text-neutral-500 mt-0.5">Add or remove people from the split pool.</p>
+                </div>
+                <div class="space-y-3">
+                    <div class="flex gap-2">
+                        <input type="text" id="memberName" placeholder="Name..." class="flex-1 bg-neutral-50 border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:border-neutral-900">
+                        <button onclick="addMember()" class="bg-neutral-900 text-white px-4 py-2 text-sm font-medium hover:bg-neutral-800 transition">Add</button>
+                    </div>
+                    <div id="memberList" class="text-sm text-neutral-700 flex flex-wrap gap-1.5 pt-1"></div>
+                </div>
+            </section>
+
+        </div>
+
+        <!-- MIDDLE ROW: New Expense -->
+        <section class="bg-white border border-neutral-300 p-5 space-y-4">
+            <div>
+                <h2 class="text-sm font-semibold uppercase tracking-wider text-neutral-700">New Expense</h2>
+                <p class="text-xs text-neutral-500 mt-0.5">Log a transaction and choose who shares the cost.</p>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <input type="text" id="expenseDesc" placeholder="Description (e.g., Dinner)" class="bg-neutral-50 border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:border-neutral-900">
+                <input type="number" id="expenseAmount" placeholder="Amount ($)" class="bg-neutral-50 border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:border-neutral-900">
+                <select id="expensePaidBy" class="bg-neutral-50 border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:border-neutral-900"></select>
+            </div>
+
+            <!-- Selective Split Checkboxes -->
+            <div class="space-y-1.5 pt-2 border-t border-neutral-200">
+                <div class="flex justify-between items-center">
+                    <label class="text-xs font-medium text-neutral-600 uppercase tracking-wider">Split Between:</label>
+                    <button type="button" onclick="toggleSelectAll(true)" class="text-xs text-neutral-500 hover:underline">Select All</button>
+                </div>
+                <div id="splitCheckboxes" class="flex flex-wrap gap-3 pt-1 text-sm text-neutral-700">
+                    <span class="text-neutral-400 text-xs italic">Add participants first.</span>
+                </div>
+            </div>
+
+            <button onclick="addExpense()" class="w-full bg-neutral-900 text-white py-2 text-sm font-medium hover:bg-neutral-800 transition">Record Expense</button>
+        </section>
+
+        <!-- BOTTOM ROW: Settlement Matrix & Ledger History -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            
+            <!-- Settlement Matrix -->
+            <section class="bg-white border border-neutral-300 p-5 space-y-4">
+                <h2 class="text-sm font-semibold uppercase tracking-wider text-neutral-700">Settlement Matrix</h2>
+                <div id="settlementList" class="space-y-2 text-sm font-mono min-h-[100px]">
+                    <p class="text-neutral-400 italic font-sans">Awaiting ledger input...</p>
+                </div>
+            </section>
+
+            <!-- Ledger History -->
+            <section class="bg-white border border-neutral-300 p-5 space-y-4">
+                <div class="flex justify-between items-center">
+                    <h2 class="text-sm font-semibold uppercase tracking-wider text-neutral-700">Ledger History</h2>
+                    <button onclick="resetLive()" class="text-xs text-red-600 hover:underline">Reset Live Sheet</button>
+                </div>
+                <ul id="expenseHistory" class="space-y-2 text-sm min-h-[100px] max-h-[250px] overflow-y-auto"></ul>
+            </section>
+
+        </div>
+
+    </div>
+
+    <!-- KNIGHT RIDER LED RECORDING MODAL -->
+    <div id="recordingModal" class="hidden fixed inset-0 bg-neutral-900/40 backdrop-blur-xs flex items-center justify-center z-50">
+        <div class="bg-white border border-neutral-300 p-6 shadow-2xl space-y-3 w-64 text-center">
+            <p class="text-xs font-semibold uppercase tracking-widest text-neutral-700 font-mono">Processing...</p>
+            <div class="h-2 bg-neutral-100 border border-neutral-200 overflow-hidden relative rounded-xs">
+                <div class="scanner-bar"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let API_URL = "";
+        let state = { members: [], expenses: [], archives: [], activeTab: "Live" };
+
+        function setStatus(text) {
+            document.getElementById('statusMsg').innerText = text;
+        }
+
+        function showLoading(show) {
+            const modal = document.getElementById('recordingModal');
+            if (show) {
+                modal.classList.remove('hidden');
+            } else {
+                modal.classList.add('hidden');
+            }
+        }
+
+        async function initApp() {
+            try {
+                const configRes = await fetch('config.json');
+                const config = await configRes.json();
+                API_URL = config.API_URL;
+                
+                if (!API_URL || API_URL.includes("YOUR_GOOGLE_APPS_SCRIPT_URL")) {
+                    setStatus("Config Error");
+                    alert("Please update config.json with your actual Google Apps Script URL.");
+                    return;
+                }
+
                 await fetchData();
             } catch (err) {
                 setStatus("Config Missing");

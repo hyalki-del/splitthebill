@@ -8,7 +8,7 @@
     <style>
         body { 
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
-            background-color: #f2f2f0;
+            background-color: #e5e5e2;
         }
         @keyframes knightRider {
             0% { left: 0%; }
@@ -28,33 +28,33 @@
 <body class="text-neutral-900 min-h-screen p-3 sm:p-8 antialiased">
     <div class="max-w-5xl mx-auto space-y-5">
         
-        <!-- Header with Logo -->
-        <header class="flex justify-between items-center border-b border-neutral-300 pb-3 gap-2">
-            <div class="flex items-center gap-3">
-                <img src="logo.png" alt="Settlr Logo" class="h-8 w-auto object-contain">
-                <p id="viewModeIndicator" class="text-xs text-neutral-500 font-mono hidden sm:block border-l border-neutral-300 pl-3">Mode: Awaiting Authentication...</p>
+        <!-- Header with Noticeable Logo -->
+        <header class="flex justify-between items-center border-b border-neutral-400 pb-4 gap-2">
+            <div class="flex items-center gap-4">
+                <img src="logo.png" alt="Settlr Logo" class="h-12 sm:h-14 w-auto object-contain">
+                <p id="viewModeIndicator" class="text-xs text-neutral-600 font-mono hidden sm:block border-l border-neutral-400 pl-4">Mode: Awaiting Authentication...</p>
             </div>
             <div class="flex items-center gap-2">
-                <button onclick="openWelcomeModal()" class="text-xs bg-neutral-200 hover:bg-neutral-300 text-neutral-800 px-3 py-1.5 font-medium rounded-xs transition">Switch Ledger</button>
-                <div id="statusMsg" class="text-xs font-mono text-neutral-600 bg-neutral-200 px-2.5 py-1.5 rounded-xs">Idle</div>
+                <button onclick="openWelcomeModal()" class="text-xs bg-neutral-300 hover:bg-neutral-400 text-neutral-900 px-3.5 py-2 font-medium rounded-xs transition">Switch Ledger</button>
+                <div id="statusMsg" class="text-xs font-mono text-neutral-700 bg-neutral-300 px-3 py-2 rounded-xs">Idle</div>
             </div>
         </header>
 
         <!-- Top Row -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
             
-            <!-- Frame 1: Active Ledger Info (Soft Warm Neutral) -->
-            <section class="bg-[#f9f8f6] border border-neutral-300 p-5 rounded-xs space-y-3 flex flex-col justify-between shadow-xs">
+            <!-- Frame 1: Active Ledger Info -->
+            <section class="bg-[#f0eee9] border border-neutral-400 p-5 rounded-xs space-y-3 flex flex-col justify-between shadow-xs">
                 <div>
                     <div class="flex justify-between items-start gap-2">
                         <div>
-                            <h2 class="text-xs font-bold uppercase tracking-wider text-neutral-500">Active Confidential Ledger</h2>
+                            <h2 class="text-xs font-bold uppercase tracking-wider text-neutral-600">Active Confidential Ledger</h2>
                             <p id="activeTabNameDisplay" class="text-base font-mono font-bold text-neutral-900 mt-0.5">No Ledger Loaded</p>
                         </div>
                         
                         <!-- Currency Selector -->
-                        <div class="flex items-center gap-1 bg-white border border-neutral-300 px-2 py-0.5 rounded-xs">
-                            <label class="text-[10px] font-bold text-neutral-500 uppercase">CURR:</label>
+                        <div class="flex items-center gap-1 bg-white border border-neutral-400 px-2 py-0.5 rounded-xs">
+                            <label class="text-[10px] font-bold text-neutral-600 uppercase">CURR:</label>
                             <select id="currencySelect" onchange="changeCurrency()" class="bg-transparent text-xs font-mono font-bold focus:outline-none text-neutral-800">
                                 <option value="USD">USD ($)</option>
                                 <option value="EUR">EUR (€)</option>
@@ -64,8 +64,8 @@
                     </div>
                 </div>
                 
-                <div class="flex justify-between items-center pt-2 border-t border-neutral-200/80">
-                    <p class="text-[11px] text-neutral-500">Isolated encrypted tab</p>
+                <div class="flex justify-between items-center pt-2 border-t border-neutral-300">
+                    <p class="text-[11px] text-neutral-600">Isolated encrypted tab</p>
                     <div class="flex items-center gap-1.5">
                         <button id="shareBtn" onclick="openShareModal()" class="hidden text-xs bg-neutral-900 hover:bg-neutral-800 text-white px-2.5 py-1 font-medium rounded-xs transition">Share Link</button>
                         <button id="deleteLedgerBtn" onclick="deleteActiveLedger()" class="hidden text-xs bg-rose-700 hover:bg-rose-800 text-white px-2.5 py-1 font-medium rounded-xs transition">Delete</button>
@@ -73,40 +73,40 @@
                 </div>
             </section>
 
-            <!-- Frame 2: Participants (Soft Cool Slate Tint) -->
-            <section class="bg-[#f3f4f6] border border-neutral-300 p-5 rounded-xs space-y-4 flex flex-col justify-between shadow-xs">
+            <!-- Frame 2: Participants -->
+            <section class="bg-[#e5e7eb] border border-neutral-400 p-5 rounded-xs space-y-4 flex flex-col justify-between shadow-xs">
                 <div>
-                    <h2 class="text-xs font-bold uppercase tracking-wider text-neutral-500">Participants</h2>
-                    <p class="text-[11px] text-neutral-500 mt-0.5">Add or remove people from this group.</p>
+                    <h2 class="text-xs font-bold uppercase tracking-wider text-neutral-600">Participants</h2>
+                    <p class="text-[11px] text-neutral-600 mt-0.5">Add or remove people from this group.</p>
                 </div>
                 <div class="space-y-3">
                     <div class="flex gap-2">
-                        <input type="text" id="memberName" placeholder="Name..." class="flex-1 bg-white border border-neutral-300 px-3 py-1.5 text-sm focus:outline-none focus:border-neutral-900 rounded-xs">
+                        <input type="text" id="memberName" placeholder="Name..." class="flex-1 bg-white border border-neutral-400 px-3 py-1.5 text-sm focus:outline-none focus:border-neutral-900 rounded-xs">
                         <button onclick="addMember()" class="bg-neutral-900 text-white px-4 py-1.5 text-xs font-semibold hover:bg-neutral-800 rounded-xs transition">Add</button>
                     </div>
-                    <div id="memberList" class="text-sm text-neutral-700 flex flex-wrap gap-1.5 pt-1"></div>
+                    <div id="memberList" class="text-sm text-neutral-800 flex flex-wrap gap-1.5 pt-1"></div>
                 </div>
             </section>
         </div>
 
-        <!-- Middle Row: Expense Form (Soft Light Sage/Warm Tint) -->
-        <section id="expenseFormSection" class="bg-[#f7f7f2] border border-neutral-300 p-5 rounded-xs space-y-4 shadow-xs transition-colors duration-200">
+        <!-- Middle Row: Expense Form -->
+        <section id="expenseFormSection" class="bg-[#eae8e1] border border-neutral-400 p-5 rounded-xs space-y-4 shadow-xs transition-colors duration-200">
             <div>
-                <h2 id="expenseFormTitle" class="text-xs font-bold uppercase tracking-wider text-neutral-500">New Expense</h2>
-                <p id="expenseFormSub" class="text-[11px] text-neutral-500 mt-0.5">Log a transaction to split.</p>
+                <h2 id="expenseFormTitle" class="text-xs font-bold uppercase tracking-wider text-neutral-600">New Expense</h2>
+                <p id="expenseFormSub" class="text-[11px] text-neutral-600 mt-0.5">Log a transaction to split.</p>
             </div>
             
             <div class="grid grid-cols-1 sm:grid-cols-5 gap-3">
                 <!-- Date Selector -->
                 <div>
-                    <label class="text-[10px] font-bold uppercase tracking-wider text-neutral-500 block mb-1">Date</label>
-                    <input type="date" id="expenseDate" class="w-full bg-white border border-neutral-300 px-2 py-1.5 text-xs focus:outline-none focus:border-neutral-900 font-mono rounded-xs">
+                    <label class="text-[10px] font-bold uppercase tracking-wider text-neutral-600 block mb-1">Date</label>
+                    <input type="date" id="expenseDate" class="w-full bg-white border border-neutral-400 px-2 py-1.5 text-xs focus:outline-none focus:border-neutral-900 font-mono rounded-xs">
                 </div>
 
                 <!-- Category Selector -->
                 <div>
-                    <label class="text-[10px] font-bold uppercase tracking-wider text-neutral-500 block mb-1">Category</label>
-                    <select id="expenseCategory" class="w-full bg-white border border-neutral-300 px-2 py-1.5 text-xs focus:outline-none focus:border-neutral-900 rounded-xs">
+                    <label class="text-[10px] font-bold uppercase tracking-wider text-neutral-600 block mb-1">Category</label>
+                    <select id="expenseCategory" class="w-full bg-white border border-neutral-400 px-2 py-1.5 text-xs focus:outline-none focus:border-neutral-900 rounded-xs">
                         <option value="General">General</option>
                         <option value="Food & Dining">Food & Dining</option>
                         <option value="Transportation">Transportation</option>
@@ -120,30 +120,30 @@
 
                 <!-- Description -->
                 <div>
-                    <label class="text-[10px] font-bold uppercase tracking-wider text-neutral-500 block mb-1">Description</label>
-                    <input type="text" id="expenseDesc" placeholder="e.g. Dinner" class="w-full bg-white border border-neutral-300 px-2 py-1.5 text-xs focus:outline-none focus:border-neutral-900 rounded-xs">
+                    <label class="text-[10px] font-bold uppercase tracking-wider text-neutral-600 block mb-1">Description</label>
+                    <input type="text" id="expenseDesc" placeholder="e.g. Dinner" class="w-full bg-white border border-neutral-400 px-2 py-1.5 text-xs focus:outline-none focus:border-neutral-900 rounded-xs">
                 </div>
 
                 <!-- Amount -->
                 <div>
-                    <label class="text-[10px] font-bold uppercase tracking-wider text-neutral-500 block mb-1">Amount (<span class="currencySymbol">$</span>)</label>
-                    <input type="number" id="expenseAmount" placeholder="0.00" class="w-full bg-white border border-neutral-300 px-2 py-1.5 text-xs focus:outline-none focus:border-neutral-900 font-mono rounded-xs">
+                    <label class="text-[10px] font-bold uppercase tracking-wider text-neutral-600 block mb-1">Amount (<span class="currencySymbol">$</span>)</label>
+                    <input type="number" id="expenseAmount" placeholder="0.00" class="w-full bg-white border border-neutral-400 px-2 py-1.5 text-xs focus:outline-none focus:border-neutral-900 font-mono rounded-xs">
                 </div>
 
                 <!-- Paid By -->
                 <div>
-                    <label class="text-[10px] font-bold uppercase tracking-wider text-neutral-500 block mb-1">Paid By</label>
-                    <select id="expensePaidBy" class="w-full bg-white border border-neutral-300 px-2 py-1.5 text-xs focus:outline-none focus:border-neutral-900 rounded-xs"></select>
+                    <label class="text-[10px] font-bold uppercase tracking-wider text-neutral-600 block mb-1">Paid By</label>
+                    <select id="expensePaidBy" class="w-full bg-white border border-neutral-400 px-2 py-1.5 text-xs focus:outline-none focus:border-neutral-900 rounded-xs"></select>
                 </div>
             </div>
 
-            <div class="space-y-1.5 pt-2 border-t border-neutral-300/60">
+            <div class="space-y-1.5 pt-2 border-t border-neutral-300">
                 <div class="flex justify-between items-center">
-                    <label class="text-[10px] font-bold uppercase tracking-wider text-neutral-500">Split Between:</label>
-                    <button type="button" onclick="toggleSelectAll(true)" class="text-[11px] text-neutral-500 hover:underline">Select All</button>
+                    <label class="text-[10px] font-bold uppercase tracking-wider text-neutral-600">Split Between:</label>
+                    <button type="button" onclick="toggleSelectAll(true)" class="text-[11px] text-neutral-600 hover:underline">Select All</button>
                 </div>
                 <div id="splitCheckboxes" class="flex flex-wrap gap-2 pt-1 text-xs text-neutral-800">
-                    <span class="text-neutral-400 text-xs italic">Add participants first.</span>
+                    <span class="text-neutral-500 text-xs italic">Add participants first.</span>
                 </div>
             </div>
 
@@ -155,23 +155,23 @@
         <!-- Bottom Row -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
             
-            <!-- Frame 4: Settlement Matrix (Soft Sand Tint) -->
-            <section class="bg-[#fbfaf5] border border-neutral-300 p-5 rounded-xs space-y-4 shadow-xs">
-                <div class="flex justify-between items-center border-b border-neutral-200/80 pb-2">
-                    <h2 class="text-xs font-bold uppercase tracking-wider text-neutral-500">Settlement Matrix</h2>
-                    <button onclick="copySettlementSummary()" class="text-[11px] bg-white border border-neutral-300 hover:bg-neutral-100 text-neutral-800 px-2.5 py-1 font-medium rounded-xs transition">Copy Summary</button>
+            <!-- Frame 4: Settlement Matrix -->
+            <section class="bg-[#eeebe0] border border-neutral-400 p-5 rounded-xs space-y-4 shadow-xs">
+                <div class="flex justify-between items-center border-b border-neutral-300 pb-2">
+                    <h2 class="text-xs font-bold uppercase tracking-wider text-neutral-600">Settlement Matrix</h2>
+                    <button onclick="copySettlementSummary()" class="text-[11px] bg-white border border-neutral-400 hover:bg-neutral-100 text-neutral-800 px-2.5 py-1 font-medium rounded-xs transition">Copy Summary</button>
                 </div>
                 <div id="settlementList" class="space-y-2 text-xs font-mono min-h-[100px]">
-                    <p class="text-neutral-400 italic font-sans text-xs">Awaiting ledger input...</p>
+                    <p class="text-neutral-500 italic font-sans text-xs">Awaiting ledger input...</p>
                 </div>
             </section>
 
-            <!-- Frame 5: Ledger History (Muted Soft Ash Tint) -->
-            <section class="bg-[#f5f5f3] border border-neutral-300 p-5 rounded-xs space-y-4 shadow-xs">
-                <div class="flex justify-between items-center border-b border-neutral-200/80 pb-2">
+            <!-- Frame 5: Ledger History -->
+            <section class="bg-[#e2e2de] border border-neutral-400 p-5 rounded-xs space-y-4 shadow-xs">
+                <div class="flex justify-between items-center border-b border-neutral-300 pb-2">
                     <div class="flex items-center gap-2">
-                        <h2 class="text-xs font-bold uppercase tracking-wider text-neutral-500">Ledger History</h2>
-                        <span class="text-[10px] text-neutral-400 italic">(Click item to edit)</span>
+                        <h2 class="text-xs font-bold uppercase tracking-wider text-neutral-600">Ledger History</h2>
+                        <span class="text-[10px] text-neutral-500 italic">(Click item to edit)</span>
                     </div>
                     <button onclick="generateReport()" class="text-xs bg-neutral-900 hover:bg-neutral-800 text-white px-2.5 py-1 font-medium rounded-xs transition">Generate Report</button>
                 </div>
@@ -181,29 +181,29 @@
         </div>
     </div>
 
-    <!-- WELCOME MODAL WITH LOGO -->
+    <!-- WELCOME MODAL WITH PROMINENT LOGO -->
     <div id="welcomeModal" class="fixed inset-0 bg-neutral-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4">
-        <div class="bg-[#fafaf9] border border-neutral-300 p-6 sm:p-8 max-w-md w-full space-y-6 shadow-2xl rounded-xs">
+        <div class="bg-[#eae8e3] border border-neutral-400 p-6 sm:p-8 max-w-md w-full space-y-6 shadow-2xl rounded-xs">
             
-            <div class="border-b border-neutral-200 pb-4 text-center">
-                <img src="logo.png" alt="Settlr Logo" class="h-10 mx-auto object-contain mb-2">
-                <p class="text-xs text-neutral-500">Create or open a confidential group ledger.</p>
+            <div class="border-b border-neutral-300 pb-5 text-center">
+                <img src="logo.png" alt="Settlr Logo" class="h-16 sm:h-20 mx-auto object-contain mb-3">
+                <p class="text-xs text-neutral-600">Create or open a confidential group ledger.</p>
             </div>
 
-            <div id="modalTabsHeader" class="flex border-b border-neutral-200">
+            <div id="modalTabsHeader" class="flex border-b border-neutral-300">
                 <button id="tabCreateBtn" onclick="switchModalTab('create')" class="flex-1 pb-2 text-xs font-semibold uppercase tracking-wider border-b-2 border-neutral-900 text-neutral-900">Create New</button>
-                <button id="tabRecallBtn" onclick="switchModalTab('recall')" class="flex-1 pb-2 text-xs font-semibold uppercase tracking-wider border-b-2 border-transparent text-neutral-400 hover:text-neutral-600">Recall Existing</button>
+                <button id="tabRecallBtn" onclick="switchModalTab('recall')" class="flex-1 pb-2 text-xs font-semibold uppercase tracking-wider border-b-2 border-transparent text-neutral-500 hover:text-neutral-700">Recall Existing</button>
             </div>
 
             <!-- Create New Form -->
             <div id="createSection" class="space-y-4">
                 <div class="space-y-1">
-                    <label class="text-xs font-medium text-neutral-600">Ledger Name</label>
-                    <input type="text" id="newLedgerName" placeholder="e.g. dinner-club" class="w-full bg-white border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:border-neutral-900 rounded-xs">
+                    <label class="text-xs font-medium text-neutral-700">Ledger Name</label>
+                    <input type="text" id="newLedgerName" placeholder="e.g. dinner-club" class="w-full bg-white border border-neutral-400 px-3 py-2 text-sm focus:outline-none focus:border-neutral-900 rounded-xs">
                 </div>
                 <div class="space-y-1">
-                    <label class="text-xs font-medium text-neutral-600">Set 4-Digit PIN</label>
-                    <input type="text" id="newLedgerPin" maxlength="4" placeholder="1234" class="w-full bg-white border border-neutral-300 px-3 py-2 text-sm font-mono focus:outline-none focus:border-neutral-900 rounded-xs">
+                    <label class="text-xs font-medium text-neutral-700">Set 4-Digit PIN</label>
+                    <input type="text" id="newLedgerPin" maxlength="4" placeholder="1234" class="w-full bg-white border border-neutral-400 px-3 py-2 text-sm font-mono focus:outline-none focus:border-neutral-900 rounded-xs">
                 </div>
                 <button onclick="createNewLedger()" class="w-full bg-neutral-900 text-white py-2.5 text-xs font-semibold hover:bg-neutral-800 transition rounded-xs">Initialize Ledger</button>
             </div>
@@ -211,18 +211,18 @@
             <!-- Recall Existing Form -->
             <div id="recallSection" class="space-y-4 hidden">
                 <div id="archiveDropdownContainer" class="space-y-1">
-                    <label class="text-xs font-medium text-neutral-600">Select Archive</label>
-                    <select id="archiveSelect" class="w-full bg-white border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:border-neutral-900 rounded-xs">
+                    <label class="text-xs font-medium text-neutral-700">Select Archive</label>
+                    <select id="archiveSelect" class="w-full bg-white border border-neutral-400 px-3 py-2 text-sm focus:outline-none focus:border-neutral-900 rounded-xs">
                         <option value="">Select archive...</option>
                     </select>
                 </div>
                 <div id="directTabDisplay" class="hidden space-y-1">
-                    <label class="text-xs font-medium text-neutral-600">Accessing Shared Ledger</label>
-                    <input type="text" id="directTabName" readonly class="w-full bg-neutral-200 border border-neutral-300 px-3 py-2 text-sm font-mono font-semibold text-neutral-800 rounded-xs">
+                    <label class="text-xs font-medium text-neutral-700">Accessing Shared Ledger</label>
+                    <input type="text" id="directTabName" readonly class="w-full bg-neutral-300 border border-neutral-400 px-3 py-2 text-sm font-mono font-semibold text-neutral-800 rounded-xs">
                 </div>
                 <div class="space-y-1">
-                    <label class="text-xs font-medium text-neutral-600">Enter 4-Digit PIN</label>
-                    <input type="text" id="recallLedgerPin" maxlength="4" placeholder="1234" class="w-full bg-white border border-neutral-300 px-3 py-2 text-sm font-mono focus:outline-none focus:border-neutral-900 rounded-xs">
+                    <label class="text-xs font-medium text-neutral-700">Enter 4-Digit PIN</label>
+                    <input type="text" id="recallLedgerPin" maxlength="4" placeholder="1234" class="w-full bg-white border border-neutral-400 px-3 py-2 text-sm font-mono focus:outline-none focus:border-neutral-900 rounded-xs">
                 </div>
                 <button onclick="recallLedger()" class="w-full bg-neutral-900 text-white py-2.5 text-xs font-semibold hover:bg-neutral-800 transition rounded-xs">Access Ledger</button>
             </div>
@@ -231,14 +231,14 @@
 
     <!-- SHARE LINK POPUP MODAL -->
     <div id="shareModal" class="hidden fixed inset-0 bg-neutral-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4">
-        <div class="bg-white border border-neutral-300 p-6 max-w-md w-full space-y-4 shadow-2xl rounded-xs">
-            <div class="flex justify-between items-center border-b border-neutral-200 pb-2">
+        <div class="bg-[#fafaf9] border border-neutral-400 p-6 max-w-md w-full space-y-4 shadow-2xl rounded-xs">
+            <div class="flex justify-between items-center border-b border-neutral-300 pb-2">
                 <h3 class="text-xs font-bold uppercase tracking-wider text-neutral-800">Share Ledger Link</h3>
-                <button onclick="closeShareModal()" class="text-neutral-400 hover:text-neutral-900 text-lg font-bold">×</button>
+                <button onclick="closeShareModal()" class="text-neutral-500 hover:text-neutral-900 text-lg font-bold">×</button>
             </div>
-            <p class="text-xs text-neutral-500">Anyone with this link will only need to enter the 4-digit PIN to access this ledger.</p>
+            <p class="text-xs text-neutral-600">Anyone with this link will only need to enter the 4-digit PIN to access this ledger.</p>
             <div class="flex gap-2">
-                <input type="text" id="shareLinkInput" readonly class="flex-1 bg-neutral-50 border border-neutral-300 px-3 py-2 text-xs font-mono focus:outline-none rounded-xs">
+                <input type="text" id="shareLinkInput" readonly class="flex-1 bg-white border border-neutral-400 px-3 py-2 text-xs font-mono focus:outline-none rounded-xs">
                 <button onclick="copyShareLink()" class="bg-neutral-900 text-white px-4 py-2 text-xs font-semibold hover:bg-neutral-800 transition rounded-xs">Copy</button>
             </div>
         </div>
@@ -246,9 +246,9 @@
 
     <!-- Processing Indicator -->
     <div id="recordingModal" class="hidden fixed inset-0 bg-neutral-900/40 backdrop-blur-xs flex items-center justify-center z-50">
-        <div class="bg-white border border-neutral-300 p-6 shadow-2xl space-y-3 w-64 text-center rounded-xs">
+        <div class="bg-[#fafaf9] border border-neutral-400 p-6 shadow-2xl space-y-3 w-64 text-center rounded-xs">
             <p class="text-xs font-bold uppercase tracking-widest text-neutral-700 font-mono">Processing...</p>
-            <div class="h-1.5 bg-neutral-100 border border-neutral-200 overflow-hidden relative rounded-xs">
+            <div class="h-1.5 bg-neutral-200 border border-neutral-300 overflow-hidden relative rounded-xs">
                 <div class="scanner-bar"></div>
             </div>
         </div>
@@ -330,12 +330,12 @@
 
             if (mode === 'create') {
                 createBtn.className = "flex-1 pb-2 text-xs font-semibold uppercase tracking-wider border-b-2 border-neutral-900 text-neutral-900";
-                recallBtn.className = "flex-1 pb-2 text-xs font-semibold uppercase tracking-wider border-b-2 border-transparent text-neutral-400 hover:text-neutral-600";
+                recallBtn.className = "flex-1 pb-2 text-xs font-semibold uppercase tracking-wider border-b-2 border-transparent text-neutral-500 hover:text-neutral-700";
                 createSec.classList.remove('hidden');
                 recallSec.classList.add('hidden');
             } else {
                 recallBtn.className = "flex-1 pb-2 text-xs font-semibold uppercase tracking-wider border-b-2 border-neutral-900 text-neutral-900";
-                createBtn.className = "flex-1 pb-2 text-xs font-semibold uppercase tracking-wider border-b-2 border-transparent text-neutral-400 hover:text-neutral-600";
+                createBtn.className = "flex-1 pb-2 text-xs font-semibold uppercase tracking-wider border-b-2 border-transparent text-neutral-500 hover:text-neutral-700";
                 recallSec.classList.remove('hidden');
                 createSec.classList.add('hidden');
             }
@@ -727,7 +727,7 @@
                     th { border-bottom: 2px solid #000; text-transform: uppercase; }
                     .total-box { border-top: 2px solid #000; border-bottom: 2px solid #000; padding: 10px 0; margin-bottom: 30px; font-weight: bold; font-size: 14px; }
                     .category-section { border-top: 1px dashed #000; padding-top: 15px; font-size: 12px; }
-                    .category-row { display: flex; justify-content: space-between; padding: 3px 0; }
+                    .category-row { display: flex; justify-between; padding: 3px 0; }
                     @media print { body { padding: 0; } }
                 </style>
             </head>
@@ -842,7 +842,7 @@
                     ${m}
                     <button onclick="removeMember('${m}')" class="text-neutral-400 hover:text-red-600 font-bold">×</button>
                 </span>
-            `).join('') || '<span class="text-neutral-400 text-xs italic">No participants added.</span>';
+            `).join('') || '<span class="text-neutral-500 text-xs italic">No participants added.</span>';
             
             document.getElementById('expensePaidBy').innerHTML = (state.members || []).map(m => `<option value="${m}">${m}</option>`).join('') || '<option>Add participants first</option>';
 
@@ -856,10 +856,10 @@
                     </label>
                 `).join('');
             } else if (!state.members || state.members.length === 0) {
-                splitCheckboxesContainer.innerHTML = '<span class="text-neutral-400 text-xs italic">Add participants first.</span>';
+                splitCheckboxesContainer.innerHTML = '<span class="text-neutral-500 text-xs italic">Add participants first.</span>';
             }
 
-            // Expense History with YYYYMMDD Date Display
+            // Expense History
             const sym = getCurrencySymbol();
             document.getElementById('expenseHistory').innerHTML = (state.expenses || []).map(exp => {
                 const isSelected = editingExpenseId === exp.id;
@@ -868,14 +868,14 @@
                 const formattedDate = formatDateYYYYMMDD(exp.date);
 
                 return `
-                    <li onclick="selectExpenseForEdit('${exp.id}')" title="Click to edit" class="border-b border-neutral-200/80 py-2 flex justify-between items-center cursor-pointer hover:bg-white/80 px-2 rounded-xs transition ${isSelected ? 'bg-amber-100/80 border-l-4 border-l-amber-600 font-medium' : ''}">
+                    <li onclick="selectExpenseForEdit('${exp.id}')" title="Click to edit" class="border-b border-neutral-300 py-2 flex justify-between items-center cursor-pointer hover:bg-white/80 px-2 rounded-xs transition ${isSelected ? 'bg-amber-100/90 border-l-4 border-l-amber-600 font-medium' : ''}">
                         <div>
                             <div class="flex items-center gap-1.5 flex-wrap">
-                                <span class="text-[10px] bg-neutral-200/80 font-mono text-neutral-800 px-1 py-0.2 rounded-xs font-semibold">${formattedDate}</span>
+                                <span class="text-[10px] bg-neutral-300/80 font-mono text-neutral-800 px-1 py-0.2 rounded-xs font-semibold">${formattedDate}</span>
                                 <span class="text-[10px] bg-white border border-neutral-300 text-neutral-700 px-1 py-0.2 rounded-xs font-medium">${exp.category || 'General'}</span>
                                 <p class="font-semibold text-neutral-900 ${isSelected ? 'text-amber-950' : ''}">${exp.desc}</p>
                             </div>
-                            <p class="text-[11px] text-neutral-500 mt-0.5">Paid by ${exp.paidBy} ${!isPayerActive ? '(Removed)' : ''} (Split: ${activeSplit.length > 0 ? activeSplit.join(', ') : 'None'})</p>
+                            <p class="text-[11px] text-neutral-600 mt-0.5">Paid by ${exp.paidBy} ${!isPayerActive ? '(Removed)' : ''} (Split: ${activeSplit.length > 0 ? activeSplit.join(', ') : 'None'})</p>
                         </div>
                         <div class="flex items-center gap-2">
                             <span class="font-mono font-bold text-neutral-900">${sym}${Number(exp.amount).toFixed(2)}</span>
@@ -883,13 +883,13 @@
                         </div>
                     </li>
                 `;
-            }).join('') || '<span class="text-neutral-400 italic text-xs">No expense entries.</span>';
+            }).join('') || '<span class="text-neutral-500 italic text-xs">No expense entries.</span>';
 
             // Settlements
             const settlements = calculateSettlements();
             document.getElementById('settlementList').innerHTML = settlements.length > 0
                 ? settlements.map(s => `<div class="bg-white border border-neutral-300 p-2 text-xs rounded-xs font-medium shadow-2xs">→ ${s}</div>`).join('')
-                : '<span class="text-neutral-400 italic font-sans text-xs">All accounts balanced.</span>';
+                : '<span class="text-neutral-500 italic font-sans text-xs">All accounts balanced.</span>';
         }
 
         initApp();

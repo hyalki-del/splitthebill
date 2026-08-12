@@ -28,11 +28,12 @@
             <section class="bg-white border border-neutral-300 p-5 space-y-4 flex flex-col justify-between">
                 <div>
                     <h2 class="text-sm font-semibold uppercase tracking-wider text-neutral-700">Archive Control</h2>
-                    <p class="text-xs text-neutral-500 mt-0.5">Save current state or recall past tabs.</p>
+                    <p class="text-xs text-neutral-500 mt-0.5">Save current state with a 4-digit PIN or recall past tabs.</p>
                 </div>
                 <div class="space-y-3">
                     <div class="flex gap-2">
                         <input type="text" id="archiveName" placeholder="archive name..." class="flex-1 bg-neutral-50 border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:border-neutral-900">
+                        <input type="text" id="archivePin" maxlength="4" placeholder="PIN" class="w-16 bg-neutral-50 border border-neutral-300 px-3 py-2 text-sm text-center font-mono focus:outline-none focus:border-neutral-900">
                         <button onclick="saveSnapshot()" class="bg-neutral-900 text-white px-4 py-2 text-sm font-medium hover:bg-neutral-800 transition">Save</button>
                     </div>
                     <div class="flex gap-2">
@@ -62,7 +63,7 @@
 
         </div>
 
-        <!-- MIDDLE ROW: New Expense (Full Width Column with Selective Split Checkboxes) -->
+        <!-- MIDDLE ROW: New Expense -->
         <section class="bg-white border border-neutral-300 p-5 space-y-4">
             <div>
                 <h2 class="text-sm font-semibold uppercase tracking-wider text-neutral-700">New Expense</h2>
@@ -88,7 +89,7 @@
             <button onclick="addExpense()" class="w-full bg-neutral-900 text-white py-2 text-sm font-medium hover:bg-neutral-800 transition">Record Expense</button>
         </section>
 
-        <!-- BOTTOM ROW: Settlement Matrix (Left) & Ledger History (Right) -->
+        <!-- BOTTOM ROW: Settlement Matrix & Ledger History -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             
             <!-- Settlement Matrix -->
@@ -139,15 +140,24 @@
             }
         }
 
-        async function fetchData(tabName = "") {
+        async function fetchData(tabName = "", pin = "") {
             setStatus("Syncing...");
             try {
                 let url = API_URL;
-                if (tabName) url += `?tab=${encodeURIComponent(tabName)}`;
+                if (tabName) {
+                    url += `?tab=${encodeURIComponent(tabName)}&pin=${encodeURIComponent(pin)}`;
+                }
                 
                 const response = await fetch(url);
-                state = await response.json();
+                const data = await response.json();
                 
+                if (data.status === "error") {
+                    alert(data.message || "Access denied.");
+                    setStatus("Access Denied");
+                    return;
+                }
+                
+                state = data;
                 setStatus("Idle");
                 render();
             } catch (err) {
@@ -189,7 +199,6 @@
             const amount = parseFloat(document.getElementById('expenseAmount').value);
             const paidBy = document.getElementById('expensePaidBy').value;
 
-            // Gather checked split members
             const checkboxes = document.querySelectorAll('.split-checkbox:checked');
             const splitWith = Array.from(checkboxes).map(cb => cb.value);
 
@@ -211,14 +220,19 @@
 
         async function saveSnapshot() {
             const userText = document.getElementById('archiveName').value.trim();
+            const userPin = document.getElementById('archivePin').value.trim();
+            
             if (!userText) { alert("Please provide a name for the archive."); return; }
+            if (!/^\d{4}$/.test(userPin)) { alert("Please provide a valid 4-digit PIN."); return; }
+            
             document.getElementById('archiveName').value = '';
+            document.getElementById('archivePin').value = '';
             
             setStatus("Archiving...");
             try {
                 const res = await fetch(API_URL, {
                     method: "POST",
-                    body: JSON.stringify({ action: "saveSnapshot", name: userText })
+                    body: JSON.stringify({ action: "saveSnapshot", name: userText, pin: userPin })
                 });
                 const data = await res.json();
                 alert(`Successfully saved archive tab: ${data.tab}`);
@@ -231,7 +245,11 @@
         function loadArchive() {
             const selectedTab = document.getElementById('archiveSelect').value;
             if (!selectedTab) return;
-            fetchData(selectedTab);
+            
+            const userPin = prompt(`Enter 4-digit PIN for archive "${selectedTab}":`);
+            if (userPin === null) return; // user cancelled prompt
+            
+            fetchData(selectedTab, userPin);
         }
 
         function returnToLive() {
@@ -281,16 +299,13 @@
             const isLive = !state.activeTab || state.activeTab === "Live";
             document.getElementById('viewModeIndicator').innerText = isLive ? "Mode: Live Working Ledger" : `Mode: Viewing Archive [${state.activeTab}]`;
             
-            // Populate archive dropdown with all historic sheet tabs
             const archiveSelect = document.getElementById('archiveSelect');
             archiveSelect.innerHTML = `<option value="">Select past archive...</option>` + 
                 (state.archives || []).map(a => `<option value="${a}" ${a === state.activeTab ? 'selected' : ''}>${a}</option>`).join('');
 
-            // Participants
             document.getElementById('memberList').innerHTML = state.members.map(m => `<span class="bg-neutral-100 border border-neutral-200 px-2 py-1 rounded text-xs font-medium">${m}</span>`).join('') || '<span class="text-neutral-400 text-xs italic">No participants added.</span>';
             document.getElementById('expensePaidBy').innerHTML = state.members.map(m => `<option value="${m}">${m}</option>`).join('') || '<option>Add participants first</option>';
 
-            // Split Checkboxes (Checked by default for convenience)
             const splitCheckboxesContainer = document.getElementById('splitCheckboxes');
             if (state.members.length > 0) {
                 splitCheckboxesContainer.innerHTML = state.members.map(m => `
@@ -303,7 +318,6 @@
                 splitCheckboxesContainer.innerHTML = '<span class="text-neutral-400 text-xs italic">Add participants first.</span>';
             }
 
-            // History
             document.getElementById('expenseHistory').innerHTML = state.expenses.map(exp => `
                 <li class="border-b border-neutral-100 py-2 flex justify-between items-center">
                     <div>
@@ -314,7 +328,6 @@
                 </li>
             `).join('') || '<span class="text-neutral-400 italic">No expense entries.</span>';
 
-            // Settlements
             const settlements = calculateSettlements();
             document.getElementById('settlementList').innerHTML = settlements.length > 0
                 ? settlements.map(s => `<div class="bg-neutral-50 border border-neutral-200 p-2 text-xs">→ ${s}</div>`).join('')

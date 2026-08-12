@@ -129,7 +129,7 @@
     <!-- KNIGHT RIDER LED RECORDING MODAL -->
     <div id="recordingModal" class="hidden fixed inset-0 bg-neutral-900/40 backdrop-blur-xs flex items-center justify-center z-50">
         <div class="bg-white border border-neutral-300 p-6 shadow-2xl space-y-3 w-64 text-center">
-            <p class="text-xs font-semibold uppercase tracking-widest text-neutral-700 font-mono">Recording...</p>
+            <p class="text-xs font-semibold uppercase tracking-widest text-neutral-700 font-mono">Processing...</p>
             <div class="h-2 bg-neutral-100 border border-neutral-200 overflow-hidden relative rounded-xs">
                 <div class="scanner-bar"></div>
             </div>
@@ -174,6 +174,10 @@
 
         async function fetchData(tabName = "", pin = "") {
             setStatus("Syncing...");
+            // Zero out state immediately to prevent any old cache/flash artifacts
+            state = { members: [], expenses: [], archives: state.archives, activeTab: tabName || "Live" };
+            render();
+
             try {
                 let url = API_URL;
                 if (tabName) {
@@ -186,6 +190,10 @@
                 if (data.status === "error") {
                     alert(data.message || "Access denied.");
                     setStatus("Access Denied");
+                    // Fallback to live view if recall failed
+                    if (tabName) {
+                        fetchData();
+                    }
                     return;
                 }
                 
@@ -262,7 +270,6 @@
         function resetLive() {
             if (state.activeTab !== "Live") { alert("Switch to Live mode to reset."); return; }
             
-            // Explicit strict confirmation dialog
             const confirmed = confirm("WARNING: Everything on the live sheet will be permanently erased. Are you sure you want to proceed?");
             if (confirmed) {
                 sendAction({ action: "reset" });
@@ -356,17 +363,17 @@
             archiveSelect.innerHTML = `<option value="">Select past archive...</option>` + 
                 (state.archives || []).map(a => `<option value="${a}" ${a === state.activeTab ? 'selected' : ''}>${a}</option>`).join('');
 
-            document.getElementById('memberList').innerHTML = state.members.map(m => `
+            document.getElementById('memberList').innerHTML = (state.members || []).map(m => `
                 <span class="bg-neutral-100 border border-neutral-200 px-2.5 py-1 rounded text-xs font-medium flex items-center gap-1.5">
                     ${m}
                     ${isLive ? `<button onclick="removeMember('${m}')" class="text-neutral-400 hover:text-red-600 font-bold">×</button>` : ''}
                 </span>
             `).join('') || '<span class="text-neutral-400 text-xs italic">No participants added.</span>';
             
-            document.getElementById('expensePaidBy').innerHTML = state.members.map(m => `<option value="${m}">${m}</option>`).join('') || '<option>Add participants first</option>';
+            document.getElementById('expensePaidBy').innerHTML = (state.members || []).map(m => `<option value="${m}">${m}</option>`).join('') || '<option>Add participants first</option>';
 
             const splitCheckboxesContainer = document.getElementById('splitCheckboxes');
-            if (state.members.length > 0) {
+            if (state.members && state.members.length > 0) {
                 splitCheckboxesContainer.innerHTML = state.members.map(m => `
                     <label class="flex items-center gap-1.5 cursor-pointer bg-neutral-50 border border-neutral-200 px-2.5 py-1 rounded">
                         <input type="checkbox" value="${m}" class="split-checkbox accent-neutral-900" checked>
@@ -377,7 +384,7 @@
                 splitCheckboxesContainer.innerHTML = '<span class="text-neutral-400 text-xs italic">Add participants first.</span>';
             }
 
-            document.getElementById('expenseHistory').innerHTML = state.expenses.map(exp => `
+            document.getElementById('expenseHistory').innerHTML = (state.expenses || []).map(exp => `
                 <li class="border-b border-neutral-100 py-2 flex justify-between items-center">
                     <div>
                         <p class="font-medium">${exp.desc}</p>

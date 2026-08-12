@@ -97,8 +97,11 @@
             </section>
 
             <section class="bg-white border border-neutral-300 p-5 space-y-4">
-                <h2 class="text-sm font-semibold uppercase tracking-wider text-neutral-700">Ledger History</h2>
-                <ul id="expenseHistory" class="space-y-2 text-sm min-h-[100px] max-h-[250px] overflow-y-auto"></ul>
+                <div class="flex justify-between items-center">
+                    <h2 class="text-sm font-semibold uppercase tracking-wider text-neutral-700">Ledger History</h2>
+                    <span class="text-xs text-neutral-400 italic">Double-click item to edit</span>
+                </div>
+                <ul id="expenseHistory" class="space-y-2 text-sm min-h-[100px] max-h-[300px] overflow-y-auto"></ul>
             </section>
         </div>
     </div>
@@ -144,7 +147,7 @@
         </div>
     </div>
 
-    <!-- Recording Indicator -->
+    <!-- Processing Indicator -->
     <div id="recordingModal" class="hidden fixed inset-0 bg-neutral-900/40 backdrop-blur-xs flex items-center justify-center z-50">
         <div class="bg-white border border-neutral-300 p-6 shadow-2xl space-y-3 w-64 text-center">
             <p class="text-xs font-semibold uppercase tracking-widest text-neutral-700 font-mono">Processing...</p>
@@ -158,6 +161,7 @@
         let API_URL = "";
         let currentTab = "";
         let currentPin = "";
+        let editingExpenseId = null;
         let state = { members: [], expenses: [], archives: [] };
 
         function setStatus(text) { document.getElementById('statusMsg').innerText = text; }
@@ -231,7 +235,6 @@
                     body: JSON.stringify({ action: "createLedger", name, pin })
                 });
 
-                // Wait 1.5 seconds for Google Sheets to finish tab creation, then authenticate directly
                 setTimeout(async () => {
                     await fetchArchivesList();
                     const createdTab = state.archives.find(a => a.includes(name.replace(/[\/\\?\*\[\]:]/g, "_")));
@@ -292,6 +295,7 @@
 
                 state.members = data.members || [];
                 state.expenses = data.expenses || [];
+                editingExpenseId = null;
                 setStatus("Idle");
                 render();
                 return true;
@@ -359,6 +363,26 @@
             sendAction({ action: "addExpense", desc, amount, paidBy, splitWith });
         }
 
+        function enableInlineEdit(id) {
+            editingExpenseId = id;
+            render();
+        }
+
+        function cancelInlineEdit() {
+            editingExpenseId = null;
+            render();
+        }
+
+        function saveInlineEdit(id) {
+            const desc = document.getElementById(`editDesc_${id}`).value.trim();
+            const amount = parseFloat(document.getElementById(`editAmount_${id}`).value);
+            const paidBy = document.getElementById(`editPaidBy_${id}`).value;
+
+            if (!desc || isNaN(amount) || !paidBy) { alert('Invalid input values.'); return; }
+
+            sendAction({ action: "updateExpense", id, desc, amount, paidBy });
+        }
+
         function deleteExpense(id) {
             if (confirm("Delete this expense item?")) {
                 sendAction({ action: "deleteExpense", id });
@@ -367,20 +391,23 @@
 
         function calculateSettlements() {
             if (!state.members || state.members.length === 0) return [];
+            
             let balances = {};
             state.members.forEach(m => balances[m] = 0);
 
             (state.expenses || []).forEach(exp => {
-                const splitGroup = (exp.splitWith && exp.splitWith.length > 0) ? exp.splitWith : state.members;
-                if (splitGroup.length === 0) return;
+                if (!state.members.includes(exp.paidBy)) return;
 
-                const splitAmount = exp.amount / splitGroup.length;
+                const rawSplitGroup = (exp.splitWith && exp.splitWith.length > 0) ? exp.splitWith : state.members;
+                const activeSplitGroup = rawSplitGroup.filter(m => state.members.includes(m));
+
+                if (activeSplitGroup.length === 0) return;
+
+                const splitAmount = exp.amount / activeSplitGroup.length;
                 balances[exp.paidBy] += exp.amount;
                 
-                splitGroup.forEach(m => {
-                    if (balances[m] !== undefined) {
-                        balances[m] -= splitAmount;
-                    }
+                activeSplitGroup.forEach(m => {
+                    balances[m] -= splitAmount;
                 });
             });
 
@@ -408,6 +435,7 @@
             document.getElementById('activeTabNameDisplay').innerText = currentTab || "No Ledger Loaded";
             document.getElementById('viewModeIndicator').innerText = currentTab ? `Mode: Active Ledger [${currentTab}]` : "Mode: Awaiting Authentication...";
 
+            // Active Members
             document.getElementById('memberList').innerHTML = (state.members || []).map(m => `
                 <span class="bg-neutral-100 border border-neutral-200 px-2.5 py-1 rounded text-xs font-medium flex items-center gap-1.5">
                     ${m}
@@ -417,6 +445,7 @@
             
             document.getElementById('expensePaidBy').innerHTML = (state.members || []).map(m => `<option value="${m}">${m}</option>`).join('') || '<option>Add participants first</option>';
 
+            // Split Checkboxes
             const splitCheckboxesContainer = document.getElementById('splitCheckboxes');
             if (state.members && state.members.length > 0) {
                 splitCheckboxesContainer.innerHTML = state.members.map(m => `
@@ -429,19 +458,45 @@
                 splitCheckboxesContainer.innerHTML = '<span class="text-neutral-400 text-xs italic">Add participants first.</span>';
             }
 
-            document.getElementById('expenseHistory').innerHTML = (state.expenses || []).map(exp => `
-                <li class="border-b border-neutral-100 py-2 flex justify-between items-center">
-                    <div>
-                        <p class="font-medium">${exp.desc}</p>
-                        <p class="text-xs text-neutral-500">Paid by ${exp.paidBy} (Split: ${exp.splitWith ? exp.splitWith.join(', ') : 'All'})</p>
-                    </div>
-                    <div class="flex items-center gap-3">
-                        <span class="font-mono font-semibold">$${Number(exp.amount).toFixed(2)}</span>
-                        <button onclick="deleteExpense('${exp.id}')" class="text-xs text-red-500 hover:underline">Remove</button>
-                    </div>
-                </li>
-            `).join('') || '<span class="text-neutral-400 italic">No expense entries.</span>';
+            // Expense History (With Double-Click Inline Edit Support)
+            document.getElementById('expenseHistory').innerHTML = (state.expenses || []).map(exp => {
+                const isEditing = editingExpenseId === exp.id;
+                const activeSplit = exp.splitWith ? exp.splitWith.filter(m => state.members.includes(m)) : state.members;
+                const isPayerActive = state.members.includes(exp.paidBy);
 
+                if (isEditing) {
+                    return `
+                        <li class="border-b border-neutral-200 py-2.5 space-y-2 bg-neutral-50 p-2">
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                                <input type="text" id="editDesc_${exp.id}" value="${exp.desc}" class="bg-white border border-neutral-300 px-2 py-1 text-xs">
+                                <input type="number" id="editAmount_${exp.id}" value="${exp.amount}" class="bg-white border border-neutral-300 px-2 py-1 text-xs">
+                                <select id="editPaidBy_${exp.id}" class="bg-white border border-neutral-300 px-2 py-1 text-xs">
+                                    ${state.members.map(m => `<option value="${m}" ${m === exp.paidBy ? 'selected' : ''}>${m}</option>`).join('')}
+                                </select>
+                            </div>
+                            <div class="flex justify-end gap-2 text-xs">
+                                <button onclick="saveInlineEdit('${exp.id}')" class="bg-neutral-900 text-white px-2.5 py-1 font-medium">Save</button>
+                                <button onclick="cancelInlineEdit()" class="bg-neutral-200 text-neutral-700 px-2.5 py-1">Cancel</button>
+                            </div>
+                        </li>
+                    `;
+                }
+
+                return `
+                    <li ondblclick="enableInlineEdit('${exp.id}')" title="Double click to edit" class="border-b border-neutral-100 py-2 flex justify-between items-center cursor-pointer hover:bg-neutral-50/80 px-1 transition">
+                        <div>
+                            <p class="font-medium">${exp.desc}</p>
+                            <p class="text-xs text-neutral-500">Paid by ${exp.paidBy} ${!isPayerActive ? '(Removed)' : ''} (Split: ${activeSplit.length > 0 ? activeSplit.join(', ') : 'None'})</p>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <span class="font-mono font-semibold">$${Number(exp.amount).toFixed(2)}</span>
+                            <button onclick="deleteExpense('${exp.id}')" class="text-xs text-red-500 hover:underline">Remove</button>
+                        </div>
+                    </li>
+                `;
+            }).join('') || '<span class="text-neutral-400 italic">No expense entries.</span>';
+
+            // Settlements
             const settlements = calculateSettlements();
             document.getElementById('settlementList').innerHTML = settlements.length > 0
                 ? settlements.map(s => `<div class="bg-neutral-50 border border-neutral-200 p-2 text-xs">→ ${s}</div>`).join('')

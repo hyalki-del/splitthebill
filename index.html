@@ -28,10 +28,10 @@
 <body class="text-neutral-900 min-h-screen p-3 sm:p-8 antialiased">
     <div class="max-w-5xl mx-auto space-y-5">
         
-        <!-- Header with Doubled Logo (Switch Ledger Button Removed) -->
+        <!-- Header with Logo (Click Logo for Main Page / Switch Ledger) -->
         <header class="flex justify-between items-center border-b border-neutral-400 pb-4 gap-2">
-            <div class="flex items-center gap-4 cursor-pointer" onclick="openWelcomeModal()" title="Switch or create ledger">
-                <img src="logo.png" alt="Settlr Logo" class="h-24 sm:h-28 w-auto object-contain">
+            <div class="flex items-center gap-4 cursor-pointer group" onclick="goHome()" title="Back to Main Page">
+                <img src="logo.png" alt="Settlr Logo" class="h-24 sm:h-28 w-auto object-contain transition-transform group-hover:scale-[1.02]">
                 <p id="viewModeIndicator" class="text-xs text-neutral-600 font-mono hidden sm:block border-l border-neutral-400 pl-4">Mode: Awaiting Authentication...</p>
             </div>
             <div class="flex items-center gap-2">
@@ -176,7 +176,7 @@
         <div class="bg-[#eae8e3] border border-neutral-400 p-6 sm:p-8 max-w-md w-full space-y-6 shadow-2xl rounded-xs">
             
             <div class="border-b border-neutral-300 pb-5 text-center space-y-2">
-                <img src="logo.png" alt="Settlr Logo" class="h-32 sm:h-40 mx-auto object-contain">
+                <img src="logo.png" alt="Settlr Logo" class="h-32 sm:h-40 mx-auto object-contain cursor-pointer" onclick="closeWelcomeModal()">
                 
                 <!-- Centered Capitalized Language Selector Directly Under Logo -->
                 <div class="text-xs font-bold tracking-widest text-neutral-700 flex justify-center items-center gap-2 pt-1 uppercase">
@@ -544,6 +544,17 @@
             render();
         }
 
+        function goHome() {
+            currentTab = "";
+            currentPin = "";
+            window.location.hash = "";
+            state.members = [];
+            state.expenses = [];
+            resetExpenseForm();
+            render();
+            openWelcomeModal();
+        }
+
         function openWelcomeModal() {
             document.getElementById('welcomeModal').classList.remove('hidden');
             fetchArchivesList();
@@ -556,6 +567,11 @@
                 document.getElementById('directTabDisplay').classList.remove('hidden');
                 document.getElementById('directTabName').value = hash;
                 document.getElementById('recallLedgerPin').focus();
+            } else {
+                switchModalTab('create');
+                document.getElementById('modalTabsHeader').classList.remove('hidden');
+                document.getElementById('archiveDropdownContainer').classList.remove('hidden');
+                document.getElementById('directTabDisplay').classList.add('hidden');
             }
         }
         function closeWelcomeModal() { document.getElementById('welcomeModal').classList.add('hidden'); }
@@ -744,15 +760,8 @@
 
                 setTimeout(async () => {
                     alert(`Ledger "${currentTab}" has been permanently deleted.`);
-                    currentTab = "";
-                    currentPin = "";
-                    window.location.hash = "";
-                    state.members = [];
-                    state.expenses = [];
-                    resetExpenseForm();
-                    render();
+                    goHome();
                     showLoading(false);
-                    openWelcomeModal();
                 }, 1200);
 
             } catch (err) {

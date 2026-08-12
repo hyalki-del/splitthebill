@@ -41,7 +41,10 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <section class="bg-white border border-neutral-300 p-5 space-y-3 flex flex-col justify-between">
                 <div>
-                    <h2 class="text-sm font-semibold uppercase tracking-wider text-neutral-700">Active Confidential Ledger</h2>
+                    <div class="flex justify-between items-center">
+                        <h2 class="text-sm font-semibold uppercase tracking-wider text-neutral-700">Active Confidential Ledger</h2>
+                        <button id="deleteLedgerBtn" onclick="deleteActiveLedger()" class="hidden text-xs bg-red-600 hover:bg-red-700 text-white px-2.5 py-1 font-medium rounded-xs transition">Delete Ledger</button>
+                    </div>
                     <p id="activeTabNameDisplay" class="text-base font-mono font-semibold text-neutral-900 mt-1">No Ledger Loaded</p>
                 </div>
                 <p class="text-xs text-neutral-500">Self-contained encrypted snapshot tab.</p>
@@ -329,6 +332,38 @@
             }
         }
 
+        async function deleteActiveLedger() {
+            if (!currentTab || !currentPin) return;
+
+            const confirmed = confirm(`Are you sure you want to PERMANENTLY DELETE ledger "${currentTab}"?\n\nThis cannot be undone.`);
+            if (!confirmed) return;
+
+            showLoading(true);
+            try {
+                await fetch(API_URL, {
+                    method: "POST",
+                    mode: "no-cors",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ action: "deleteLedger", tab: currentTab, pin: currentPin })
+                });
+
+                setTimeout(async () => {
+                    alert(`Ledger "${currentTab}" has been permanently deleted.`);
+                    currentTab = "";
+                    currentPin = "";
+                    state.members = [];
+                    state.expenses = [];
+                    render();
+                    showLoading(false);
+                    openWelcomeModal();
+                }, 1200);
+
+            } catch (err) {
+                alert("Failed to delete ledger.");
+                showLoading(false);
+            }
+        }
+
         function addMember() {
             const name = document.getElementById('memberName').value.trim();
             if (!name) return;
@@ -378,9 +413,13 @@
             const amount = parseFloat(document.getElementById(`editAmount_${id}`).value);
             const paidBy = document.getElementById(`editPaidBy_${id}`).value;
 
-            if (!desc || isNaN(amount) || !paidBy) { alert('Invalid input values.'); return; }
+            const checkboxes = document.querySelectorAll(`.edit-split-cb-${id}:checked`);
+            const splitWith = Array.from(checkboxes).map(cb => cb.value);
 
-            sendAction({ action: "updateExpense", id, desc, amount, paidBy });
+            if (!desc || isNaN(amount) || !paidBy) { alert('Invalid input values.'); return; }
+            if (splitWith.length === 0) { alert('Select at least one participant to split with.'); return; }
+
+            sendAction({ action: "updateExpense", id, desc, amount, paidBy, splitWith });
         }
 
         function deleteExpense(id) {
@@ -435,6 +474,13 @@
             document.getElementById('activeTabNameDisplay').innerText = currentTab || "No Ledger Loaded";
             document.getElementById('viewModeIndicator').innerText = currentTab ? `Mode: Active Ledger [${currentTab}]` : "Mode: Awaiting Authentication...";
 
+            const deleteBtn = document.getElementById('deleteLedgerBtn');
+            if (currentTab) {
+                deleteBtn.classList.remove('hidden');
+            } else {
+                deleteBtn.classList.add('hidden');
+            }
+
             // Active Members
             document.getElementById('memberList').innerHTML = (state.members || []).map(m => `
                 <span class="bg-neutral-100 border border-neutral-200 px-2.5 py-1 rounded text-xs font-medium flex items-center gap-1.5">
@@ -445,7 +491,7 @@
             
             document.getElementById('expensePaidBy').innerHTML = (state.members || []).map(m => `<option value="${m}">${m}</option>`).join('') || '<option>Add participants first</option>';
 
-            // Split Checkboxes
+            // Split Checkboxes for New Expense
             const splitCheckboxesContainer = document.getElementById('splitCheckboxes');
             if (state.members && state.members.length > 0) {
                 splitCheckboxesContainer.innerHTML = state.members.map(m => `
@@ -458,7 +504,7 @@
                 splitCheckboxesContainer.innerHTML = '<span class="text-neutral-400 text-xs italic">Add participants first.</span>';
             }
 
-            // Expense History (With Double-Click Inline Edit Support)
+            // Expense History
             document.getElementById('expenseHistory').innerHTML = (state.expenses || []).map(exp => {
                 const isEditing = editingExpenseId === exp.id;
                 const activeSplit = exp.splitWith ? exp.splitWith.filter(m => state.members.includes(m)) : state.members;
@@ -466,17 +512,37 @@
 
                 if (isEditing) {
                     return `
-                        <li class="border-b border-neutral-200 py-2.5 space-y-2 bg-neutral-50 p-2">
+                        <li class="border border-neutral-300 py-3 p-3 space-y-3 bg-neutral-50 rounded-xs">
                             <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                                <input type="text" id="editDesc_${exp.id}" value="${exp.desc}" class="bg-white border border-neutral-300 px-2 py-1 text-xs">
-                                <input type="number" id="editAmount_${exp.id}" value="${exp.amount}" class="bg-white border border-neutral-300 px-2 py-1 text-xs">
-                                <select id="editPaidBy_${exp.id}" class="bg-white border border-neutral-300 px-2 py-1 text-xs">
-                                    ${state.members.map(m => `<option value="${m}" ${m === exp.paidBy ? 'selected' : ''}>${m}</option>`).join('')}
-                                </select>
+                                <div>
+                                    <label class="text-[10px] uppercase font-bold text-neutral-500">Desc</label>
+                                    <input type="text" id="editDesc_${exp.id}" value="${exp.desc}" class="w-full bg-white border border-neutral-300 px-2 py-1 text-xs">
+                                </div>
+                                <div>
+                                    <label class="text-[10px] uppercase font-bold text-neutral-500">Amount ($)</label>
+                                    <input type="number" id="editAmount_${exp.id}" value="${exp.amount}" class="w-full bg-white border border-neutral-300 px-2 py-1 text-xs">
+                                </div>
+                                <div>
+                                    <label class="text-[10px] uppercase font-bold text-neutral-500">Payer</label>
+                                    <select id="editPaidBy_${exp.id}" class="w-full bg-white border border-neutral-300 px-2 py-1 text-xs">
+                                        ${state.members.map(m => `<option value="${m}" ${m === exp.paidBy ? 'selected' : ''}>${m}</option>`).join('')}
+                                    </select>
+                                </div>
                             </div>
-                            <div class="flex justify-end gap-2 text-xs">
-                                <button onclick="saveInlineEdit('${exp.id}')" class="bg-neutral-900 text-white px-2.5 py-1 font-medium">Save</button>
-                                <button onclick="cancelInlineEdit()" class="bg-neutral-200 text-neutral-700 px-2.5 py-1">Cancel</button>
+                            <div>
+                                <label class="text-[10px] uppercase font-bold text-neutral-500 block mb-1">Split Between</label>
+                                <div class="flex flex-wrap gap-2 text-xs">
+                                    ${state.members.map(m => `
+                                        <label class="flex items-center gap-1 bg-white border border-neutral-200 px-2 py-0.5 rounded cursor-pointer">
+                                            <input type="checkbox" value="${m}" class="edit-split-cb-${exp.id} accent-neutral-900" ${activeSplit.includes(m) ? 'checked' : ''}>
+                                            <span>${m}</span>
+                                        </label>
+                                    `).join('')}
+                                </div>
+                            </div>
+                            <div class="flex justify-end gap-2 text-xs pt-1 border-t border-neutral-200">
+                                <button onclick="saveInlineEdit('${exp.id}')" class="bg-neutral-900 text-white px-3 py-1 font-medium hover:bg-neutral-800 transition">Save</button>
+                                <button onclick="cancelInlineEdit()" class="bg-neutral-200 text-neutral-700 px-3 py-1 hover:bg-neutral-300 transition">Cancel</button>
                             </div>
                         </li>
                     `;

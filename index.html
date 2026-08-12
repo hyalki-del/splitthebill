@@ -52,7 +52,7 @@
                             <p id="activeTabNameDisplay" class="text-base font-mono font-bold text-neutral-900 mt-0.5">No Ledger Loaded</p>
                         </div>
                         
-                        <!-- Currency Selector Moved Here -->
+                        <!-- Currency Selector -->
                         <div class="flex items-center gap-1 bg-white border border-neutral-300 px-2 py-0.5 rounded-xs">
                             <label class="text-[10px] font-bold text-neutral-500 uppercase">CURR:</label>
                             <select id="currencySelect" onchange="changeCurrency()" class="bg-transparent text-xs font-mono font-bold focus:outline-none text-neutral-800">
@@ -291,12 +291,17 @@
             }
         }
 
-        // Formats "2026-08-12" or "2026/08/12" to "20260812"
+        // Formats ISO timestamps ("2026-08-10T21:00:00.000Z"), standard dates ("2026-08-10"), or raw input to clean "20260810"
         function formatDateYYYYMMDD(rawDateStr) {
             if (!rawDateStr) return '-';
-            const digitsOnly = rawDateStr.replace(/\D/g, '');
-            if (digitsOnly.length === 8) {
-                return digitsOnly;
+            const str = String(rawDateStr);
+            const match = str.match(/^(\d{4})[\/\-]?(\d{2})[\/\-]?(\d{2})/);
+            if (match) {
+                return `${match[1]}${match[2]}${match[3]}`;
+            }
+            const digits = str.replace(/\D/g, '');
+            if (digits.length >= 8) {
+                return digits.substring(0, 8);
             }
             return rawDateStr;
         }

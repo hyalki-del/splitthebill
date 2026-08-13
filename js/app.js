@@ -37,7 +37,7 @@ async function saveSettings() {
     updateCurrencyDisplays();
     closeSettingsModal();
 
-    // Send single combined action to prevent race conditions in Google Apps Script
+    // Send single combined action to prevent race conditions
     await sendAction({ 
         action: "updateSettings", 
         currency: newCur, 
@@ -194,8 +194,9 @@ async function createNewLedger() {
 
         setTimeout(async () => {
             await fetchArchivesList();
-            const sanitizedTarget = name.replace(/[\/\\?\*\[\]:]/g, "_");
-            const createdTab = state.archives.find(a => a.includes(sanitizedTarget));
+            
+            const sanitizedUserWord = name.replace(/[\/\\?\*\[\]:\s]+/g, "-").replace(/^-+|-+$/g, "");
+            const createdTab = state.archives.find(a => a.endsWith("-" + sanitizedUserWord) || a.includes(sanitizedUserWord));
             
             if (createdTab) {
                 currentTab = createdTab;

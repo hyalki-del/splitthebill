@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SPENSE</title>
+    <title>Group Expense Splitter</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="css/styles.css">
 </head>
@@ -13,17 +13,15 @@
         <!-- Header -->
         <header class="theme-card theme-header p-4 sm:p-6 space-y-4">
             <div class="flex items-center justify-between gap-3">
-                <div class="flex items-center gap-3 cursor-pointer group" onclick="goHome()" title="Back to Main Page">
-                    <div>
-                        <h1 class="text-2xl sm:text-3xl font-extrabold tracking-wide uppercase theme-font-head leading-none">SPENSE</h1>
+                <!-- Brand Text removed; clicking the logo container routes home -->
+                <div class="flex items-center gap-3 cursor-pointer group" onclick="goHome()" title="Home">
+                    <div class="relative w-28 h-12 sm:w-36 sm:h-16 flex items-center justify-center group-hover:scale-105 transition-transform flex-shrink-0">
+                        <img src="logo.png" alt="Brand Logo" class="w-full h-full object-contain drop-shadow-md">
                     </div>
                 </div>
 
-                <!-- Logo at top right of header frame -->
+                <!-- Settings & Status Controls -->
                 <div class="flex items-center gap-3 flex-shrink-0">
-                    <div class="relative w-12 h-12 sm:w-16 sm:h-16 rounded-full looney-target flex items-center justify-center border-3 sm:border-4 border-slate-900 shadow-[2px_2px_0px_#0f172a] sm:shadow-[3px_3px_0px_#0f172a] group-hover:scale-105 transition-transform cursor-pointer" onclick="goHome()" title="Home">
-                        <img src="logo.png" alt="SPENSE Logo" class="h-8 sm:h-11 w-auto object-contain drop-shadow-md">
-                    </div>
                     <button id="settingsBtn" type="button" onclick="openSettingsModal()" data-i18n="settingsBtn" class="hidden theme-btn text-xs px-2.5 py-1.5 font-bold cursor-pointer">⚙ Settings</button>
                     <div id="statusMsg" class="text-[10px] sm:text-xs font-black px-2.5 py-1.5 rounded-xl border border-current uppercase">Idle</div>
                 </div>
@@ -126,9 +124,9 @@
     <div id="welcomeModal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
         <div class="theme-card p-6 sm:p-8 max-w-md w-full space-y-6 shadow-2xl bg-white text-slate-900">
             <div class="border-b border-slate-200 pb-5 text-center space-y-3">
-                <!-- Logo fitting the width cleanly at the top (motto is embedded in logo.png) -->
-                <div class="w-full max-w-[200px] mx-auto py-2">
-                    <img src="logo.png" alt="SPENSE Logo" class="w-full h-auto object-contain drop-shadow-md">
+                <!-- Logo fitting the width cleanly at the top -->
+                <div class="w-full max-w-[220px] mx-auto py-2">
+                    <img src="logo.png" alt="Brand Logo" class="w-full h-auto object-contain drop-shadow-md">
                 </div>
 
                 <div class="text-xs font-black tracking-widest text-slate-800 flex justify-center items-center gap-2 pt-1 uppercase">

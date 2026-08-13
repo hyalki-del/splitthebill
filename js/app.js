@@ -5,7 +5,7 @@ let currentCurrency = "USD";
 let currentTheme = "Silk";
 let currentLang = "en";
 let editingExpenseId = null;
-let stagedMembers = []; // Local buffer for batch member staging
+let stagedMembers = [];
 let state = { members: [], expenses: [], archives: [] };
 
 const CURRENCY_MAP = { USD: "$", EUR: "€", TRY: "₺" };
@@ -32,13 +32,11 @@ async function saveSettings() {
     const selectedRadio = document.querySelector('input[name="modalThemeSelect"]:checked');
     const newTheme = selectedRadio ? selectedRadio.value : currentTheme;
 
-    // Apply updates locally immediately
     currentCurrency = newCur;
     applyTheme(newTheme);
     updateCurrencyDisplays();
     closeSettingsModal();
 
-    // Send single combined action to prevent race conditions in GAS
     await sendAction({ 
         action: "updateSettings", 
         currency: newCur, 
@@ -176,6 +174,7 @@ async function fetchArchivesList() {
     }
 }
 
+// Fixed createNewLedger: Implements polling retry and auto-navigates directly into screen
 async function createNewLedger() {
     const name = document.getElementById('newLedgerName').value.trim();
     const pin = document.getElementById('newLedgerPin').value.trim();
@@ -190,38 +189,56 @@ async function createNewLedger() {
         await fetch(API_URL, {
             method: "POST",
             mode: "no-cors",
-            headers: { "Content-Type": "application/json" },
+            headers: { "Content-Type": "text/plain" },
             body: JSON.stringify({ action: "createLedger", name, pin, theme, currency: "USD" })
         });
 
-        setTimeout(async () => {
+        const sanitizedUserWord = name.replace(/[\/\\?\*\[\]:\s]+/g, "-").replace(/^-+|-+$/g, "");
+        let createdTab = null;
+
+        // Poll up to 5 times (1s interval) to confirm Google Apps Script tab creation
+        for (let attempt = 0; attempt < 5; attempt++) {
+            await new Promise(r => setTimeout(r, 1000));
             await fetchArchivesList();
-            
-            const sanitizedUserWord = name.replace(/[\/\\?\*\[\]:\s]+/g, "-").replace(/^-+|-+$/g, "");
-            const createdTab = state.archives.find(a => a.endsWith("-" + sanitizedUserWord) || a.includes(sanitizedUserWord));
-            
-            if (createdTab) {
-                currentTab = createdTab;
-                currentPin = pin;
-                window.location.hash = createdTab;
-                document.getElementById('newLedgerName').value = '';
-                document.getElementById('newLedgerPin').value = '';
-                closeWelcomeModal();
-                await fetchLedgerData();
-            } else {
-                alert("Ledger initialized. Select it from 'Recall Existing'.");
-            }
-            showLoading(false);
-        }, 1500);
+            createdTab = state.archives.find(a => a.endsWith("-" + sanitizedUserWord) || a.toLowerCase().includes(sanitizedUserWord.toLowerCase()));
+            if (createdTab) break;
+        }
+
+        // Auto-navigate directly
+        if (!createdTab) {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            createdTab = `${year}${month}${day}-${sanitizedUserWord}`;
+        }
+
+        currentTab = createdTab;
+        currentPin = pin;
+        window.location.hash = createdTab;
+        document.getElementById('newLedgerName').value = '';
+        document.getElementById('newLedgerPin').value = '';
+        closeWelcomeModal();
+        await fetchLedgerData();
+
     } catch (err) {
         alert("Connection error.");
+    } finally {
         showLoading(false);
     }
 }
 
+// Fixed recallLedger: Explicitly separates Direct Shared Access from Dropdown Selection
 async function recallLedger() {
-    const hash = window.location.hash.replace('#', '').trim();
-    const selectedTab = hash || document.getElementById('archiveSelect').value;
+    let selectedTab = "";
+    const directDisplay = document.getElementById('directTabDisplay');
+
+    if (directDisplay && !directDisplay.classList.contains('hidden')) {
+        selectedTab = document.getElementById('directTabName').value.trim();
+    } else {
+        selectedTab = document.getElementById('archiveSelect').value.trim();
+    }
+
     const pin = document.getElementById('recallLedgerPin').value.trim();
 
     if (!selectedTab) { alert("Please select an archive from the list."); return; }
@@ -260,7 +277,7 @@ async function fetchLedgerData() {
         applyTheme(data.theme || "Silk");
         state.members = data.members || [];
         state.expenses = data.expenses || [];
-        stagedMembers = []; // Clear local staging buffer on sync
+        stagedMembers = [];
         editingExpenseId = null;
         setStatus("Idle");
         render();
@@ -281,7 +298,7 @@ async function sendAction(payload) {
         await fetch(API_URL, {
             method: "POST",
             mode: "no-cors",
-            headers: { "Content-Type": "application/json" },
+            headers: { "Content-Type": "text/plain" },
             body: JSON.stringify(payload)
         });
         
@@ -304,7 +321,7 @@ async function deleteActiveLedger() {
         await fetch(API_URL, {
             method: "POST",
             mode: "no-cors",
-            headers: { "Content-Type": "application/json" },
+            headers: { "Content-Type": "text/plain" },
             body: JSON.stringify({ action: "deleteLedger", tab: currentTab, pin: currentPin })
         });
 
@@ -336,10 +353,6 @@ function copyShareLink() {
     closeShareModal();
 }
 
-// ==========================================
-// PARTICIPANT STAGING BUFFER LOGIC
-// ==========================================
-
 function stageMember() {
     const input = document.getElementById('memberName');
     const name = input.value.trim();
@@ -364,7 +377,6 @@ function unstageMember(index) {
 
 async function saveStagedMembers() {
     if (stagedMembers.length === 0) return;
-    
     const namesToSave = [...stagedMembers];
     sendAction({ action: "addMembers", names: namesToSave });
 }
@@ -634,7 +646,6 @@ function generateReport() {
 function render() {
     const t = TRANSLATIONS[currentLang];
 
-    // Formats directly to: "ACTIVE LEDGER: LEDGERNAME" in UPPERCASE
     const indicatorEl = document.getElementById('viewModeIndicator');
     if (currentTab) {
         indicatorEl.innerText = `ACTIVE LEDGER: ${currentTab.toUpperCase()}`;
@@ -680,7 +691,6 @@ function render() {
         `;
     }
 
-    // Render Saved Members (solid pills) and Staged Members (dashed pending pills)
     const savedPills = (state.members || []).map(m => `
         <span class="border border-current px-3 py-1 rounded-xl text-xs font-bold flex items-center gap-1.5">
             ${escapeHTML(m)}
@@ -702,7 +712,6 @@ function render() {
         memberListContainer.innerHTML = `<span class="opacity-50 text-xs italic font-medium">${t.noParticipants}</span>`;
     }
 
-    // Toggle Save Button Visibility based on staged buffer state
     const saveMembersBtn = document.getElementById('saveMembersBtn');
     if (stagedMembers.length > 0) {
         saveMembersBtn.classList.remove('hidden');

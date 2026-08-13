@@ -28,7 +28,7 @@
 <body class="text-neutral-900 min-h-screen p-3 sm:p-8 antialiased">
     <div class="max-w-5xl mx-auto space-y-5">
         
-        <!-- Header with Logo (Click Logo for Main Page / Switch Ledger) -->
+        <!-- Header with Logo -->
         <header class="flex justify-between items-center border-b border-neutral-400 pb-4 gap-2">
             <div class="flex items-center gap-4 cursor-pointer group" onclick="goHome()" title="Back to Main Page">
                 <img src="logo.png" alt="Settlr Logo" class="h-24 sm:h-28 w-auto object-contain transition-transform group-hover:scale-[1.02]">
@@ -66,8 +66,8 @@
                 <div class="flex justify-between items-center pt-2 border-t border-neutral-300">
                     <p data-i18n="encryptedSub" class="text-[11px] text-neutral-600">Isolated encrypted tab</p>
                     <div class="flex items-center gap-1.5">
-                        <button id="shareBtn" onclick="openShareModal()" data-i18n="shareLinkBtn" class="hidden text-xs bg-neutral-900 hover:bg-neutral-800 text-white px-2.5 py-1 font-medium rounded-xs transition">Share Link</button>
-                        <button id="deleteLedgerBtn" onclick="deleteActiveLedger()" data-i18n="deleteBtn" class="hidden text-xs bg-rose-700 hover:bg-rose-800 text-white px-2.5 py-1 font-medium rounded-xs transition">Delete</button>
+                        <button id="shareBtn" onclick="openShareModal()" data-i18n="shareLinkBtn" class="hidden text-xs bg-neutral-900 hover:bg-neutral-800 text-white px-2.5 py-1 font-medium rounded-xs transition cursor-pointer">Share Link</button>
+                        <button id="deleteLedgerBtn" onclick="deleteActiveLedger()" data-i18n="deleteBtn" class="hidden text-xs bg-rose-700 hover:bg-rose-800 text-white px-2.5 py-1 font-medium rounded-xs transition cursor-pointer">Delete</button>
                     </div>
                 </div>
             </section>
@@ -81,7 +81,7 @@
                 <div class="space-y-3">
                     <div class="flex gap-2">
                         <input type="text" id="memberName" data-i18n-ph="namePlaceholder" placeholder="Name..." class="flex-1 bg-white border border-neutral-400 px-3 py-1.5 text-sm focus:outline-none focus:border-neutral-900 rounded-xs">
-                        <button onclick="addMember()" data-i18n="addBtn" class="bg-neutral-900 text-white px-4 py-1.5 text-xs font-semibold hover:bg-neutral-800 rounded-xs transition">Add</button>
+                        <button onclick="addMember()" data-i18n="addBtn" class="bg-neutral-900 text-white px-4 py-1.5 text-xs font-semibold hover:bg-neutral-800 rounded-xs transition cursor-pointer">Add</button>
                     </div>
                     <div id="memberList" class="text-sm text-neutral-800 flex flex-wrap gap-1.5 pt-1"></div>
                 </div>
@@ -117,7 +117,7 @@
                 <!-- Amount -->
                 <div>
                     <label class="text-[10px] font-bold uppercase tracking-wider text-neutral-600 block mb-1"><span data-i18n="amountLabel">Amount</span> (<span class="currencySymbol">$</span>)</label>
-                    <input type="number" id="expenseAmount" placeholder="0.00" class="w-full bg-white border border-neutral-400 px-2 py-1.5 text-xs focus:outline-none focus:border-neutral-900 font-mono rounded-xs">
+                    <input type="number" step="0.01" id="expenseAmount" placeholder="0.00" class="w-full bg-white border border-neutral-400 px-2 py-1.5 text-xs focus:outline-none focus:border-neutral-900 font-mono rounded-xs">
                 </div>
 
                 <!-- Paid By -->
@@ -130,7 +130,7 @@
             <div class="space-y-1.5 pt-2 border-t border-neutral-300">
                 <div class="flex justify-between items-center">
                     <label data-i18n="splitBetweenLabel" class="text-[10px] font-bold uppercase tracking-wider text-neutral-600">Split Between:</label>
-                    <button type="button" onclick="toggleSelectAll(true)" data-i18n="selectAllBtn" class="text-[11px] text-neutral-600 hover:underline">Select All</button>
+                    <button type="button" onclick="toggleSelectAll(true)" data-i18n="selectAllBtn" class="text-[11px] text-neutral-600 hover:underline cursor-pointer">Select All</button>
                 </div>
                 <div id="splitCheckboxes" class="flex flex-wrap gap-2 pt-1 text-xs text-neutral-800">
                     <span data-i18n="addMembersFirstMsg" class="text-neutral-500 text-xs italic">Add participants first.</span>
@@ -138,7 +138,7 @@
             </div>
 
             <div id="expenseFormButtons">
-                <button onclick="addExpense()" data-i18n="recordExpenseBtn" class="w-full bg-neutral-900 text-white py-2 text-xs font-semibold hover:bg-neutral-800 rounded-xs transition">Record Expense</button>
+                <button onclick="addExpense()" data-i18n="recordExpenseBtn" class="w-full bg-neutral-900 text-white py-2 text-xs font-semibold hover:bg-neutral-800 rounded-xs transition cursor-pointer">Record Expense</button>
             </div>
         </section>
 
@@ -149,7 +149,7 @@
             <section class="bg-[#eeebe0] border border-neutral-400 p-5 rounded-xs space-y-4 shadow-xs">
                 <div class="flex justify-between items-center border-b border-neutral-300 pb-2">
                     <h2 data-i18n="settlementTitle" class="text-xs font-bold uppercase tracking-wider text-neutral-600">Settlement Matrix</h2>
-                    <button onclick="copySettlementSummary()" data-i18n="copySummaryBtn" class="text-[11px] bg-white border border-neutral-400 hover:bg-neutral-100 text-neutral-800 px-2.5 py-1 font-medium rounded-xs transition">Copy Summary</button>
+                    <button onclick="copySettlementSummary()" data-i18n="copySummaryBtn" class="text-[11px] bg-white border border-neutral-400 hover:bg-neutral-100 text-neutral-800 px-2.5 py-1 font-medium rounded-xs transition cursor-pointer">Copy Summary</button>
                 </div>
                 <div id="settlementList" class="space-y-2 text-xs font-mono min-h-[100px]">
                     <p data-i18n="awaitingLedgerMsg" class="text-neutral-500 italic font-sans text-xs">Awaiting ledger input...</p>
@@ -163,22 +163,20 @@
                         <h2 data-i18n="historyTitle" class="text-xs font-bold uppercase tracking-wider text-neutral-600">Ledger History</h2>
                         <span data-i18n="clickToEditSub" class="text-[10px] text-neutral-500 italic">(Click item to edit)</span>
                     </div>
-                    <button onclick="generateReport()" data-i18n="generateReportBtn" class="text-xs bg-neutral-900 hover:bg-neutral-800 text-white px-2.5 py-1 font-medium rounded-xs transition">Generate Report</button>
+                    <button onclick="generateReport()" data-i18n="generateReportBtn" class="text-xs bg-neutral-900 hover:bg-neutral-800 text-white px-2.5 py-1 font-medium rounded-xs transition cursor-pointer">Generate Report</button>
                 </div>
                 <ul id="expenseHistory" class="space-y-2 text-xs min-h-[100px] max-h-[300px] overflow-y-auto pr-1"></ul>
             </section>
-            
         </div>
     </div>
 
-    <!-- WELCOME MODAL WITH CENTERED LANGUAGE TEXT & LOGO -->
+    <!-- WELCOME MODAL -->
     <div id="welcomeModal" class="fixed inset-0 bg-neutral-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4">
         <div class="bg-[#eae8e3] border border-neutral-400 p-6 sm:p-8 max-w-md w-full space-y-6 shadow-2xl rounded-xs">
             
             <div class="border-b border-neutral-300 pb-5 text-center space-y-2">
                 <img src="logo.png" alt="Settlr Logo" class="h-32 sm:h-40 mx-auto object-contain cursor-pointer" onclick="closeWelcomeModal()">
                 
-                <!-- Centered Capitalized Language Selector Directly Under Logo -->
                 <div class="text-xs font-bold tracking-widest text-neutral-700 flex justify-center items-center gap-2 pt-1 uppercase">
                     <button id="lang-tr" onclick="switchLanguage('tr')" class="hover:text-neutral-900 cursor-pointer transition">TÜRKÇE</button>
                     <span class="text-neutral-400 font-normal">|</span>
@@ -191,8 +189,8 @@
             </div>
 
             <div id="modalTabsHeader" class="flex border-b border-neutral-300">
-                <button id="tabCreateBtn" onclick="switchModalTab('create')" data-i18n="tabCreate" class="flex-1 pb-2 text-xs font-semibold uppercase tracking-wider border-b-2 border-neutral-900 text-neutral-900">Create New</button>
-                <button id="tabRecallBtn" onclick="switchModalTab('recall')" data-i18n="tabRecall" class="flex-1 pb-2 text-xs font-semibold uppercase tracking-wider border-b-2 border-transparent text-neutral-500 hover:text-neutral-700">Recall Existing</button>
+                <button id="tabCreateBtn" onclick="switchModalTab('create')" data-i18n="tabCreate" class="flex-1 pb-2 text-xs font-semibold uppercase tracking-wider border-b-2 border-neutral-900 text-neutral-900 cursor-pointer">Create New</button>
+                <button id="tabRecallBtn" onclick="switchModalTab('recall')" data-i18n="tabRecall" class="flex-1 pb-2 text-xs font-semibold uppercase tracking-wider border-b-2 border-transparent text-neutral-500 hover:text-neutral-700 cursor-pointer">Recall Existing</button>
             </div>
 
             <!-- Create New Form -->
@@ -205,7 +203,7 @@
                     <label data-i18n="setPinLabel" class="text-xs font-medium text-neutral-700">Set 4-Digit PIN</label>
                     <input type="text" id="newLedgerPin" maxlength="4" placeholder="1234" class="w-full bg-white border border-neutral-400 px-3 py-2 text-sm font-mono focus:outline-none focus:border-neutral-900 rounded-xs">
                 </div>
-                <button onclick="createNewLedger()" data-i18n="initializeBtn" class="w-full bg-neutral-900 text-white py-2.5 text-xs font-semibold hover:bg-neutral-800 transition rounded-xs">Initialize Ledger</button>
+                <button onclick="createNewLedger()" data-i18n="initializeBtn" class="w-full bg-neutral-900 text-white py-2.5 text-xs font-semibold hover:bg-neutral-800 transition rounded-xs cursor-pointer">Initialize Ledger</button>
             </div>
 
             <!-- Recall Existing Form -->
@@ -224,7 +222,7 @@
                     <label data-i18n="enterPinLabel" class="text-xs font-medium text-neutral-700">Enter 4-Digit PIN</label>
                     <input type="text" id="recallLedgerPin" maxlength="4" placeholder="1234" class="w-full bg-white border border-neutral-400 px-3 py-2 text-sm font-mono focus:outline-none focus:border-neutral-900 rounded-xs">
                 </div>
-                <button onclick="recallLedger()" data-i18n="accessLedgerBtn" class="w-full bg-neutral-900 text-white py-2.5 text-xs font-semibold hover:bg-neutral-800 transition rounded-xs">Access Ledger</button>
+                <button onclick="recallLedger()" data-i18n="accessLedgerBtn" class="w-full bg-neutral-900 text-white py-2.5 text-xs font-semibold hover:bg-neutral-800 transition rounded-xs cursor-pointer">Access Ledger</button>
             </div>
         </div>
     </div>
@@ -234,12 +232,12 @@
         <div class="bg-[#fafaf9] border border-neutral-400 p-6 max-w-md w-full space-y-4 shadow-2xl rounded-xs">
             <div class="flex justify-between items-center border-b border-neutral-300 pb-2">
                 <h3 data-i18n="shareLinkHeader" class="text-xs font-bold uppercase tracking-wider text-neutral-800">Share Ledger Link</h3>
-                <button onclick="closeShareModal()" class="text-neutral-500 hover:text-neutral-900 text-lg font-bold">×</button>
+                <button onclick="closeShareModal()" class="text-neutral-500 hover:text-neutral-900 text-lg font-bold cursor-pointer">×</button>
             </div>
             <p data-i18n="shareLinkSub" class="text-xs text-neutral-600">Anyone with this link will only need to enter the 4-digit PIN to access this ledger.</p>
             <div class="flex gap-2">
                 <input type="text" id="shareLinkInput" readonly class="flex-1 bg-white border border-neutral-400 px-3 py-2 text-xs font-mono focus:outline-none rounded-xs">
-                <button onclick="copyShareLink()" data-i18n="copyBtn" class="bg-neutral-900 text-white px-4 py-2 text-xs font-semibold hover:bg-neutral-800 transition rounded-xs">Copy</button>
+                <button onclick="copyShareLink()" data-i18n="copyBtn" class="bg-neutral-900 text-white px-4 py-2 text-xs font-semibold hover:bg-neutral-800 transition rounded-xs cursor-pointer">Copy</button>
             </div>
         </div>
     </div>
@@ -263,11 +261,7 @@
         let editingExpenseId = null;
         let state = { members: [], expenses: [], archives: [] };
 
-        const CURRENCY_MAP = {
-            USD: "$",
-            EUR: "€",
-            TRY: "₺"
-        };
+        const CURRENCY_MAP = { USD: "$", EUR: "€", TRY: "₺" };
 
         const TRANSLATIONS = {
             en: {
@@ -464,15 +458,34 @@
             }
         };
 
+        // DOM Sanitizer against XSS Attacks
+        function escapeHTML(str) {
+            if (str === null || str === undefined) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        // Converts any date structure (YYYYMMDD, ISO, YYYY/MM/DD) into HTML5 W3C-compliant YYYY-MM-DD
+        function toInputDateFormat(rawDateStr) {
+            if (!rawDateStr) return new Date().toISOString().split('T')[0];
+            const str = String(rawDateStr).trim();
+            if (/^\d{4}-\d{2}-\d{2}$/.test(str)) return str;
+            const match = str.match(/^(\d{4})[\/\-]?(\d{2})[\/\-]?(\d{2})/);
+            if (match) return `${match[1]}-${match[2]}-${match[3]}`;
+            return new Date().toISOString().split('T')[0];
+        }
+
         function setStatus(text) { document.getElementById('statusMsg').innerText = text; }
         function showLoading(show) {
             const modal = document.getElementById('recordingModal');
             if (show) modal.classList.remove('hidden'); else modal.classList.add('hidden');
         }
 
-        function getCurrencySymbol() {
-            return CURRENCY_MAP[currentCurrency] || "$";
-        }
+        function getCurrencySymbol() { return CURRENCY_MAP[currentCurrency] || "$"; }
 
         function updateCurrencyDisplays() {
             const symbols = document.querySelectorAll('.currencySymbol');
@@ -483,8 +496,7 @@
         function setDefaultDate() {
             const dateInput = document.getElementById('expenseDate');
             if (dateInput && !dateInput.value) {
-                const today = new Date().toISOString().split('T')[0];
-                dateInput.value = today;
+                dateInput.value = new Date().toISOString().split('T')[0];
             }
         }
 
@@ -492,13 +504,9 @@
             if (!rawDateStr) return '-';
             const str = String(rawDateStr);
             const match = str.match(/^(\d{4})[\/\-]?(\d{2})[\/\-]?(\d{2})/);
-            if (match) {
-                return `${match[1]}${match[2]}${match[3]}`;
-            }
+            if (match) return `${match[1]}${match[2]}${match[3]}`;
             const digits = str.replace(/\D/g, '');
-            if (digits.length >= 8) {
-                return digits.substring(0, 8);
-            }
+            if (digits.length >= 8) return digits.substring(0, 8);
             return rawDateStr;
         }
 
@@ -506,39 +514,29 @@
             if (!TRANSLATIONS[lang]) return;
             currentLang = lang;
 
-            // Highlight Active Language in Header Line
             ['tr', 'en', 'de'].forEach(l => {
                 const btn = document.getElementById(`lang-${l}`);
                 if (btn) {
-                    if (l === lang) {
-                        btn.className = "hover:text-neutral-900 cursor-pointer transition text-neutral-900 border-b-2 border-neutral-900 pb-0.5";
-                    } else {
-                        btn.className = "hover:text-neutral-900 cursor-pointer transition text-neutral-500";
-                    }
+                    btn.className = (l === lang)
+                        ? "hover:text-neutral-900 cursor-pointer transition text-neutral-900 border-b-2 border-neutral-900 pb-0.5"
+                        : "hover:text-neutral-900 cursor-pointer transition text-neutral-500";
                 }
             });
 
-            // Translate DOM Elements with data-i18n
             document.querySelectorAll('[data-i18n]').forEach(el => {
                 const key = el.getAttribute('data-i18n');
-                if (TRANSLATIONS[lang][key]) {
-                    el.innerText = TRANSLATIONS[lang][key];
-                }
+                if (TRANSLATIONS[lang][key]) el.innerText = TRANSLATIONS[lang][key];
             });
 
-            // Translate Placeholders
             document.querySelectorAll('[data-i18n-ph]').forEach(el => {
                 const key = el.getAttribute('data-i18n-ph');
-                if (TRANSLATIONS[lang][key]) {
-                    el.placeholder = TRANSLATIONS[lang][key];
-                }
+                if (TRANSLATIONS[lang][key]) el.placeholder = TRANSLATIONS[lang][key];
             });
 
-            // Populate Expense Categories
             const catSelect = document.getElementById('expenseCategory');
             const currentCatVal = catSelect.value || "General";
             const catMap = TRANSLATIONS[lang].categories;
-            catSelect.innerHTML = Object.keys(catMap).map(k => `<option value="${k}">${catMap[k]}</option>`).join('');
+            catSelect.innerHTML = Object.keys(catMap).map(k => `<option value="${escapeHTML(k)}">${escapeHTML(catMap[k])}</option>`).join('');
             catSelect.value = currentCatVal;
 
             render();
@@ -574,6 +572,7 @@
                 document.getElementById('directTabDisplay').classList.add('hidden');
             }
         }
+
         function closeWelcomeModal() { document.getElementById('welcomeModal').classList.add('hidden'); }
 
         function switchModalTab(mode) {
@@ -583,13 +582,13 @@
             const recallSec = document.getElementById('recallSection');
 
             if (mode === 'create') {
-                createBtn.className = "flex-1 pb-2 text-xs font-semibold uppercase tracking-wider border-b-2 border-neutral-900 text-neutral-900";
-                recallBtn.className = "flex-1 pb-2 text-xs font-semibold uppercase tracking-wider border-b-2 border-transparent text-neutral-500 hover:text-neutral-700";
+                createBtn.className = "flex-1 pb-2 text-xs font-semibold uppercase tracking-wider border-b-2 border-neutral-900 text-neutral-900 cursor-pointer";
+                recallBtn.className = "flex-1 pb-2 text-xs font-semibold uppercase tracking-wider border-b-2 border-transparent text-neutral-500 hover:text-neutral-700 cursor-pointer";
                 createSec.classList.remove('hidden');
                 recallSec.classList.add('hidden');
             } else {
-                recallBtn.className = "flex-1 pb-2 text-xs font-semibold uppercase tracking-wider border-b-2 border-neutral-900 text-neutral-900";
-                createBtn.className = "flex-1 pb-2 text-xs font-semibold uppercase tracking-wider border-b-2 border-transparent text-neutral-500 hover:text-neutral-700";
+                recallBtn.className = "flex-1 pb-2 text-xs font-semibold uppercase tracking-wider border-b-2 border-neutral-900 text-neutral-900 cursor-pointer";
+                createBtn.className = "flex-1 pb-2 text-xs font-semibold uppercase tracking-wider border-b-2 border-transparent text-neutral-500 hover:text-neutral-700 cursor-pointer";
                 recallSec.classList.remove('hidden');
                 createSec.classList.add('hidden');
             }
@@ -597,7 +596,7 @@
 
         async function initApp() {
             setDefaultDate();
-            switchLanguage('en'); // Default to English
+            switchLanguage('en');
             try {
                 const configRes = await fetch('config.json');
                 const config = await configRes.json();
@@ -615,8 +614,8 @@
                 state.archives = data.archives || [];
                 const select = document.getElementById('archiveSelect');
                 const phText = TRANSLATIONS[currentLang].selectArchivePh;
-                select.innerHTML = `<option value="">${phText}</option>` + 
-                    state.archives.map(a => `<option value="${a}">${a}</option>`).join('');
+                select.innerHTML = `<option value="">${escapeHTML(phText)}</option>` + 
+                    state.archives.map(a => `<option value="${escapeHTML(a)}">${escapeHTML(a)}</option>`).join('');
             } catch (err) {
                 console.error("Failed to fetch archives", err);
             }
@@ -640,7 +639,8 @@
 
                 setTimeout(async () => {
                     await fetchArchivesList();
-                    const createdTab = state.archives.find(a => a.includes(name.replace(/[\/\\?\*\[\]:]/g, "_")));
+                    const sanitizedTarget = name.replace(/[\/\\?\*\[\]:]/g, "_");
+                    const createdTab = state.archives.find(a => a.includes(sanitizedTarget));
                     
                     if (createdTab) {
                         currentTab = createdTab;
@@ -651,11 +651,10 @@
                         closeWelcomeModal();
                         await fetchLedgerData();
                     } else {
-                        alert("Creation finished. Please select your new tab from 'Recall Existing'.");
+                        alert("Ledger initialized. Select it from 'Recall Existing'.");
                     }
                     showLoading(false);
                 }, 1500);
-
             } catch (err) {
                 alert("Connection error.");
                 showLoading(false);
@@ -745,9 +744,7 @@
 
         async function deleteActiveLedger() {
             if (!currentTab || !currentPin) return;
-
-            const confirmed = confirm(`Are you sure you want to PERMANENTLY DELETE ledger "${currentTab}"?\n\nThis cannot be undone.`);
-            if (!confirmed) return;
+            if (!confirm(`Are you sure you want to PERMANENTLY DELETE ledger "${currentTab}"?\n\nThis cannot be undone.`)) return;
 
             showLoading(true);
             try {
@@ -758,12 +755,11 @@
                     body: JSON.stringify({ action: "deleteLedger", tab: currentTab, pin: currentPin })
                 });
 
-                setTimeout(async () => {
+                setTimeout(() => {
                     alert(`Ledger "${currentTab}" has been permanently deleted.`);
                     goHome();
                     showLoading(false);
                 }, 1200);
-
             } catch (err) {
                 alert("Failed to delete ledger.");
                 showLoading(false);
@@ -777,9 +773,7 @@
             document.getElementById('shareModal').classList.remove('hidden');
         }
 
-        function closeShareModal() {
-            document.getElementById('shareModal').classList.add('hidden');
-        }
+        function closeShareModal() { document.getElementById('shareModal').classList.add('hidden'); }
 
         function copyShareLink() {
             const input = document.getElementById('shareLinkInput');
@@ -803,8 +797,7 @@
         }
 
         function toggleSelectAll(select) {
-            const checkboxes = document.querySelectorAll('.split-checkbox');
-            checkboxes.forEach(cb => cb.checked = select);
+            document.querySelectorAll('.split-checkbox').forEach(cb => cb.checked = select);
         }
 
         function addExpense() {
@@ -814,11 +807,16 @@
             const amount = parseFloat(document.getElementById('expenseAmount').value);
             const paidBy = document.getElementById('expensePaidBy').value;
 
-            const checkboxes = document.querySelectorAll('.split-checkbox:checked');
-            const splitWith = Array.from(checkboxes).map(cb => cb.value);
+            const splitWith = Array.from(document.querySelectorAll('.split-checkbox:checked')).map(cb => cb.value);
 
-            if (!date || !desc || isNaN(amount) || !paidBy) { alert('Please fill in all expense fields.'); return; }
-            if (splitWith.length === 0) { alert('Select at least one person to split the expense with.'); return; }
+            if (!date || !desc || isNaN(amount) || amount <= 0 || !paidBy) { 
+                alert('Please fill in valid expense fields.'); 
+                return; 
+            }
+            if (splitWith.length === 0) { 
+                alert('Select at least one person to split the expense with.'); 
+                return; 
+            }
 
             resetExpenseForm();
             sendAction({ action: "addExpense", date, category, desc, amount, paidBy, splitWith });
@@ -829,20 +827,20 @@
             if (!exp) return;
 
             editingExpenseId = exp.id;
+            render(); // Swaps UI to edit mode & re-builds split checkboxes DOM
 
-            document.getElementById('expenseDate').value = exp.date || new Date().toISOString().split('T')[0];
+            // HTML5 Compliance: Format date into YYYY-MM-DD before assigning to DOM input
+            document.getElementById('expenseDate').value = toInputDateFormat(exp.date);
             document.getElementById('expenseCategory').value = exp.category || "General";
-            document.getElementById('expenseDesc').value = exp.desc;
-            document.getElementById('expenseAmount').value = exp.amount;
-            document.getElementById('expensePaidBy').value = exp.paidBy;
+            document.getElementById('expenseDesc').value = exp.desc || "";
+            document.getElementById('expenseAmount').value = exp.amount || "";
+            document.getElementById('expensePaidBy').value = exp.paidBy || "";
 
             const activeSplit = exp.splitWith && exp.splitWith.length > 0 ? exp.splitWith : state.members;
-            const checkboxes = document.querySelectorAll('.split-checkbox');
-            checkboxes.forEach(cb => {
+            document.querySelectorAll('.split-checkbox').forEach(cb => {
                 cb.checked = activeSplit.includes(cb.value);
             });
 
-            render();
             document.getElementById('expenseFormSection').scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
 
@@ -855,11 +853,16 @@
             const amount = parseFloat(document.getElementById('expenseAmount').value);
             const paidBy = document.getElementById('expensePaidBy').value;
 
-            const checkboxes = document.querySelectorAll('.split-checkbox:checked');
-            const splitWith = Array.from(checkboxes).map(cb => cb.value);
+            const splitWith = Array.from(document.querySelectorAll('.split-checkbox:checked')).map(cb => cb.value);
 
-            if (!date || !desc || isNaN(amount) || !paidBy) { alert('Please fill in all expense fields.'); return; }
-            if (splitWith.length === 0) { alert('Select at least one person to split the expense with.'); return; }
+            if (!date || !desc || isNaN(amount) || amount <= 0 || !paidBy) { 
+                alert('Please fill in valid expense fields.'); 
+                return; 
+            }
+            if (splitWith.length === 0) { 
+                alert('Select at least one person to split the expense with.'); 
+                return; 
+            }
 
             const idToUpdate = editingExpenseId;
             resetExpenseForm();
@@ -868,7 +871,7 @@
 
         function deleteExpenseFromForm() {
             if (!editingExpenseId) return;
-            if (confirm("Delete this expense item?")) {
+            if (confirm("Delete this expense entry?")) {
                 const idToDelete = editingExpenseId;
                 resetExpenseForm();
                 sendAction({ action: "deleteExpense", id: idToDelete });
@@ -881,8 +884,8 @@
             document.getElementById('expenseCategory').value = 'General';
             document.getElementById('expenseDesc').value = '';
             document.getElementById('expenseAmount').value = '';
-            toggleSelectAll(true);
             render();
+            toggleSelectAll(true);
         }
 
         function calculateSettlements() {
@@ -902,16 +905,14 @@
                 const splitAmount = exp.amount / activeSplitGroup.length;
                 balances[exp.paidBy] += exp.amount;
                 
-                activeSplitGroup.forEach(m => {
-                    balances[m] -= splitAmount;
-                });
+                activeSplitGroup.forEach(m => { balances[m] -= splitAmount; });
             });
 
             let debtors = [], creditors = [];
             for (let m in balances) {
                 let b = parseFloat(balances[m].toFixed(2));
-                if (b < -0.01) debtors.push({ name: m, amount: -b });
-                if (b > 0.01) creditors.push({ name: m, amount: b });
+                if (b < -0.009) debtors.push({ name: m, amount: -b });
+                if (b > 0.009) creditors.push({ name: m, amount: b });
             }
 
             let transactions = [];
@@ -922,10 +923,10 @@
             while (i < debtors.length && j < creditors.length) {
                 let d = debtors[i], c = creditors[j];
                 let amt = Math.min(d.amount, c.amount);
-                transactions.push(`${d.name} ${paysWord} ${c.name} ${sym}${amt.toFixed(2)}`);
+                transactions.push(`${escapeHTML(d.name)} ${paysWord} ${escapeHTML(c.name)} ${sym}${amt.toFixed(2)}`);
                 d.amount -= amt; c.amount -= amt;
-                if (d.amount < 0.01) i++;
-                if (c.amount < 0.01) j++;
+                if (d.amount < 0.009) i++;
+                if (c.amount < 0.009) j++;
             }
             return transactions;
         }
@@ -969,7 +970,7 @@
             <!DOCTYPE html>
             <html>
             <head>
-                <title>Report - ${currentTab}</title>
+                <title>Report - ${escapeHTML(currentTab)}</title>
                 <style>
                     body { font-family: 'Courier New', Courier, monospace; background: #fff; color: #000; padding: 40px; max-width: 800px; margin: 0 auto; }
                     h1 { font-size: 20px; text-transform: uppercase; border-bottom: 2px solid #000; padding-bottom: 5px; margin-bottom: 5px; }
@@ -979,26 +980,26 @@
                     th { border-bottom: 2px solid #000; text-transform: uppercase; }
                     .total-box { border-top: 2px solid #000; border-bottom: 2px solid #000; padding: 10px 0; margin-bottom: 30px; font-weight: bold; font-size: 14px; }
                     .category-section { border-top: 1px dashed #000; padding-top: 15px; font-size: 12px; }
-                    .category-row { display: flex; justify-between; padding: 3px 0; }
+                    .category-row { display: flex; justify-content: space-between; padding: 3px 0; }
                     @media print { body { padding: 0; } }
                 </style>
             </head>
             <body>
-                <h1>LEDGER REPORT: ${currentTab}</h1>
+                <h1>LEDGER REPORT: ${escapeHTML(currentTab)}</h1>
                 <div class="meta">
-                    <div>Generated On: ${dateToday}</div>
-                    <div>Currency: ${currentCurrency} (${sym})</div>
+                    <div>Generated On: ${escapeHTML(dateToday)}</div>
+                    <div>Currency: ${escapeHTML(currentCurrency)} (${sym})</div>
                     <div>Total Entries: ${state.expenses.length}</div>
                 </div>
 
                 <table>
                     <thead>
                         <tr>
-                            <th>${t.dateLabel}</th>
-                            <th>${t.categoryLabel}</th>
-                            <th>${t.descLabel}</th>
-                            <th>${t.paidByLabel}</th>
-                            <th style="text-align: right;">${t.amountLabel}</th>
+                            <th>${escapeHTML(t.dateLabel)}</th>
+                            <th>${escapeHTML(t.categoryLabel)}</th>
+                            <th>${escapeHTML(t.descLabel)}</th>
+                            <th>${escapeHTML(t.paidByLabel)}</th>
+                            <th style="text-align: right;">${escapeHTML(t.amountLabel)}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -1008,10 +1009,10 @@
                 const catLabel = t.categories[e.category] || e.category || 'General';
                 html += `
                     <tr>
-                        <td>${formatDateYYYYMMDD(e.date)}</td>
-                        <td>${catLabel}</td>
-                        <td>${e.desc}</td>
-                        <td>${e.paidBy}</td>
+                        <td>${escapeHTML(formatDateYYYYMMDD(e.date))}</td>
+                        <td>${escapeHTML(catLabel)}</td>
+                        <td>${escapeHTML(e.desc)}</td>
+                        <td>${escapeHTML(e.paidBy)}</td>
                         <td style="text-align: right;">${sym}${Number(e.amount).toFixed(2)}</td>
                     </tr>
                 `;
@@ -1035,7 +1036,7 @@
                 let catLabel = t.categories[cat] || cat;
                 html += `
                     <div class="category-row">
-                        <span>${catLabel}: ${sym}${catAmount.toFixed(2)}</span>
+                        <span>${escapeHTML(catLabel)}: ${sym}${catAmount.toFixed(2)}</span>
                         <span>${pct}%</span>
                     </div>
                 `;
@@ -1054,8 +1055,8 @@
         function render() {
             const t = TRANSLATIONS[currentLang];
 
-            document.getElementById('activeTabNameDisplay').innerText = currentTab || t.noLedgerLoaded;
-            document.getElementById('viewModeIndicator').innerText = currentTab ? `Mode: Active Ledger [${currentTab}]` : "Mode: Awaiting Authentication...";
+            document.getElementById('activeTabNameDisplay').innerText = currentTab ? escapeHTML(currentTab) : t.noLedgerLoaded;
+            document.getElementById('viewModeIndicator').innerText = currentTab ? `Mode: Active Ledger [${escapeHTML(currentTab)}]` : "Mode: Awaiting Authentication...";
 
             const deleteBtn = document.getElementById('deleteLedgerBtn');
             const shareBtn = document.getElementById('shareBtn');
@@ -1079,39 +1080,39 @@
                 formSub.innerText = t.editExpenseSub;
                 formButtons.innerHTML = `
                     <div class="flex flex-col sm:flex-row gap-2 pt-1">
-                        <button onclick="updateExpenseFromForm()" class="flex-1 bg-neutral-900 text-white py-2 text-xs font-semibold hover:bg-neutral-800 rounded-xs transition">${t.updateExpenseBtn}</button>
-                        <button onclick="deleteExpenseFromForm()" class="bg-rose-700 text-white px-4 py-2 text-xs font-semibold hover:bg-rose-800 rounded-xs transition">${t.deleteBtn}</button>
-                        <button onclick="resetExpenseForm()" class="bg-neutral-200 text-neutral-800 px-4 py-2 text-xs font-semibold hover:bg-neutral-300 rounded-xs transition">${t.cancelBtn}</button>
+                        <button onclick="updateExpenseFromForm()" class="flex-1 bg-neutral-900 text-white py-2 text-xs font-semibold hover:bg-neutral-800 rounded-xs transition cursor-pointer">${t.updateExpenseBtn}</button>
+                        <button onclick="deleteExpenseFromForm()" class="bg-rose-700 text-white px-4 py-2 text-xs font-semibold hover:bg-rose-800 rounded-xs transition cursor-pointer">${t.deleteBtn}</button>
+                        <button onclick="resetExpenseForm()" class="bg-neutral-200 text-neutral-800 px-4 py-2 text-xs font-semibold hover:bg-neutral-300 rounded-xs transition cursor-pointer">${t.cancelBtn}</button>
                     </div>
                 `;
             } else {
                 formTitle.innerText = t.newExpenseTitle;
                 formSub.innerText = t.newExpenseSub;
                 formButtons.innerHTML = `
-                    <button onclick="addExpense()" class="w-full bg-neutral-900 text-white py-2 text-xs font-semibold hover:bg-neutral-800 rounded-xs transition">${t.recordExpenseBtn}</button>
+                    <button onclick="addExpense()" class="w-full bg-neutral-900 text-white py-2 text-xs font-semibold hover:bg-neutral-800 rounded-xs transition cursor-pointer">${t.recordExpenseBtn}</button>
                 `;
             }
 
             // Members List
             document.getElementById('memberList').innerHTML = (state.members || []).map(m => `
                 <span class="bg-white border border-neutral-300 px-2.5 py-1 rounded-xs text-xs font-medium flex items-center gap-1.5 shadow-2xs">
-                    ${m}
-                    <button onclick="removeMember('${m}')" class="text-neutral-400 hover:text-red-600 font-bold">×</button>
+                    ${escapeHTML(m)}
+                    <button onclick="removeMember('${escapeHTML(m)}')" class="text-neutral-400 hover:text-red-600 font-bold cursor-pointer">×</button>
                 </span>
             `).join('') || `<span class="text-neutral-500 text-xs italic">${t.noParticipants}</span>`;
             
-            document.getElementById('expensePaidBy').innerHTML = (state.members || []).map(m => `<option value="${m}">${m}</option>`).join('') || `<option>${t.addMembersFirstMsg}</option>`;
+            document.getElementById('expensePaidBy').innerHTML = (state.members || []).map(m => `<option value="${escapeHTML(m)}">${escapeHTML(m)}</option>`).join('') || `<option>${t.addMembersFirstMsg}</option>`;
 
             // Split Checkboxes
             const splitCheckboxesContainer = document.getElementById('splitCheckboxes');
-            if (state.members && state.members.length > 0 && !editingExpenseId) {
+            if (state.members && state.members.length > 0) {
                 splitCheckboxesContainer.innerHTML = state.members.map(m => `
                     <label class="flex items-center gap-1.5 cursor-pointer bg-white border border-neutral-300 px-2.5 py-1 rounded-xs shadow-2xs">
-                        <input type="checkbox" value="${m}" class="split-checkbox accent-neutral-900" checked>
-                        <span>${m}</span>
+                        <input type="checkbox" value="${escapeHTML(m)}" class="split-checkbox accent-neutral-900" checked>
+                        <span>${escapeHTML(m)}</span>
                     </label>
                 `).join('');
-            } else if (!state.members || state.members.length === 0) {
+            } else {
                 splitCheckboxesContainer.innerHTML = `<span class="text-neutral-500 text-xs italic">${t.addMembersFirstMsg}</span>`;
             }
 
@@ -1128,11 +1129,11 @@
                     <li onclick="selectExpenseForEdit('${exp.id}')" title="Click to edit" class="border-b border-neutral-300 py-2 flex justify-between items-center cursor-pointer hover:bg-white/80 px-2 rounded-xs transition ${isSelected ? 'bg-amber-100/90 border-l-4 border-l-amber-600 font-medium' : ''}">
                         <div>
                             <div class="flex items-center gap-1.5 flex-wrap">
-                                <span class="text-[10px] bg-neutral-300/80 font-mono text-neutral-800 px-1 py-0.2 rounded-xs font-semibold">${formattedDate}</span>
-                                <span class="text-[10px] bg-white border border-neutral-300 text-neutral-700 px-1 py-0.2 rounded-xs font-medium">${catLabel}</span>
-                                <p class="font-semibold text-neutral-900 ${isSelected ? 'text-amber-950' : ''}">${exp.desc}</p>
+                                <span class="text-[10px] bg-neutral-300/80 font-mono text-neutral-800 px-1 py-0.2 rounded-xs font-semibold">${escapeHTML(formattedDate)}</span>
+                                <span class="text-[10px] bg-white border border-neutral-300 text-neutral-700 px-1 py-0.2 rounded-xs font-medium">${escapeHTML(catLabel)}</span>
+                                <p class="font-semibold text-neutral-900 ${isSelected ? 'text-amber-950' : ''}">${escapeHTML(exp.desc)}</p>
                             </div>
-                            <p class="text-[11px] text-neutral-600 mt-0.5">Paid by ${exp.paidBy} ${!isPayerActive ? '(Removed)' : ''} (Split: ${activeSplit.length > 0 ? activeSplit.join(', ') : 'None'})</p>
+                            <p class="text-[11px] text-neutral-600 mt-0.5">Paid by ${escapeHTML(exp.paidBy)} ${!isPayerActive ? '(Removed)' : ''} (Split: ${activeSplit.length > 0 ? activeSplit.map(escapeHTML).join(', ') : 'None'})</p>
                         </div>
                         <div class="flex items-center gap-2">
                             <span class="font-mono font-bold text-neutral-900">${sym}${Number(exp.amount).toFixed(2)}</span>

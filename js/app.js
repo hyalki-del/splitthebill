@@ -5,6 +5,7 @@ let currentCurrency = "USD";
 let currentTheme = "Silk";
 let currentLang = "en";
 let editingExpenseId = null;
+let stagedMembers = []; // Client-side staging buffer
 let state = { members: [], expenses: [], archives: [] };
 
 const CURRENCY_MAP = { USD: "$", EUR: "€", TRY: "₺" };
@@ -31,13 +32,11 @@ async function saveSettings() {
     const selectedRadio = document.querySelector('input[name="modalThemeSelect"]:checked');
     const newTheme = selectedRadio ? selectedRadio.value : currentTheme;
 
-    // Apply updates locally immediately
     currentCurrency = newCur;
     applyTheme(newTheme);
     updateCurrencyDisplays();
     closeSettingsModal();
 
-    // Send single combined action to prevent race conditions
     await sendAction({ 
         action: "updateSettings", 
         currency: newCur, 
@@ -100,6 +99,7 @@ function goHome() {
     window.location.hash = "";
     state.members = [];
     state.expenses = [];
+    stagedMembers = [];
     applyTheme("Silk");
     resetExpenseForm();
     render();
@@ -258,6 +258,7 @@ async function fetchLedgerData() {
         applyTheme(data.theme || "Silk");
         state.members = data.members || [];
         state.expenses = data.expenses || [];
+        stagedMembers = []; // Clear staging buffer on fresh sync
         editingExpenseId = null;
         setStatus("Idle");
         render();
@@ -333,11 +334,37 @@ function copyShareLink() {
     closeShareModal();
 }
 
-function addMember() {
-    const name = document.getElementById('memberName').value.trim();
+// ==========================================
+// PARTICIPANT STAGING BUFFER LOGIC
+// ==========================================
+
+function stageMember() {
+    const input = document.getElementById('memberName');
+    const name = input.value.trim();
     if (!name) return;
-    document.getElementById('memberName').value = '';
-    sendAction({ action: "addMember", name });
+
+    if (state.members.includes(name) || stagedMembers.includes(name)) {
+        alert(`Participant "${name}" is already in the list.`);
+        return;
+    }
+
+    stagedMembers.push(name);
+    input.value = '';
+    render();
+}
+
+function unstageMember(index) {
+    if (index >= 0 && index < stagedMembers.length) {
+        stagedMembers.splice(index, 1);
+        render();
+    }
+}
+
+async function saveStagedMembers() {
+    if (stagedMembers.length === 0) return;
+    
+    const namesToSave = [...stagedMembers];
+    sendAction({ action: "addMembers", names: namesToSave });
 }
 
 function removeMember(name) {
@@ -645,12 +672,36 @@ function render() {
         `;
     }
 
-    document.getElementById('memberList').innerHTML = (state.members || []).map(m => `
+    // Render Saved Members (solid pills) and Staged Members (dashed pending pills)
+    const savedPills = (state.members || []).map(m => `
         <span class="border border-current px-3 py-1 rounded-xl text-xs font-bold flex items-center gap-1.5">
             ${escapeHTML(m)}
             <button onclick="removeMember('${escapeHTML(m)}')" class="text-rose-500 hover:text-rose-700 font-extrabold cursor-pointer text-sm">×</button>
         </span>
-    `).join('') || `<span class="opacity-50 text-xs italic font-medium">${t.noParticipants}</span>`;
+    `).join('');
+
+    const stagedPills = stagedMembers.map((m, idx) => `
+        <span class="border-2 border-dashed border-amber-500 bg-amber-100/50 text-slate-900 px-3 py-1 rounded-xl text-xs font-extrabold flex items-center gap-1.5 animate-pulse">
+            ${escapeHTML(m)} <span class="text-[9px] opacity-75 font-mono">(new)</span>
+            <button onclick="unstageMember(${idx})" class="text-rose-600 hover:text-rose-800 font-black cursor-pointer text-sm">×</button>
+        </span>
+    `).join('');
+
+    const memberListContainer = document.getElementById('memberList');
+    if (savedPills || stagedPills) {
+        memberListContainer.innerHTML = savedPills + stagedPills;
+    } else {
+        memberListContainer.innerHTML = `<span class="opacity-50 text-xs italic font-medium">${t.noParticipants}</span>`;
+    }
+
+    // Toggle Save Button Visibility
+    const saveMembersBtn = document.getElementById('saveMembersBtn');
+    if (stagedMembers.length > 0) {
+        saveMembersBtn.classList.remove('hidden');
+        saveMembersBtn.innerText = `${t.saveMembersBtn} (${stagedMembers.length})`;
+    } else {
+        saveMembersBtn.classList.add('hidden');
+    }
     
     document.getElementById('expensePaidBy').innerHTML = (state.members || []).map(m => `<option value="${escapeHTML(m)}" class="text-slate-900">${escapeHTML(m)}</option>`).join('') || `<option class="text-slate-900">${t.addMembersFirstMsg}</option>`;
 

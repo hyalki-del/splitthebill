@@ -43,6 +43,7 @@
                 </div>
             </section>
 
+            <!-- Participant Staging Section -->
             <section class="theme-card theme-frame-2 p-6 flex flex-col justify-between space-y-4">
                 <div>
                     <h2 data-i18n="participantsTitle" class="text-xs font-black uppercase tracking-wider opacity-70">Participants</h2>
@@ -50,10 +51,11 @@
                 </div>
                 <div class="space-y-3">
                     <div class="flex gap-2">
-                        <input type="text" id="memberName" data-i18n-ph="namePlaceholder" placeholder="Name..." class="flex-1 theme-input px-3 py-2 text-sm">
-                        <button onclick="addMember()" data-i18n="addBtn" class="theme-btn px-4 py-2 text-xs font-extrabold cursor-pointer">Add</button>
+                        <input type="text" id="memberName" data-i18n-ph="namePlaceholder" placeholder="Name..." class="flex-1 theme-input px-3 py-2 text-sm" onkeypress="if(event.key==='Enter') stageMember()">
+                        <button onclick="stageMember()" data-i18n="addBtn" class="theme-btn px-4 py-2 text-xs font-extrabold cursor-pointer">Add</button>
                     </div>
                     <div id="memberList" class="text-sm flex flex-wrap gap-2 pt-1"></div>
+                    <button id="saveMembersBtn" onclick="saveStagedMembers()" data-i18n="saveMembersBtn" class="hidden w-full theme-btn bg-lime-400 hover:bg-lime-500 text-slate-900 py-2 text-xs font-black uppercase tracking-wider rounded-xl cursor-pointer">Save New Participants</button>
                 </div>
             </section>
         </div>

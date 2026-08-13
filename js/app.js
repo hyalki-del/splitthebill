@@ -1,956 +1,259 @@
-/**
- * Settlr - Client-Side Controller
- * Architecture: Modular Event-Driven UI with Global Scope Binding & Atomic Settings Persistence
- */
-
-const FALLBACK_API_URL = "https://script.google.com/macros/s/AKfycbyA9QSZKFNWJMenmVJuaR56Ma1BnvZ2r3_AlceA8Mdgew-CUeqfSyZd0-VrPSjQL6eF8g/exec";
-let API_URL = FALLBACK_API_URL;
-
-let currentTab = "";
-let currentPin = "";
-let currentCurrency = "USD";
-let currentTheme = "Silk";
-let currentLang = "en";
-let editingExpenseId = null;
-let stagedMembers = [];
-let state = { members: [], expenses: [], archives: [] };
-
-const CURRENCY_MAP = { USD: "$", EUR: "€", TRY: "₺" };
-
-function applyTheme(themeName) {
-    const validThemes = ["Toon", "Silk", "Neon"];
-    currentTheme = validThemes.includes(themeName) ? themeName : "Silk";
-    document.documentElement.setAttribute('data-theme', currentTheme.toLowerCase());
-}
-
-function openSettingsModal() {
-    try {
-        const curSel = document.getElementById('settingsCurrencySelect');
-        if (curSel) curSel.value = currentCurrency;
-
-        const langSel = document.getElementById('settingsLangSelect');
-        if (langSel) langSel.value = currentLang;
-
-        const themeRadios = document.querySelectorAll('input[name="modalThemeSelect"]');
-        themeRadios.forEach(r => { if (r) r.checked = (r.value === currentTheme); });
-
-        const modal = document.getElementById('settingsModal');
-        if (modal) modal.classList.remove('hidden');
-    } catch (e) {
-        console.error("Error opening settings modal:", e);
-    }
-}
-
-function closeSettingsModal() {
-    const modal = document.getElementById('settingsModal');
-    if (modal) modal.classList.add('hidden');
-}
-
-async function saveSettings() {
-    try {
-        const curEl = document.getElementById('settingsCurrencySelect');
-        const newCur = curEl ? curEl.value : currentCurrency;
-
-        const langEl = document.getElementById('settingsLangSelect');
-        const newLang = langEl ? langEl.value : currentLang;
-
-        const selectedRadio = document.querySelector('input[name="modalThemeSelect"]:checked');
-        const newTheme = selectedRadio ? selectedRadio.value : currentTheme;
-
-        currentCurrency = newCur;
-        currentLang = newLang;
+<!DOCTYPE html>
+<html lang="en" data-theme="silk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settlr - Group Expense Splitter</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body class="min-h-screen p-3 sm:p-8 antialiased">
+    <div class="max-w-5xl mx-auto space-y-6">
         
-        if (typeof switchLanguage === 'function') {
-            switchLanguage(newLang);
-        }
-
-        applyTheme(newTheme);
-        updateCurrencyDisplays();
-        closeSettingsModal();
-
-        await sendAction({ 
-            action: "updateSettings", 
-            currency: newCur, 
-            theme: newTheme,
-            language: newLang
-        });
-    } catch (e) {
-        console.error("Error saving settings:", e);
-    }
-}
-
-function escapeHTML(str) {
-    if (str === null || str === undefined) return '';
-    return String(str)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#039;');
-}
-
-function toInputDateFormat(rawDateStr) {
-    if (!rawDateStr) return new Date().toISOString().split('T')[0];
-    const str = String(rawDateStr).trim();
-    if (/^\d{4}-\d{2}-\d{2}$/.test(str)) return str;
-    const match = str.match(/^(\d{4})[\/\-]?(\d{2})[\/\-]?(\d{2})/);
-    if (match) return `${match[1]}-${match[2]}-${match[3]}`;
-    return new Date().toISOString().split('T')[0];
-}
-
-function setStatus(text) { 
-    try {
-        const el = document.getElementById('statusMsg');
-        if (el) el.innerText = text; 
-    } catch (e) {}
-}
-
-function showLoading(show) {
-    try {
-        const modal = document.getElementById('recordingModal');
-        if (!modal) return;
-        if (show) modal.classList.remove('hidden'); 
-        else modal.classList.add('hidden');
-    } catch (e) {}
-}
-
-function getCurrencySymbol() { return CURRENCY_MAP[currentCurrency] || "$"; }
-
-function updateCurrencyDisplays() {
-    try {
-        const symbols = document.querySelectorAll('.currencySymbol');
-        symbols.forEach(el => { if (el) el.innerText = getCurrencySymbol(); });
-    } catch (e) {}
-}
-
-function setDefaultDate() {
-    try {
-        const dateInput = document.getElementById('expenseDate');
-        if (dateInput && !dateInput.value) {
-            dateInput.value = new Date().toISOString().split('T')[0];
-        }
-    } catch (e) {}
-}
-
-function formatDateYYYYMMDD(rawDateStr) {
-    if (!rawDateStr) return '-';
-    const str = String(rawDateStr);
-    const match = str.match(/^(\d{4})[\/\-]?(\d{2})[\/\-]?(\d{2})/);
-    if (match) return `${match[1]}${match[2]}${match[3]}`;
-    const digits = str.replace(/\D/g, '');
-    if (digits.length >= 8) return digits.substring(0, 8);
-    return rawDateStr;
-}
-
-function goHome() {
-    currentTab = "";
-    currentPin = "";
-    window.location.hash = "";
-    state.members = [];
-    state.expenses = [];
-    stagedMembers = [];
-    applyTheme("Silk");
-    resetExpenseForm();
-    render();
-    openWelcomeModal();
-}
-
-function openWelcomeModal() {
-    try {
-        const modal = document.getElementById('welcomeModal');
-        if (modal) modal.classList.remove('hidden');
-        
-        fetchArchivesList().catch(err => console.warn("Archive fetch skipped:", err));
-        
-        const hash = window.location.hash.replace('#', '').trim();
-        const tabsHeader = document.getElementById('modalTabsHeader');
-        if (tabsHeader) tabsHeader.classList.remove('hidden');
-
-        if (hash) {
-            switchModalTab('recall');
-            const container = document.getElementById('archiveDropdownContainer');
-            if (container) container.classList.add('hidden');
-            const directDisplay = document.getElementById('directTabDisplay');
-            if (directDisplay) directDisplay.classList.remove('hidden');
-            const directInput = document.getElementById('directTabName');
-            if (directInput) directInput.value = hash;
-            const pinInput = document.getElementById('recallLedgerPin');
-            if (pinInput) pinInput.focus();
-        } else {
-            switchModalTab('create');
-            const container = document.getElementById('archiveDropdownContainer');
-            if (container) container.classList.remove('hidden');
-            const directDisplay = document.getElementById('directTabDisplay');
-            if (directDisplay) directDisplay.classList.add('hidden');
-        }
-    } catch (e) {
-        console.error("Critical error in openWelcomeModal:", e);
-    }
-}
-
-function closeWelcomeModal() { 
-    if (!currentTab) return; 
-    try {
-        const modal = document.getElementById('welcomeModal');
-        if (modal) modal.classList.add('hidden'); 
-    } catch (e) {}
-}
-
-function switchModalTab(mode) {
-    try {
-        const createBtn = document.getElementById('tabCreateBtn');
-        const recallBtn = document.getElementById('tabRecallBtn');
-        const createSec = document.getElementById('createSection');
-        const recallSec = document.getElementById('recallSection');
-
-        if (mode === 'create') {
-            if (createBtn) createBtn.className = "flex-1 theme-btn py-2 text-xs font-black uppercase tracking-wider bg-amber-300 text-slate-900 rounded-xl cursor-pointer";
-            if (recallBtn) recallBtn.className = "flex-1 theme-btn py-2 text-xs font-black uppercase tracking-wider bg-slate-100 text-slate-500 rounded-xl cursor-pointer";
-            if (createSec) createSec.classList.remove('hidden');
-            if (recallSec) recallSec.classList.add('hidden');
-        } else {
-            if (recallBtn) recallBtn.className = "flex-1 theme-btn py-2 text-xs font-black uppercase tracking-wider bg-amber-300 text-slate-900 rounded-xl cursor-pointer";
-            if (createBtn) createBtn.className = "flex-1 theme-btn py-2 text-xs font-black uppercase tracking-wider bg-slate-100 text-slate-500 rounded-xl cursor-pointer";
-            if (recallSec) recallSec.classList.remove('hidden');
-            if (createSec) createSec.classList.add('hidden');
-
-            const hash = window.location.hash.replace('#', '').trim();
-            if (!hash) {
-                const container = document.getElementById('archiveDropdownContainer');
-                if (container) container.classList.remove('hidden');
-                const directDisplay = document.getElementById('directTabDisplay');
-                if (directDisplay) directDisplay.classList.add('hidden');
-            }
-        }
-    } catch (e) {
-        console.error("Error switching modal tabs:", e);
-    }
-}
-
-async function initApp() {
-    try {
-        setDefaultDate();
-        
-        try {
-            const configRes = await fetch('config.json');
-            if (configRes.ok) {
-                const config = await configRes.json();
-                if (config && config.API_URL) API_URL = config.API_URL;
-            }
-        } catch (err) {
-            console.warn("Config fetch failed, using fallback URL.");
-        }
-
-        if (typeof switchLanguage === 'function') {
-            switchLanguage('en');
-        }
-
-        openWelcomeModal();
-    } catch (e) {
-        console.error("Fatal initialization error:", e);
-    }
-}
-
-async function fetchArchivesList() {
-    if (!API_URL) return;
-    try {
-        const response = await fetch(API_URL);
-        if (!response.ok) throw new Error("Network response failed");
-        const data = await response.json();
-        state.archives = data.archives || [];
-        
-        const select = document.getElementById('archiveSelect');
-        if (select) {
-            const phText = (typeof TRANSLATIONS !== 'undefined' && TRANSLATIONS[currentLang] && TRANSLATIONS[currentLang].selectArchivePh) 
-                ? TRANSLATIONS[currentLang].selectArchivePh 
-                : "Select archive...";
-            select.innerHTML = `<option value="">${escapeHTML(phText)}</option>` + 
-                state.archives.map(a => `<option value="${escapeHTML(a)}">${escapeHTML(a)}</option>`).join('');
-        }
-    } catch (err) {
-        console.warn("Failed to fetch archives list:", err);
-    }
-}
-
-async function createNewLedger() {
-    const nameEl = document.getElementById('newLedgerName');
-    const pinEl = document.getElementById('newLedgerPin');
-    if (!nameEl || !pinEl) return;
-
-    const name = nameEl.value.trim();
-    const pin = pinEl.value.trim();
-    const themeRadio = document.querySelector('input[name="themeSelect"]:checked');
-    const theme = themeRadio ? themeRadio.value : "Silk";
-
-    if (!name) { alert("Please provide a ledger name."); return; }
-    if (!/^\d{4}$/.test(pin)) { alert("Please enter a valid 4-digit PIN."); return; }
-
-    showLoading(true);
-    try {
-        await fetch(API_URL, {
-            method: "POST",
-            mode: "no-cors",
-            headers: { "Content-Type": "text/plain" },
-            body: JSON.stringify({ action: "createLedger", name, pin, theme, currency: "USD", language: currentLang })
-        });
-
-        const sanitizedUserWord = name.replace(/[\/\\?\*\[\]:\s]+/g, "-").replace(/^-+|-+$/g, "");
-        let createdTab = null;
-
-        for (let attempt = 0; attempt < 3; attempt++) {
-            await new Promise(r => setTimeout(r, 1000));
-            try {
-                await fetchArchivesList();
-                createdTab = state.archives.find(a => a.endsWith("-" + sanitizedUserWord) || a.toLowerCase().includes(sanitizedUserWord.toLowerCase()));
-                if (createdTab) break;
-            } catch (e) {}
-        }
-
-        if (!createdTab) {
-            const now = new Date();
-            const year = now.getFullYear();
-            const month = String(now.getMonth() + 1).padStart(2, '0');
-            const day = String(now.getDate()).padStart(2, '0');
-            createdTab = `${year}${month}${day}-${sanitizedUserWord}`;
-        }
-
-        currentTab = createdTab;
-        currentPin = pin;
-        window.location.hash = createdTab;
-        nameEl.value = '';
-        pinEl.value = '';
-        
-        const welcomeModal = document.getElementById('welcomeModal');
-        if (welcomeModal) welcomeModal.classList.add('hidden');
-        
-        await fetchLedgerData();
-
-    } catch (err) {
-        console.error(err);
-        alert("Error creating ledger. Please verify network connection.");
-    } finally {
-        showLoading(false);
-    }
-}
-
-async function recallLedger() {
-    let selectedTab = "";
-    const directDisplay = document.getElementById('directTabDisplay');
-
-    if (directDisplay && !directDisplay.classList.contains('hidden')) {
-        const directInput = document.getElementById('directTabName');
-        if (directInput) selectedTab = directInput.value.trim();
-    } else {
-        const selectEl = document.getElementById('archiveSelect');
-        if (selectEl) selectedTab = selectEl.value.trim();
-    }
-
-    const pinEl = document.getElementById('recallLedgerPin');
-    const pin = pinEl ? pinEl.value.trim() : "";
-
-    if (!selectedTab) { alert("Please select an archive from the list."); return; }
-    if (!/^\d{4}$/.test(pin) && pin !== "8977") { alert("Please enter a valid 4-digit PIN."); return; }
-
-    currentTab = selectedTab;
-    currentPin = pin;
-    window.location.hash = selectedTab;
-
-    showLoading(true);
-    try {
-        const success = await fetchLedgerData();
-        if (success) {
-            if (pinEl) pinEl.value = '';
-            const modal = document.getElementById('welcomeModal');
-            if (modal) modal.classList.add('hidden');
-        }
-    } finally {
-        showLoading(false);
-    }
-}
-
-async function fetchLedgerData() {
-    if (!currentTab || !currentPin) return false;
-    setStatus("Syncing...");
-    try {
-        const response = await fetch(`${API_URL}?tab=${encodeURIComponent(currentTab)}&pin=${encodeURIComponent(currentPin)}`);
-        const data = await response.json();
-        
-        if (data.status === "error") {
-            alert(data.message || "Incorrect PIN.");
-            setStatus("Access Denied");
-            return false;
-        }
-
-        currentCurrency = data.currency || "USD";
-        currentLang = data.language || "en";
-        
-        if (typeof switchLanguage === 'function') {
-            switchLanguage(currentLang);
-        }
-
-        applyTheme(data.theme || "Silk");
-        state.members = data.members || [];
-        state.expenses = data.expenses || [];
-        stagedMembers = [];
-        editingExpenseId = null;
-        setStatus("Idle");
-        render();
-        return true;
-    } catch (err) {
-        setStatus("Sync Error");
-        return false;
-    }
-}
-
-async function sendAction(payload) {
-    if (!currentTab || !currentPin) { openWelcomeModal(); return; }
-    showLoading(true);
-    try {
-        payload.tab = currentTab;
-        payload.pin = currentPin;
-        
-        await fetch(API_URL, {
-            method: "POST",
-            mode: "no-cors",
-            headers: { "Content-Type": "text/plain" },
-            body: JSON.stringify(payload)
-        });
-        
-        setTimeout(async () => {
-            await fetchLedgerData();
-            showLoading(false);
-        }, 1000);
-    } catch (err) {
-        alert("Action failed");
-        showLoading(false);
-    }
-}
-
-async function deleteActiveLedger() {
-    if (!currentTab || !currentPin) return;
-    if (!confirm(`Are you sure you want to PERMANENTLY DELETE ledger "${currentTab}"?\n\nThis cannot be undone.`)) return;
-
-    showLoading(true);
-    try {
-        await fetch(API_URL, {
-            method: "POST",
-            mode: "no-cors",
-            headers: { "Content-Type": "text/plain" },
-            body: JSON.stringify({ action: "deleteLedger", tab: currentTab, pin: currentPin })
-        });
-
-        setTimeout(() => {
-            alert(`Ledger "${currentTab}" has been permanently deleted.`);
-            goHome();
-            showLoading(false);
-        }, 1200);
-    } catch (err) {
-        alert("Failed to delete ledger.");
-        showLoading(false);
-    }
-}
-
-function openShareModal() {
-    if (!currentTab) return;
-    const linkInput = document.getElementById('shareLinkInput');
-    if (linkInput) {
-        linkInput.value = `${window.location.origin}${window.location.pathname}#${currentTab}`;
-    }
-    const modal = document.getElementById('shareModal');
-    if (modal) modal.classList.remove('hidden');
-}
-
-function closeShareModal() { 
-    const modal = document.getElementById('shareModal');
-    if (modal) modal.classList.add('hidden');
-    if (currentTab && currentPin) {
-        const welcome = document.getElementById('welcomeModal');
-        if (welcome) welcome.classList.add('hidden');
-        render();
-    }
-}
-
-function copyShareLink() {
-    const input = document.getElementById('shareLinkInput');
-    if (input) {
-        input.select();
-        input.setSelectionRange(0, 99999);
-        navigator.clipboard.writeText(input.value);
-        alert("Share link copied to clipboard!");
-    }
-    closeShareModal();
-}
-
-function stageMember() {
-    const input = document.getElementById('memberName');
-    if (!input) return;
-    const name = input.value.trim();
-    if (!name) return;
-
-    if (state.members.includes(name) || stagedMembers.includes(name)) {
-        alert(`Participant "${name}" is already in the list.`);
-        return;
-    }
-
-    stagedMembers.push(name);
-    input.value = '';
-    render();
-}
-
-function unstageMember(index) {
-    if (index >= 0 && index < stagedMembers.length) {
-        stagedMembers.splice(index, 1);
-        render();
-    }
-}
-
-async function saveStagedMembers() {
-    if (stagedMembers.length === 0) return;
-    const namesToSave = [...stagedMembers];
-    sendAction({ action: "addMembers", names: namesToSave });
-}
-
-function removeMember(name) {
-    if (confirm(`Remove participant "${name}"?`)) {
-        sendAction({ action: "removeMember", name });
-    }
-}
-
-function toggleSelectAll(select) {
-    document.querySelectorAll('.split-checkbox').forEach(cb => { if(cb) cb.checked = select; });
-}
-
-function addExpense() {
-    const date = document.getElementById('expenseDate').value;
-    const category = document.getElementById('expenseCategory').value;
-    const desc = document.getElementById('expenseDesc').value.trim();
-    const amount = parseFloat(document.getElementById('expenseAmount').value);
-    const paidBy = document.getElementById('expensePaidBy').value;
-
-    const splitWith = Array.from(document.querySelectorAll('.split-checkbox:checked')).map(cb => cb.value);
-
-    if (!date || !desc || isNaN(amount) || amount <= 0 || !paidBy) { 
-        alert('Please fill in valid expense fields.'); 
-        return; 
-    }
-    if (splitWith.length === 0) { 
-        alert('Select at least one person to split the expense with.'); 
-        return; 
-    }
-
-    resetExpenseForm();
-    sendAction({ action: "addExpense", date, category, desc, amount, paidBy, splitWith });
-}
-
-function selectExpenseForEdit(id) {
-    const exp = (state.expenses || []).find(e => e.id.toString() === id.toString());
-    if (!exp) return;
-
-    editingExpenseId = exp.id;
-    render();
-
-    document.getElementById('expenseDate').value = toInputDateFormat(exp.date);
-    document.getElementById('expenseCategory').value = exp.category || "General";
-    document.getElementById('expenseDesc').value = exp.desc || "";
-    document.getElementById('expenseAmount').value = exp.amount || "";
-    document.getElementById('expensePaidBy').value = exp.paidBy || "";
-
-    const activeSplit = exp.splitWith && exp.splitWith.length > 0 ? exp.splitWith : state.members;
-    document.querySelectorAll('.split-checkbox').forEach(cb => {
-        if (cb) cb.checked = activeSplit.includes(cb.value);
-    });
-
-    const formSec = document.getElementById('expenseFormSection');
-    if (formSec) formSec.scrollIntoView({ behavior: 'smooth', block: 'center' });
-}
-
-function updateExpenseFromForm() {
-    if (!editingExpenseId) return;
-
-    const date = document.getElementById('expenseDate').value;
-    const category = document.getElementById('expenseCategory').value;
-    const desc = document.getElementById('expenseDesc').value.trim();
-    const amount = parseFloat(document.getElementById('expenseAmount').value);
-    const paidBy = document.getElementById('expensePaidBy').value;
-
-    const splitWith = Array.from(document.querySelectorAll('.split-checkbox:checked')).map(cb => cb.value);
-
-    if (!date || !desc || isNaN(amount) || amount <= 0 || !paidBy) { 
-        alert('Please fill in valid expense fields.'); 
-        return; 
-    }
-    if (splitWith.length === 0) { 
-        alert('Select at least one person to split the expense with.'); 
-        return; 
-    }
-
-    const idToUpdate = editingExpenseId;
-    resetExpenseForm();
-    sendAction({ action: "updateExpense", id: idToUpdate, date, category, desc, amount, paidBy, splitWith });
-}
-
-function deleteExpenseFromForm() {
-    if (!editingExpenseId) return;
-    if (confirm("Delete this expense entry?")) {
-        const idToDelete = editingExpenseId;
-        resetExpenseForm();
-        sendAction({ action: "deleteExpense", id: idToDelete });
-    }
-}
-
-function resetExpenseForm() {
-    editingExpenseId = null;
-    setDefaultDate();
-    const cat = document.getElementById('expenseCategory');
-    if (cat) cat.value = 'General';
-    const desc = document.getElementById('expenseDesc');
-    if (desc) desc.value = '';
-    const amt = document.getElementById('expenseAmount');
-    if (amt) amt.value = '';
-    render();
-    toggleSelectAll(true);
-}
-
-function calculateSettlements() {
-    if (!state.members || state.members.length === 0) return [];
-    
-    let balances = {};
-    state.members.forEach(m => balances[m] = 0);
-
-    (state.expenses || []).forEach(exp => {
-        if (!state.members.includes(exp.paidBy)) return;
-
-        const rawSplitGroup = (exp.splitWith && exp.splitWith.length > 0) ? exp.splitWith : state.members;
-        const activeSplitGroup = rawSplitGroup.filter(m => state.members.includes(m));
-
-        if (activeSplitGroup.length === 0) return;
-
-        const splitAmount = exp.amount / activeSplitGroup.length;
-        balances[exp.paidBy] += exp.amount;
-        
-        activeSplitGroup.forEach(m => { balances[m] -= splitAmount; });
-    });
-
-    let debtors = [], creditors = [];
-    for (let m in balances) {
-        let b = parseFloat(balances[m].toFixed(2));
-        if (b < -0.009) debtors.push({ name: m, amount: -b });
-        if (b > 0.009) creditors.push({ name: m, amount: b });
-    }
-
-    let transactions = [];
-    let i = 0, j = 0;
-    const sym = getCurrencySymbol();
-    const paysWord = (typeof TRANSLATIONS !== 'undefined' && TRANSLATIONS[currentLang] && TRANSLATIONS[currentLang].pays) 
-        ? TRANSLATIONS[currentLang].pays 
-        : "pays";
-
-    while (i < debtors.length && j < creditors.length) {
-        let d = debtors[i], c = creditors[j];
-        let amt = Math.min(d.amount, c.amount);
-        transactions.push(`${escapeHTML(d.name)} ${paysWord} ${escapeHTML(c.name)} ${sym}${amt.toFixed(2)}`);
-        d.amount -= amt; c.amount -= amt;
-        if (d.amount < 0.009) i++;
-        if (c.amount < 0.009) j++;
-    }
-    return transactions;
-}
-
-function copySettlementSummary() {
-    const settlements = calculateSettlements();
-    if (settlements.length === 0) {
-        alert("No settlements to copy.");
-        return;
-    }
-
-    const sym = getCurrencySymbol();
-    let summaryText = `*Settlr Summary [${currentTab}]*\n`;
-    summaryText += `Currency: ${currentCurrency} (${sym})\n\n`;
-    summaryText += `*Settlements:*\n`;
-    settlements.forEach(s => summaryText += `• ${s}\n`);
-
-    navigator.clipboard.writeText(summaryText);
-    alert("Settlement summary copied to clipboard!");
-}
-
-function generateReport() {
-    if (!currentTab || !state.expenses) return;
-
-    const reportWindow = window.open('', '_blank');
-    const dateToday = formatDateYYYYMMDD(new Date().toISOString().split('T')[0]);
-    const sym = getCurrencySymbol();
-    const t = (typeof TRANSLATIONS !== 'undefined') ? TRANSLATIONS[currentLang] : {};
-
-    let totalSpent = 0;
-    let categoryTotals = {};
-
-    (state.expenses || []).forEach(e => {
-        const amt = Number(e.amount) || 0;
-        totalSpent += amt;
-        const cat = e.category || "General";
-        categoryTotals[cat] = (categoryTotals[cat] || 0) + amt;
-    });
-
-    let html = `
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <title>Report - ${escapeHTML(currentTab)}</title>
-        <style>
-            body { font-family: 'JetBrains Mono', Courier, monospace; background: #fff; color: #000; padding: 40px; max-width: 800px; margin: 0 auto; }
-            h1 { font-size: 20px; text-transform: uppercase; border-bottom: 2px solid #000; padding-bottom: 5px; margin-bottom: 5px; }
-            .meta { font-size: 12px; margin-bottom: 30px; text-transform: uppercase; }
-            table { width: 100%; border-collapse: collapse; margin-bottom: 30px; text-align: left; font-size: 13px; }
-            th, td { border-bottom: 1px solid #ccc; padding: 8px 4px; }
-            th { border-bottom: 2px solid #000; text-transform: uppercase; }
-            .total-box { border-top: 2px solid #000; border-bottom: 2px solid #000; padding: 10px 0; margin-bottom: 30px; font-weight: bold; font-size: 14px; }
-            .category-section { border-top: 1px dashed #000; padding-top: 15px; font-size: 12px; }
-            .category-row { display: flex; justify-content: space-between; padding: 3px 0; }
-            @media print { body { padding: 0; } }
-        </style>
-    </head>
-    <body>
-        <h1>LEDGER REPORT: ${escapeHTML(currentTab)}</h1>
-        <div class="meta">
-            <div>Generated On: ${escapeHTML(dateToday)}</div>
-            <div>Currency: ${escapeHTML(currentCurrency)} (${sym})</div>
-            <div>Theme: ${escapeHTML(currentTheme)}</div>
-            <div>Total Entries: ${state.expenses.length}</div>
-        </div>
-
-        <table>
-            <thead>
-                <tr>
-                    <th>${escapeHTML((t && t.dateLabel) || 'Date')}</th>
-                    <th>${escapeHTML((t && t.categoryLabel) || 'Category')}</th>
-                    <th>${escapeHTML((t && t.descLabel) || 'Description')}</th>
-                    <th>${escapeHTML((t && t.paidByLabel) || 'Paid By')}</th>
-                    <th style="text-align: right;">${escapeHTML((t && t.amountLabel) || 'Amount')}</th>
-                </tr>
-            </thead>
-            <tbody>
-    `;
-
-    (state.expenses || []).forEach(e => {
-        const catLabel = (t && t.categories && t.categories[e.category]) || e.category || 'General';
-        html += `
-            <tr>
-                <td>${escapeHTML(formatDateYYYYMMDD(e.date))}</td>
-                <td>${escapeHTML(catLabel)}</td>
-                <td>${escapeHTML(e.desc)}</td>
-                <td>${escapeHTML(e.paidBy)}</td>
-                <td style="text-align: right;">${sym}${Number(e.amount).toFixed(2)}</td>
-            </tr>
-        `;
-    });
-
-    html += `
-            </tbody>
-        </table>
-
-        <div class="total-box">
-            TOTAL EXPENSES: ${sym}${totalSpent.toFixed(2)}
-        </div>
-
-        <div class="category-section">
-            <div style="font-weight: bold; margin-bottom: 8px; text-transform: uppercase;">Category Allocation Breakdown:</div>
-    `;
-
-    for (let cat in categoryTotals) {
-        let catAmount = categoryTotals[cat];
-        let pct = totalSpent > 0 ? ((catAmount / totalSpent) * 100).toFixed(1) : "0.0";
-        let catLabel = (t && t.categories && t.categories[cat]) || cat;
-        html += `
-            <div class="category-row">
-                <span>${escapeHTML(catLabel)}: ${sym}${catAmount.toFixed(2)}</span>
-                <span>${pct}%</span>
-            </div>
-        `;
-    }
-
-    html += `
-        </div>
-    </body>
-    </html>
-    `;
-
-    reportWindow.document.write(html);
-    reportWindow.document.close();
-}
-
-function render() {
-    if (typeof TRANSLATIONS === 'undefined') return;
-    const t = TRANSLATIONS[currentLang] || TRANSLATIONS['en'];
-
-    const indicatorEl = document.getElementById('viewModeIndicator');
-    if (indicatorEl) {
-        if (currentTab) {
-            indicatorEl.innerText = `ACTIVE LEDGER: ${currentTab.toUpperCase()}`;
-        } else {
-            indicatorEl.innerText = "AWAITING AUTHENTICATION...";
-        }
-    }
-
-    const deleteBtn = document.getElementById('deleteLedgerBtn');
-    const shareBtn = document.getElementById('shareBtn');
-    const settingsBtn = document.getElementById('settingsBtn');
-    
-    if (currentTab) {
-        if (deleteBtn) deleteBtn.classList.remove('hidden');
-        if (shareBtn) shareBtn.classList.remove('hidden');
-        if (settingsBtn) settingsBtn.classList.remove('hidden');
-    } else {
-        if (deleteBtn) deleteBtn.classList.add('hidden');
-        if (shareBtn) shareBtn.classList.add('hidden');
-        if (settingsBtn) settingsBtn.classList.add('hidden');
-    }
-
-    updateCurrencyDisplays();
-
-    const formTitle = document.getElementById('expenseFormTitle');
-    const formSub = document.getElementById('expenseFormSub');
-    const formButtons = document.getElementById('expenseFormButtons');
-
-    if (editingExpenseId) {
-        if (formTitle) formTitle.innerText = t.editExpenseTitle;
-        if (formSub) formSub.innerText = t.editExpenseSub;
-        if (formButtons) {
-            formButtons.innerHTML = `
-                <div class="flex flex-col sm:flex-row gap-2 pt-1">
-                    <button type="button" onclick="updateExpenseFromForm()" class="flex-1 theme-btn py-2.5 text-xs font-black uppercase cursor-pointer">${t.updateExpenseBtn}</button>
-                    <button type="button" onclick="deleteExpenseFromForm()" class="theme-btn bg-rose-500 hover:bg-rose-600 text-white px-4 py-2.5 text-xs font-black uppercase cursor-pointer">${t.deleteBtn}</button>
-                    <button type="button" onclick="resetExpenseForm()" class="theme-btn opacity-60 hover:opacity-100 px-4 py-2.5 text-xs font-black uppercase cursor-pointer">${t.cancelBtn}</button>
-                </div>
-            `;
-        }
-    } else {
-        if (formTitle) formTitle.innerText = t.newExpenseTitle;
-        if (formSub) formSub.innerText = t.newExpenseSub;
-        if (formButtons) {
-            formButtons.innerHTML = `
-                <button type="button" onclick="addExpense()" class="w-full theme-btn py-3 text-sm font-black uppercase cursor-pointer">${t.recordExpenseBtn}</button>
-            `;
-        }
-    }
-
-    const savedPills = (state.members || []).map(m => `
-        <span class="border border-current px-3 py-1 rounded-xl text-xs font-bold flex items-center gap-1.5">
-            ${escapeHTML(m)}
-            <button type="button" onclick="removeMember('${escapeHTML(m)}')" class="text-rose-500 hover:text-rose-700 font-extrabold cursor-pointer text-sm">×</button>
-        </span>
-    `).join('');
-
-    const stagedPills = stagedMembers.map((m, idx) => `
-        <span class="border-2 border-dashed border-amber-500 bg-amber-100/50 text-slate-900 px-3 py-1 rounded-xl text-xs font-extrabold flex items-center gap-1.5 animate-pulse">
-            ${escapeHTML(m)} <span class="text-[9px] opacity-75 font-mono">(new)</span>
-            <button type="button" onclick="unstageMember(${idx})" class="text-rose-600 hover:text-rose-800 font-black cursor-pointer text-sm">×</button>
-        </span>
-    `).join('');
-
-    const memberListContainer = document.getElementById('memberList');
-    if (memberListContainer) {
-        if (savedPills || stagedPills) {
-            memberListContainer.innerHTML = savedPills + stagedPills;
-        } else {
-            memberListContainer.innerHTML = `<span class="opacity-50 text-xs italic font-medium">${t.noParticipants}</span>`;
-        }
-    }
-
-    const saveMembersBtn = document.getElementById('saveMembersBtn');
-    if (saveMembersBtn) {
-        if (stagedMembers.length > 0) {
-            saveMembersBtn.classList.remove('hidden');
-            saveMembersBtn.innerText = `${t.saveMembersBtn} (${stagedMembers.length})`;
-        } else {
-            saveMembersBtn.classList.add('hidden');
-        }
-    }
-    
-    const paidBySelect = document.getElementById('expensePaidBy');
-    if (paidBySelect) {
-        paidBySelect.innerHTML = (state.members || []).map(m => `<option value="${escapeHTML(m)}" class="text-slate-900">${escapeHTML(m)}</option>`).join('') || `<option class="text-slate-900">${t.addMembersFirstMsg}</option>`;
-    }
-
-    const splitCheckboxesContainer = document.getElementById('splitCheckboxes');
-    if (splitCheckboxesContainer) {
-        if (state.members && state.members.length > 0) {
-            splitCheckboxesContainer.innerHTML = state.members.map(m => `
-                <label class="flex items-center gap-2 cursor-pointer border border-current px-3 py-1.5 rounded-xl font-bold text-xs">
-                    <input type="checkbox" value="${escapeHTML(m)}" class="split-checkbox w-4 h-4 accent-amber-500 rounded" checked>
-                    <span>${escapeHTML(m)}</span>
-                </label>
-            `).join('');
-        } else {
-            splitCheckboxesContainer.innerHTML = `<span class="opacity-50 text-xs italic font-medium">${t.addMembersFirstMsg}</span>`;
-        }
-    }
-
-    const sym = getCurrencySymbol();
-    const historyList = document.getElementById('expenseHistory');
-    if (historyList) {
-        historyList.innerHTML = (state.expenses || []).map(exp => {
-            const isSelected = editingExpenseId === exp.id;
-            const activeSplit = exp.splitWith ? exp.splitWith.filter(m => state.members.includes(m)) : state.members;
-            const isPayerActive = state.members.includes(exp.paidBy);
-            const formattedDate = formatDateYYYYMMDD(exp.date);
-            const catLabel = (t.categories && t.categories[exp.category]) || exp.category || 'General';
-
-            return `
-                <li onclick="selectExpenseForEdit('${exp.id}')" title="Click to edit" class="border border-current p-3 rounded-xl mb-2 flex justify-between items-center cursor-pointer hover:opacity-80 transition-opacity ${isSelected ? 'ring-2 ring-amber-500 font-bold' : ''}">
+        <!-- Header -->
+        <header class="theme-card theme-header p-4 sm:p-6 space-y-4">
+            <div class="flex items-center justify-between gap-3">
+                <div class="flex items-center gap-3 cursor-pointer group" onclick="goHome()" title="Back to Main Page">
+                    <div class="relative w-12 h-12 sm:w-16 sm:h-16 rounded-full looney-target flex items-center justify-center border-3 sm:border-4 border-slate-900 shadow-[2px_2px_0px_#0f172a] sm:shadow-[3px_3px_0px_#0f172a] group-hover:scale-105 transition-transform flex-shrink-0">
+                        <img src="logo.png" alt="Settlr Logo" class="h-8 sm:h-11 w-auto object-contain drop-shadow-md">
+                    </div>
                     <div>
-                        <div class="flex items-center gap-2 flex-wrap">
-                            <span class="text-[10px] border border-current font-mono px-1.5 py-0.5 rounded-md font-bold">${escapeHTML(formattedDate)}</span>
-                            <span class="text-[10px] border border-current opacity-80 px-1.5 py-0.5 rounded-md font-bold">${escapeHTML(catLabel)}</span>
-                            <p class="font-extrabold text-sm">${escapeHTML(exp.desc)}</p>
-                        </div>
-                        <p class="text-[11px] opacity-70 font-semibold mt-1">Paid by ${escapeHTML(exp.paidBy)} ${!isPayerActive ? '(Removed)' : ''} (Split: ${activeSplit.length > 0 ? activeSplit.map(escapeHTML).join(', ') : 'None'})</p>
+                        <h1 class="text-2xl sm:text-3xl font-extrabold tracking-wide uppercase theme-font-head leading-none">Settlr!</h1>
                     </div>
+                </div>
+
+                <div class="flex items-center gap-2 flex-shrink-0">
+                    <button id="settingsBtn" type="button" onclick="openSettingsModal()" data-i18n="settingsBtn" class="hidden theme-btn text-xs px-2.5 py-1.5 font-bold cursor-pointer">⚙ Settings</button>
+                    <div id="statusMsg" class="text-[10px] sm:text-xs font-black px-2.5 py-1.5 rounded-xl border border-current uppercase">Idle</div>
+                </div>
+            </div>
+
+            <div id="activeLedgerBar" class="pt-3 border-t border-current/15 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <p id="viewModeIndicator" class="text-base sm:text-xl font-black uppercase tracking-wider theme-font-head opacity-90 break-words leading-tight">
+                    AWAITING AUTHENTICATION...
+                </p>
+                <div class="flex items-center gap-2 flex-wrap">
+                    <button id="shareBtn" type="button" onclick="openShareModal()" data-i18n="shareLinkBtn" class="hidden theme-btn action-btn text-xs px-3 py-1.5 font-bold cursor-pointer">Share Link</button>
+                    <button id="deleteLedgerBtn" type="button" onclick="deleteActiveLedger()" data-i18n="deleteBtn" class="hidden theme-btn text-xs bg-rose-500 hover:bg-rose-600 text-white px-3 py-1.5 font-bold cursor-pointer">Delete</button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Full-Width Participants Section -->
+        <section class="theme-card theme-frame-2 p-6 flex flex-col justify-between space-y-4">
+            <div>
+                <h2 data-i18n="participantsTitle" class="text-xs font-black uppercase tracking-wider opacity-70">Participants</h2>
+                <p data-i18n="participantsSub" class="text-xs font-medium opacity-70 mt-0.5">Add or remove people from this group.</p>
+            </div>
+            <div class="space-y-3">
+                <div class="flex gap-2">
+                    <input type="text" id="memberName" data-i18n-ph="namePlaceholder" placeholder="Name..." class="flex-1 theme-input px-3 py-2 text-sm" onkeypress="if(event.key==='Enter') stageMember()">
+                    <button type="button" onclick="stageMember()" data-i18n="addBtn" class="theme-btn px-4 py-2 text-xs font-extrabold cursor-pointer">Add</button>
+                </div>
+                <div id="memberList" class="text-sm flex flex-wrap gap-2 pt-1"></div>
+                <button id="saveMembersBtn" type="button" onclick="saveStagedMembers()" data-i18n="saveMembersBtn" class="hidden w-full theme-btn bg-lime-400 hover:bg-lime-500 text-slate-900 py-2 text-xs font-black uppercase tracking-wider rounded-xl cursor-pointer">Save New Participants</button>
+            </div>
+        </section>
+
+        <!-- Expense Form -->
+        <section id="expenseFormSection" class="theme-card theme-frame-3 p-6 space-y-5">
+            <div>
+                <h2 id="expenseFormTitle" data-i18n="newExpenseTitle" class="text-xs font-black uppercase tracking-wider opacity-70">New Expense</h2>
+                <p id="expenseFormSub" data-i18n="newExpenseSub" class="text-xs font-medium opacity-70 mt-0.5">Log a transaction to split.</p>
+            </div>
+            
+            <div class="grid grid-cols-1 sm:grid-cols-5 gap-3">
+                <div>
+                    <label data-i18n="dateLabel" class="text-[10px] font-black uppercase tracking-wider opacity-70 block mb-1">Date</label>
+                    <input type="date" id="expenseDate" class="w-full theme-input px-2.5 py-2 text-xs">
+                </div>
+                <div>
+                    <label data-i18n="categoryLabel" class="text-[10px] font-black uppercase tracking-wider opacity-70 block mb-1">Category</label>
+                    <select id="expenseCategory" class="w-full theme-input px-2.5 py-2 text-xs cursor-pointer text-slate-900"></select>
+                </div>
+                <div>
+                    <label data-i18n="descLabel" class="text-[10px] font-black uppercase tracking-wider opacity-70 block mb-1">Description</label>
+                    <input type="text" id="expenseDesc" data-i18n-ph="descPlaceholder" placeholder="e.g. Dinner" class="w-full theme-input px-3 py-2 text-xs">
+                </div>
+                <div>
+                    <label class="text-[10px] font-black uppercase tracking-wider opacity-70 block mb-1"><span data-i18n="amountLabel">Amount</span> (<span class="currencySymbol">$</span>)</label>
+                    <input type="number" step="0.01" id="expenseAmount" placeholder="0.00" class="w-full theme-input px-2.5 py-2 text-xs font-bold">
+                </div>
+                <div>
+                    <label data-i18n="paidByLabel" class="text-[10px] font-black uppercase tracking-wider opacity-70 block mb-1">Paid By</label>
+                    <select id="expensePaidBy" class="w-full theme-input px-2.5 py-2 text-xs cursor-pointer text-slate-900"></select>
+                </div>
+            </div>
+
+            <div class="space-y-2 pt-2 border-t border-current/10">
+                <div class="flex justify-between items-center">
+                    <label data-i18n="splitBetweenLabel" class="text-[10px] font-black uppercase tracking-wider opacity-70">Split Between:</label>
+                    <button type="button" onclick="toggleSelectAll(true)" data-i18n="selectAllBtn" class="text-xs font-bold opacity-80 hover:opacity-100 underline cursor-pointer">Select All</button>
+                </div>
+                <div id="splitCheckboxes" class="flex flex-wrap gap-2 pt-1 text-xs"></div>
+            </div>
+
+            <div id="expenseFormButtons">
+                <button type="button" onclick="addExpense()" data-i18n="recordExpenseBtn" class="w-full theme-btn py-3 text-sm font-extrabold cursor-pointer">Record Expense</button>
+            </div>
+        </section>
+
+        <!-- Settlement & History -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <section class="theme-card theme-frame-4 p-6 space-y-4">
+                <div class="flex justify-between items-center border-b border-current/10 pb-3">
+                    <h2 data-i18n="settlementTitle" class="text-xs font-black uppercase tracking-wider opacity-70">Settlement Matrix</h2>
+                    <button type="button" onclick="copySettlementSummary()" data-i18n="copySummaryBtn" class="theme-btn action-btn text-xs px-3 py-1.5 font-extrabold cursor-pointer">Copy Summary</button>
+                </div>
+                <div id="settlementList" class="space-y-2 text-xs min-h-[100px]"></div>
+            </section>
+
+            <section class="theme-card theme-frame-5 p-6 space-y-4">
+                <div class="flex justify-between items-center border-b border-current/10 pb-3">
                     <div class="flex items-center gap-2">
-                        <span class="theme-font-head text-base font-bold">${sym}${Number(exp.amount).toFixed(2)}</span>
-                        ${isSelected ? `<span class="text-[10px] border border-current px-1.5 py-0.5 rounded-md font-bold uppercase">${t.editingBadge}</span>` : ''}
+                        <h2 data-i18n="historyTitle" class="text-xs font-black uppercase tracking-wider opacity-70">Ledger History</h2>
+                        <span data-i18n="clickToEditSub" class="text-[10px] opacity-70 italic font-medium">(Click item to edit)</span>
                     </div>
-                </li>
-            `;
-        }).join('') || `<span class="opacity-50 italic text-xs font-medium">${t.noExpenseEntries}</span>`;
-    }
+                    <button type="button" onclick="generateReport()" data-i18n="generateReportBtn" class="theme-btn action-btn text-xs px-3 py-1.5 font-extrabold cursor-pointer">Generate Report</button>
+                </div>
+                <ul id="expenseHistory" class="space-y-2 text-xs min-h-[100px] max-h-[300px] overflow-y-auto pr-1"></ul>
+            </section>
+        </div>
+    </div>
 
-    const settlements = calculateSettlements();
-    const settlementList = document.getElementById('settlementList');
-    if (settlementList) {
-        settlementList.innerHTML = settlements.length > 0
-            ? settlements.map(s => `<div class="border border-current p-2.5 text-xs rounded-xl font-bold">→ ${s}</div>`).join('')
-            : `<span class="opacity-50 italic font-medium text-xs">${t.allAccountsBalanced}</span>`;
-    }
-}
+    <!-- Welcome Modal (Theme selection removed) -->
+    <div id="welcomeModal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div class="theme-card p-6 sm:p-8 max-w-md w-full space-y-6 shadow-2xl bg-white text-slate-900">
+            <div class="border-b border-slate-200 pb-5 text-center space-y-3">
+                <div class="relative w-24 h-24 mx-auto rounded-full looney-target flex items-center justify-center border-4 border-slate-900 shadow-[4px_4px_0px_#0f172a] cursor-pointer hover:scale-105 transition-transform" onclick="closeWelcomeModal()">
+                    <img src="logo.png" alt="Settlr Logo" class="h-16 w-auto object-contain drop-shadow-md">
+                </div>
+                <div class="text-xs font-black tracking-widest text-slate-800 flex justify-center items-center gap-2 pt-1 uppercase">
+                    <button id="lang-tr" type="button" onclick="switchLanguage('tr')" class="hover:text-amber-600 cursor-pointer transition">TÜRKÇE</button>
+                    <span class="text-slate-300 font-normal">|</span>
+                    <button id="lang-en" type="button" onclick="switchLanguage('en')" class="hover:text-amber-600 cursor-pointer transition">ENGLISH</button>
+                    <span class="text-slate-300 font-normal">|</span>
+                    <button id="lang-de" type="button" onclick="switchLanguage('de')" class="hover:text-amber-600 cursor-pointer transition">DEUTSCH</button>
+                </div>
+                <p data-i18n="modalSub" class="text-xs font-bold text-slate-600">Create or open a confidential group ledger.</p>
+            </div>
 
-// Explicit Global Scope Bindings for DOM HTML onclick attributes
-window.createNewLedger = createNewLedger;
-window.recallLedger = recallLedger;
-window.switchModalTab = switchModalTab;
-window.closeWelcomeModal = closeWelcomeModal;
-window.openSettingsModal = openSettingsModal;
-window.closeSettingsModal = closeSettingsModal;
-window.saveSettings = saveSettings;
-window.stageMember = stageMember;
-window.unstageMember = unstageMember;
-window.saveStagedMembers = saveStagedMembers;
-window.removeMember = removeMember;
-window.toggleSelectAll = toggleSelectAll;
-window.addExpense = addExpense;
-window.updateExpenseFromForm = updateExpenseFromForm;
-window.deleteExpenseFromForm = deleteExpenseFromForm;
-window.resetExpenseForm = resetExpenseForm;
-window.copySettlementSummary = copySettlementSummary;
-window.generateReport = generateReport;
-window.openShareModal = openShareModal;
-window.closeShareModal = closeShareModal;
-window.copyShareLink = copyShareLink;
-window.goHome = goHome;
-window.deleteActiveLedger = deleteActiveLedger;
+            <div id="modalTabsHeader" class="flex gap-2">
+                <button id="tabCreateBtn" type="button" onclick="switchModalTab('create')" data-i18n="tabCreate" class="flex-1 theme-btn py-2 text-xs font-black uppercase tracking-wider bg-amber-300 text-slate-900 rounded-xl cursor-pointer">Create New</button>
+                <button id="tabRecallBtn" type="button" onclick="switchModalTab('recall')" data-i18n="tabRecall" class="flex-1 theme-btn py-2 text-xs font-black uppercase tracking-wider bg-slate-100 text-slate-500 rounded-xl cursor-pointer">Recall Existing</button>
+            </div>
 
-// Guaranteed Event Loop Bootstrapper
-if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", initApp);
-} else {
-    initApp();
-}
+            <!-- Create Form -->
+            <div id="createSection" class="space-y-4">
+                <div class="space-y-1">
+                    <label data-i18n="ledgerNameLabel" class="text-xs font-extrabold text-slate-800">Ledger Name</label>
+                    <input type="text" id="newLedgerName" data-i18n-ph="ledgerNamePh" placeholder="e.g. dinner-club" class="w-full theme-input px-3 py-2 text-sm" onkeypress="if(event.key==='Enter') createNewLedger()">
+                </div>
+                <div class="space-y-1">
+                    <label data-i18n="setPinLabel" class="text-xs font-extrabold text-slate-800">Set 4-Digit PIN</label>
+                    <input type="text" id="newLedgerPin" maxlength="4" placeholder="1234" class="w-full theme-input px-3 py-2 text-sm font-mono tracking-widest" onkeypress="if(event.key==='Enter') createNewLedger()">
+                </div>
+                <button type="button" onclick="createNewLedger()" data-i18n="initializeBtn" class="w-full theme-btn bg-lime-400 hover:bg-lime-500 text-slate-900 py-3 text-xs font-black uppercase tracking-wider rounded-xl cursor-pointer">Initialize Ledger</button>
+            </div>
+
+            <!-- Recall Form -->
+            <div id="recallSection" class="space-y-4 hidden">
+                <div id="archiveDropdownContainer" class="space-y-1">
+                    <label data-i18n="selectArchiveLabel" class="text-xs font-extrabold text-slate-800">Select Archive</label>
+                    <select id="archiveSelect" class="w-full theme-input px-3 py-2 text-sm cursor-pointer"></select>
+                </div>
+                <div id="directTabDisplay" class="hidden space-y-1">
+                    <label data-i18n="accessingSharedLabel" class="text-xs font-extrabold text-slate-800">Accessing Shared Ledger</label>
+                    <input type="text" id="directTabName" readonly class="w-full theme-input bg-amber-100 px-3 py-2 text-sm font-bold text-slate-900">
+                </div>
+                <div class="space-y-1">
+                    <label data-i18n="enterPinLabel" class="text-xs font-extrabold text-slate-800">Enter 4-Digit PIN</label>
+                    <input type="text" id="recallLedgerPin" maxlength="4" placeholder="1234" class="w-full theme-input px-3 py-2 text-sm font-mono tracking-widest" onkeypress="if(event.key==='Enter') recallLedger()">
+                </div>
+                <button type="button" onclick="recallLedger()" data-i18n="accessLedgerBtn" class="w-full theme-btn bg-cyan-400 hover:bg-cyan-500 text-slate-900 py-3 text-xs font-black uppercase tracking-wider rounded-xl cursor-pointer">Access Ledger</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settingsModal" class="hidden fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div class="theme-card bg-white p-6 max-w-md w-full space-y-5 shadow-2xl text-slate-900">
+            <div class="flex justify-between items-center border-b border-slate-200 pb-3">
+                <h3 class="text-sm font-black uppercase tracking-wider">Ledger Settings</h3>
+                <button type="button" onclick="closeSettingsModal()" class="text-slate-500 hover:text-slate-900 text-xl font-bold cursor-pointer">×</button>
+            </div>
+
+            <!-- Language Option -->
+            <div class="space-y-1">
+                <label class="text-xs font-extrabold text-slate-800 block">Language</label>
+                <select id="settingsLangSelect" class="w-full theme-input px-3 py-2 text-sm cursor-pointer text-slate-900">
+                    <option value="en">English</option>
+                    <option value="tr">Türkçe</option>
+                    <option value="de">Deutsch</option>
+                </select>
+            </div>
+
+            <div class="space-y-1">
+                <label class="text-xs font-extrabold text-slate-800 block">Currency</label>
+                <select id="settingsCurrencySelect" class="w-full theme-input px-3 py-2 text-sm cursor-pointer text-slate-900">
+                    <option value="USD">USD ($)</option>
+                    <option value="EUR">EUR (€)</option>
+                    <option value="TRY">TRY (₺)</option>
+                </select>
+            </div>
+
+            <div class="space-y-1.5">
+                <label class="text-xs font-extrabold text-slate-800 block">Visual Template</label>
+                <div class="grid grid-cols-3 gap-2">
+                    <label class="cursor-pointer border border-slate-300 bg-slate-50 p-2 rounded-xl text-center shadow-xs has-[:checked]:ring-2 has-[:checked]:ring-blue-500">
+                        <input type="radio" name="modalThemeSelect" value="Silk" onchange="applyTheme('Silk')" class="sr-only">
+                        <span class="block text-xs font-black font-sans">Silk</span>
+                        <span class="text-[9px] block text-slate-500 font-sans">Minimal</span>
+                    </label>
+                    <label class="cursor-pointer border-2 border-slate-900 bg-amber-100 p-2 rounded-xl text-center shadow-[2px_2px_0px_#0f172a] has-[:checked]:ring-2 has-[:checked]:ring-amber-500">
+                        <input type="radio" name="modalThemeSelect" value="Toon" onchange="applyTheme('Toon')" class="sr-only">
+                        <span class="block text-xs font-black font-serif">Toon</span>
+                        <span class="text-[9px] block text-slate-600 font-sans">Cartoon</span>
+                    </label>
+                    <label class="cursor-pointer border border-cyan-500 bg-slate-950 p-2 rounded-xl text-center text-cyan-400 shadow-xs has-[:checked]:ring-2 has-[:checked]:ring-cyan-400">
+                        <input type="radio" name="modalThemeSelect" value="Neon" onchange="applyTheme('Neon')" class="sr-only">
+                        <span class="block text-xs font-black font-mono">Neon</span>
+                        <span class="text-[9px] block text-cyan-300 font-mono">Cyber</span>
+                    </label>
+                </div>
+            </div>
+
+            <button type="button" onclick="saveSettings()" class="w-full theme-btn bg-lime-400 hover:bg-lime-500 text-slate-900 py-3 text-xs font-black uppercase tracking-wider rounded-xl cursor-pointer">Save Settings</button>
+        </div>
+    </div>
+
+    <!-- Share Link Modal -->
+    <div id="shareModal" class="hidden fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div class="theme-card bg-white p-6 max-w-md w-full space-y-4 shadow-2xl text-slate-900">
+            <div class="flex justify-between items-center border-b border-slate-200 pb-2">
+                <h3 data-i18n="shareLinkHeader" class="text-xs font-black uppercase tracking-wider">Share Ledger Link</h3>
+                <button type="button" onclick="closeShareModal()" class="text-slate-500 hover:text-slate-900 text-xl font-bold cursor-pointer">×</button>
+            </div>
+            <p data-i18n="shareLinkSub" class="text-xs font-medium text-slate-600">Anyone with this link will only need to enter the 4-digit PIN to access this ledger.</p>
+            <div class="flex gap-2">
+                <input type="text" id="shareLinkInput" readonly class="flex-1 theme-input px-3 py-2 text-xs font-mono">
+                <button type="button" onclick="copyShareLink()" data-i18n="copyBtn" class="theme-btn action-btn px-4 py-2 text-xs font-black uppercase rounded-xl cursor-pointer">Copy</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Processing Modal -->
+    <div id="recordingModal" class="hidden fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-50">
+        <div class="theme-card bg-white p-6 space-y-4 w-64 text-center text-slate-900">
+            <p data-i18n="processingMsg" class="text-xs font-black uppercase tracking-widest theme-font-head">Processing...</p>
+            <div class="h-3 bg-slate-200 border border-slate-400 overflow-hidden relative rounded-full">
+                <div class="scanner-bar"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/i18n.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>

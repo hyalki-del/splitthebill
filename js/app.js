@@ -5,7 +5,7 @@ let currentCurrency = "USD";
 let currentTheme = "Silk";
 let currentLang = "en";
 let editingExpenseId = null;
-let stagedMembers = []; // Client-side staging buffer
+let stagedMembers = []; // Local buffer for batch member staging
 let state = { members: [], expenses: [], archives: [] };
 
 const CURRENCY_MAP = { USD: "$", EUR: "€", TRY: "₺" };
@@ -32,11 +32,13 @@ async function saveSettings() {
     const selectedRadio = document.querySelector('input[name="modalThemeSelect"]:checked');
     const newTheme = selectedRadio ? selectedRadio.value : currentTheme;
 
+    // Apply updates locally immediately
     currentCurrency = newCur;
     applyTheme(newTheme);
     updateCurrencyDisplays();
     closeSettingsModal();
 
+    // Send single combined action to prevent race conditions in GAS
     await sendAction({ 
         action: "updateSettings", 
         currency: newCur, 
@@ -258,7 +260,7 @@ async function fetchLedgerData() {
         applyTheme(data.theme || "Silk");
         state.members = data.members || [];
         state.expenses = data.expenses || [];
-        stagedMembers = []; // Clear staging buffer on fresh sync
+        stagedMembers = []; // Clear local staging buffer on sync
         editingExpenseId = null;
         setStatus("Idle");
         render();
@@ -632,12 +634,18 @@ function generateReport() {
 function render() {
     const t = TRANSLATIONS[currentLang];
 
-    document.getElementById('activeTabNameDisplay').innerText = currentTab ? escapeHTML(currentTab) : t.noLedgerLoaded;
-    document.getElementById('viewModeIndicator').innerText = currentTab ? `Mode: Active Ledger [${escapeHTML(currentTab)}]` : "Mode: Awaiting Authentication...";
+    // Formats directly to: "ACTIVE LEDGER: LEDGERNAME" in UPPERCASE
+    const indicatorEl = document.getElementById('viewModeIndicator');
+    if (currentTab) {
+        indicatorEl.innerText = `ACTIVE LEDGER: ${currentTab.toUpperCase()}`;
+    } else {
+        indicatorEl.innerText = "AWAITING AUTHENTICATION...";
+    }
 
     const deleteBtn = document.getElementById('deleteLedgerBtn');
     const shareBtn = document.getElementById('shareBtn');
     const settingsBtn = document.getElementById('settingsBtn');
+    
     if (currentTab) {
         deleteBtn.classList.remove('hidden');
         shareBtn.classList.remove('hidden');
@@ -694,7 +702,7 @@ function render() {
         memberListContainer.innerHTML = `<span class="opacity-50 text-xs italic font-medium">${t.noParticipants}</span>`;
     }
 
-    // Toggle Save Button Visibility
+    // Toggle Save Button Visibility based on staged buffer state
     const saveMembersBtn = document.getElementById('saveMembersBtn');
     if (stagedMembers.length > 0) {
         saveMembersBtn.classList.remove('hidden');

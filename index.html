@@ -1,166 +1,16 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="toon">
+<html lang="en" data-theme="silk">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Settlr - Group Expense Splitter</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=JetBrains+Mono:wght@500;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap');
-
-        /* ==================== THEME 1: TOON (Cartoon Neo-Brutalist) ==================== */
-        html[data-theme="toon"] body { 
-            font-family: 'Plus Jakarta Sans', sans-serif; 
-            background-color: #fce7f3;
-            background-image: radial-gradient(#fb7185 1.5px, transparent 1.5px);
-            background-size: 24px 24px;
-            color: #0f172a;
-        }
-
-        html[data-theme="toon"] .theme-font-head { font-family: 'Fredoka', cursive, sans-serif; }
-        
-        html[data-theme="toon"] .looney-target {
-            background: radial-gradient(circle, #facc15 0%, #facc15 22%, #f97316 22%, #f97316 44%, #ef4444 44%, #ef4444 66%, #b91c1c 66%, #b91c1c 88%, #881337 88%, #881337 100%);
-        }
-
-        html[data-theme="toon"] .theme-card {
-            background-color: #ffffff;
-            border: 4px solid #0f172a;
-            border-radius: 1.5rem;
-            box-shadow: 6px 6px 0px #0f172a;
-            transition: transform 0.15s ease, box-shadow 0.15s ease;
-        }
-
-        html[data-theme="toon"] .theme-header { background-color: #facc15; }
-        html[data-theme="toon"] .theme-frame-1 { background-color: #cff4fc; }
-        html[data-theme="toon"] .theme-frame-2 { background-color: #d1e7dd; }
-        html[data-theme="toon"] .theme-frame-3 { background-color: #ffe69c; }
-        html[data-theme="toon"] .theme-frame-4 { background-color: #d1e7dd; }
-        html[data-theme="toon"] .theme-frame-5 { background-color: #e2d9f3; }
-
-        html[data-theme="toon"] .theme-btn {
-            border: 3px solid #0f172a;
-            box-shadow: 3px 3px 0px #0f172a;
-            font-family: 'Fredoka', cursive, sans-serif;
-            transition: all 0.1s ease-in-out;
-        }
-        html[data-theme="toon"] .theme-btn:hover { transform: translate(-2px, -2px); box-shadow: 5px 5px 0px #0f172a; }
-        html[data-theme="toon"] .theme-btn:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0px #0f172a; }
-
-        html[data-theme="toon"] .theme-input {
-            border: 3px solid #0f172a;
-            border-radius: 0.75rem;
-            box-shadow: inset 2px 2px 0px rgba(0, 0, 0, 0.08);
-            font-weight: 600;
-        }
-
-        /* ==================== THEME 2: SILK (Cupertino Minimal) ==================== */
-        html[data-theme="silk"] body { 
-            font-family: -apple-system, BlinkMacSystemFont, 'Plus Jakarta Sans', sans-serif; 
-            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
-            color: #1e293b;
-        }
-
-        html[data-theme="silk"] .theme-font-head { font-family: -apple-system, BlinkMacSystemFont, 'Plus Jakarta Sans', sans-serif; }
-        html[data-theme="silk"] .looney-target { display: none; }
-
-        html[data-theme="silk"] .theme-card {
-            background: rgba(255, 255, 255, 0.75);
-            backdrop-filter: blur(16px);
-            border: 1px solid rgba(255, 255, 255, 0.8);
-            border-radius: 1.5rem;
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.04), 0 8px 10px -6px rgba(0, 0, 0, 0.02);
-        }
-
-        html[data-theme="silk"] .theme-header { background-color: rgba(255, 255, 255, 0.85); }
-        html[data-theme="silk"] .theme-frame-1, 
-        html[data-theme="silk"] .theme-frame-2, 
-        html[data-theme="silk"] .theme-frame-3, 
-        html[data-theme="silk"] .theme-frame-4, 
-        html[data-theme="silk"] .theme-frame-5 { background-color: rgba(255, 255, 255, 0.65); }
-
-        html[data-theme="silk"] .theme-btn {
-            border: 1px solid rgba(0, 0, 0, 0.05);
-            font-family: inherit;
-            border-radius: 9999px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-            transition: all 0.2s ease;
-        }
-        html[data-theme="silk"] .theme-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-
-        html[data-theme="silk"] .theme-input {
-            border: 1px solid #cbd5e1;
-            border-radius: 0.75rem;
-            background-color: rgba(255, 255, 255, 0.9);
-            font-weight: 500;
-        }
-
-        /* ==================== THEME 3: NEON (Cyber Terminal) ==================== */
-        html[data-theme="neon"] body { 
-            font-family: 'JetBrains Mono', monospace; 
-            background-color: #090d16;
-            background-image: linear-gradient(to right, #1e293b 1px, transparent 1px), linear-gradient(to bottom, #1e293b 1px, transparent 1px);
-            background-size: 32px 32px;
-            color: #f1f5f9;
-        }
-
-        html[data-theme="neon"] .theme-font-head { font-family: 'JetBrains Mono', monospace; }
-        html[data-theme="neon"] .looney-target { display: none; }
-
-        html[data-theme="neon"] .theme-card {
-            background-color: #0f172a;
-            border: 1px solid #00f0ff;
-            border-radius: 0.75rem;
-            box-shadow: 0 0 15px rgba(0, 240, 255, 0.15);
-        }
-
-        html[data-theme="neon"] .theme-header { background-color: #1e293b; border-color: #00ff66; }
-        html[data-theme="neon"] .theme-frame-1, 
-        html[data-theme="neon"] .theme-frame-2, 
-        html[data-theme="neon"] .theme-frame-3, 
-        html[data-theme="neon"] .theme-frame-4, 
-        html[data-theme="neon"] .theme-frame-5 { background-color: #0f172a; }
-
-        html[data-theme="neon"] .theme-btn {
-            border: 1px solid #00f0ff;
-            background-color: #00f0ff;
-            color: #090d16;
-            border-radius: 0.5rem;
-            font-weight: 800;
-            text-transform: uppercase;
-            box-shadow: 0 0 10px rgba(0, 240, 255, 0.4);
-            transition: all 0.15s ease;
-        }
-        html[data-theme="neon"] .theme-btn:hover { background-color: #00ff66; border-color: #00ff66; box-shadow: 0 0 15px rgba(0, 255, 102, 0.6); }
-
-        html[data-theme="neon"] .theme-input {
-            border: 1px solid #334155;
-            border-radius: 0.5rem;
-            background-color: #020617;
-            color: #00f0ff;
-        }
-
-        @keyframes knightRider {
-            0% { left: 0%; }
-            50% { left: calc(100% - 35px); }
-            100% { left: 0%; }
-        }
-        
-        .scanner-bar {
-            position: relative;
-            width: 35px;
-            height: 8px;
-            background-color: #facc15;
-            border-radius: 4px;
-            box-shadow: 0 0 8px #facc15;
-            animation: knightRider 0.6s infinite ease-in-out;
-        }
-    </style>
+    <link rel="stylesheet" href="css/styles.css">
 </head>
 <body class="min-h-screen p-3 sm:p-8 antialiased">
     <div class="max-w-5xl mx-auto space-y-6">
         
-        <!-- Header with Logo -->
+        <!-- Header -->
         <header class="theme-card theme-header p-4 sm:p-6 flex flex-col sm:flex-row justify-between items-center gap-4">
             <div class="flex items-center gap-4 cursor-pointer group" onclick="goHome()" title="Back to Main Page">
                 <div class="relative w-16 h-16 sm:w-20 sm:h-20 rounded-full looney-target flex items-center justify-center border-4 border-slate-900 shadow-[3px_3px_0px_#0f172a] group-hover:scale-105 transition-transform">
@@ -172,45 +22,27 @@
                 </div>
             </div>
             <div class="flex items-center gap-2">
-                <div id="themeBadge" class="text-xs font-black px-3 py-1.5 rounded-xl border border-current uppercase">Theme: Toon</div>
+                <button id="settingsBtn" onclick="openSettingsModal()" data-i18n="settingsBtn" class="hidden theme-btn text-xs px-3 py-1.5 font-bold cursor-pointer">⚙ Settings</button>
                 <div id="statusMsg" class="text-xs font-black px-3 py-1.5 rounded-xl border border-current uppercase">Idle</div>
             </div>
         </header>
 
         <!-- Top Row -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            
-            <!-- Frame 1: Active Ledger Info -->
             <section class="theme-card theme-frame-1 p-6 flex flex-col justify-between space-y-4">
                 <div>
-                    <div class="flex justify-between items-start gap-2">
-                        <div>
-                            <h2 data-i18n="activeLedgerTitle" class="text-xs font-black uppercase tracking-wider opacity-70">Active Confidential Ledger</h2>
-                            <p id="activeTabNameDisplay" class="text-2xl theme-font-head font-bold mt-1">No Ledger Loaded</p>
-                        </div>
-                        
-                        <!-- Currency Selector -->
-                        <div class="flex items-center gap-1 border border-current px-2.5 py-1 rounded-xl">
-                            <label class="text-[10px] font-black uppercase">CURR:</label>
-                            <select id="currencySelect" onchange="changeCurrency()" class="bg-transparent text-xs theme-font-head font-bold focus:outline-none cursor-pointer">
-                                <option value="USD" class="text-slate-900">USD ($)</option>
-                                <option value="EUR" class="text-slate-900">EUR (€)</option>
-                                <option value="TRY" class="text-slate-900">TRY (₺)</option>
-                            </select>
-                        </div>
-                    </div>
+                    <h2 data-i18n="activeLedgerTitle" class="text-xs font-black uppercase tracking-wider opacity-70">Active Confidential Ledger</h2>
+                    <p id="activeTabNameDisplay" class="text-2xl theme-font-head font-bold mt-1">No Ledger Loaded</p>
                 </div>
-                
                 <div class="flex justify-between items-center pt-3 border-t border-current/20">
                     <p data-i18n="encryptedSub" class="text-xs font-bold opacity-70">Isolated encrypted tab</p>
                     <div class="flex items-center gap-2">
-                        <button id="shareBtn" onclick="openShareModal()" data-i18n="shareLinkBtn" class="hidden theme-btn text-xs px-3 py-1.5 font-bold cursor-pointer">Share Link</button>
+                        <button id="shareBtn" onclick="openShareModal()" data-i18n="shareLinkBtn" class="hidden theme-btn action-btn text-xs px-3 py-1.5 font-bold cursor-pointer">Share Link</button>
                         <button id="deleteLedgerBtn" onclick="deleteActiveLedger()" data-i18n="deleteBtn" class="hidden theme-btn text-xs bg-rose-500 hover:bg-rose-600 text-white px-3 py-1.5 font-bold cursor-pointer">Delete</button>
                     </div>
                 </div>
             </section>
 
-            <!-- Frame 2: Participants -->
             <section class="theme-card theme-frame-2 p-6 flex flex-col justify-between space-y-4">
                 <div>
                     <h2 data-i18n="participantsTitle" class="text-xs font-black uppercase tracking-wider opacity-70">Participants</h2>
@@ -226,7 +58,7 @@
             </section>
         </div>
 
-        <!-- Middle Row: Expense Form -->
+        <!-- Expense Form -->
         <section id="expenseFormSection" class="theme-card theme-frame-3 p-6 space-y-5">
             <div>
                 <h2 id="expenseFormTitle" data-i18n="newExpenseTitle" class="text-xs font-black uppercase tracking-wider opacity-70">New Expense</h2>
@@ -234,31 +66,22 @@
             </div>
             
             <div class="grid grid-cols-1 sm:grid-cols-5 gap-3">
-                <!-- Date Selector -->
                 <div>
                     <label data-i18n="dateLabel" class="text-[10px] font-black uppercase tracking-wider opacity-70 block mb-1">Date</label>
                     <input type="date" id="expenseDate" class="w-full theme-input px-2.5 py-2 text-xs">
                 </div>
-
-                <!-- Category Selector -->
                 <div>
                     <label data-i18n="categoryLabel" class="text-[10px] font-black uppercase tracking-wider opacity-70 block mb-1">Category</label>
                     <select id="expenseCategory" class="w-full theme-input px-2.5 py-2 text-xs cursor-pointer text-slate-900"></select>
                 </div>
-
-                <!-- Description -->
                 <div>
                     <label data-i18n="descLabel" class="text-[10px] font-black uppercase tracking-wider opacity-70 block mb-1">Description</label>
                     <input type="text" id="expenseDesc" data-i18n-ph="descPlaceholder" placeholder="e.g. Dinner" class="w-full theme-input px-3 py-2 text-xs">
                 </div>
-
-                <!-- Amount -->
                 <div>
                     <label class="text-[10px] font-black uppercase tracking-wider opacity-70 block mb-1"><span data-i18n="amountLabel">Amount</span> (<span class="currencySymbol">$</span>)</label>
                     <input type="number" step="0.01" id="expenseAmount" placeholder="0.00" class="w-full theme-input px-2.5 py-2 text-xs font-bold">
                 </div>
-
-                <!-- Paid By -->
                 <div>
                     <label data-i18n="paidByLabel" class="text-[10px] font-black uppercase tracking-wider opacity-70 block mb-1">Paid By</label>
                     <select id="expensePaidBy" class="w-full theme-input px-2.5 py-2 text-xs cursor-pointer text-slate-900"></select>
@@ -270,9 +93,7 @@
                     <label data-i18n="splitBetweenLabel" class="text-[10px] font-black uppercase tracking-wider opacity-70">Split Between:</label>
                     <button type="button" onclick="toggleSelectAll(true)" data-i18n="selectAllBtn" class="text-xs font-bold opacity-80 hover:opacity-100 underline cursor-pointer">Select All</button>
                 </div>
-                <div id="splitCheckboxes" class="flex flex-wrap gap-2 pt-1 text-xs">
-                    <span data-i18n="addMembersFirstMsg" class="opacity-50 text-xs italic font-medium">Add participants first.</span>
-                </div>
+                <div id="splitCheckboxes" class="flex flex-wrap gap-2 pt-1 text-xs"></div>
             </div>
 
             <div id="expenseFormButtons">
@@ -280,43 +101,36 @@
             </div>
         </section>
 
-        <!-- Bottom Row -->
+        <!-- Settlement & History -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            
-            <!-- Frame 4: Settlement Matrix -->
             <section class="theme-card theme-frame-4 p-6 space-y-4">
                 <div class="flex justify-between items-center border-b border-current/10 pb-3">
                     <h2 data-i18n="settlementTitle" class="text-xs font-black uppercase tracking-wider opacity-70">Settlement Matrix</h2>
-                    <button onclick="copySettlementSummary()" data-i18n="copySummaryBtn" class="theme-btn text-xs px-3 py-1.5 font-extrabold cursor-pointer">Copy Summary</button>
+                    <button onclick="copySettlementSummary()" data-i18n="copySummaryBtn" class="theme-btn action-btn text-xs px-3 py-1.5 font-extrabold cursor-pointer">Copy Summary</button>
                 </div>
-                <div id="settlementList" class="space-y-2 text-xs min-h-[100px]">
-                    <p data-i18n="awaitingLedgerMsg" class="opacity-50 italic font-medium text-xs">Awaiting ledger input...</p>
-                </div>
+                <div id="settlementList" class="space-y-2 text-xs min-h-[100px]"></div>
             </section>
 
-            <!-- Frame 5: Ledger History -->
             <section class="theme-card theme-frame-5 p-6 space-y-4">
                 <div class="flex justify-between items-center border-b border-current/10 pb-3">
                     <div class="flex items-center gap-2">
                         <h2 data-i18n="historyTitle" class="text-xs font-black uppercase tracking-wider opacity-70">Ledger History</h2>
                         <span data-i18n="clickToEditSub" class="text-[10px] opacity-70 italic font-medium">(Click item to edit)</span>
                     </div>
-                    <button onclick="generateReport()" data-i18n="generateReportBtn" class="theme-btn text-xs px-3 py-1.5 font-extrabold cursor-pointer">Generate Report</button>
+                    <button onclick="generateReport()" data-i18n="generateReportBtn" class="theme-btn action-btn text-xs px-3 py-1.5 font-extrabold cursor-pointer">Generate Report</button>
                 </div>
                 <ul id="expenseHistory" class="space-y-2 text-xs min-h-[100px] max-h-[300px] overflow-y-auto pr-1"></ul>
             </section>
         </div>
     </div>
 
-    <!-- WELCOME MODAL -->
+    <!-- Welcome Modal -->
     <div id="welcomeModal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
         <div class="theme-card p-6 sm:p-8 max-w-md w-full space-y-6 shadow-2xl bg-white text-slate-900">
-            
             <div class="border-b border-slate-200 pb-5 text-center space-y-3">
                 <div class="relative w-24 h-24 mx-auto rounded-full looney-target flex items-center justify-center border-4 border-slate-900 shadow-[4px_4px_0px_#0f172a] cursor-pointer hover:scale-105 transition-transform" onclick="closeWelcomeModal()">
                     <img src="logo.png" alt="Settlr Logo" class="h-16 w-auto object-contain drop-shadow-md">
                 </div>
-                
                 <div class="text-xs font-black tracking-widest text-slate-800 flex justify-center items-center gap-2 pt-1 uppercase">
                     <button id="lang-tr" onclick="switchLanguage('tr')" class="hover:text-amber-600 cursor-pointer transition">TÜRKÇE</button>
                     <span class="text-slate-300 font-normal">|</span>
@@ -324,7 +138,6 @@
                     <span class="text-slate-300 font-normal">|</span>
                     <button id="lang-de" onclick="switchLanguage('de')" class="hover:text-amber-600 cursor-pointer transition">DEUTSCH</button>
                 </div>
-
                 <p data-i18n="modalSub" class="text-xs font-bold text-slate-600">Create or open a confidential group ledger.</p>
             </div>
 
@@ -333,7 +146,7 @@
                 <button id="tabRecallBtn" onclick="switchModalTab('recall')" data-i18n="tabRecall" class="flex-1 theme-btn py-2 text-xs font-black uppercase tracking-wider bg-slate-100 text-slate-500 rounded-xl cursor-pointer">Recall Existing</button>
             </div>
 
-            <!-- Create New Form -->
+            <!-- Create Form -->
             <div id="createSection" class="space-y-4">
                 <div class="space-y-1">
                     <label data-i18n="ledgerNameLabel" class="text-xs font-extrabold text-slate-800">Ledger Name</label>
@@ -343,20 +156,18 @@
                     <label data-i18n="setPinLabel" class="text-xs font-extrabold text-slate-800">Set 4-Digit PIN</label>
                     <input type="text" id="newLedgerPin" maxlength="4" placeholder="1234" class="w-full theme-input px-3 py-2 text-sm font-mono tracking-widest">
                 </div>
-
-                <!-- Template Selector -->
                 <div class="space-y-1.5">
                     <label class="text-xs font-extrabold text-slate-800 block">Choose Visual Template</label>
                     <div class="grid grid-cols-3 gap-2">
-                        <label class="cursor-pointer border-2 border-slate-900 bg-amber-100 p-2 rounded-xl text-center shadow-[2px_2px_0px_#0f172a] has-[:checked]:ring-2 has-[:checked]:ring-amber-500">
-                            <input type="radio" name="themeSelect" value="Toon" checked onchange="applyTheme('Toon')" class="sr-only">
-                            <span class="block text-xs font-black font-serif">Toon</span>
-                            <span class="text-[9px] block text-slate-600 font-sans">Cartoon</span>
-                        </label>
                         <label class="cursor-pointer border border-slate-300 bg-slate-50 p-2 rounded-xl text-center shadow-xs has-[:checked]:ring-2 has-[:checked]:ring-blue-500">
-                            <input type="radio" name="themeSelect" value="Silk" onchange="applyTheme('Silk')" class="sr-only">
+                            <input type="radio" name="themeSelect" value="Silk" checked onchange="applyTheme('Silk')" class="sr-only">
                             <span class="block text-xs font-black font-sans">Silk</span>
                             <span class="text-[9px] block text-slate-500 font-sans">Minimal</span>
+                        </label>
+                        <label class="cursor-pointer border-2 border-slate-900 bg-amber-100 p-2 rounded-xl text-center shadow-[2px_2px_0px_#0f172a] has-[:checked]:ring-2 has-[:checked]:ring-amber-500">
+                            <input type="radio" name="themeSelect" value="Toon" onchange="applyTheme('Toon')" class="sr-only">
+                            <span class="block text-xs font-black font-serif">Toon</span>
+                            <span class="text-[9px] block text-slate-600 font-sans">Cartoon</span>
                         </label>
                         <label class="cursor-pointer border border-cyan-500 bg-slate-950 p-2 rounded-xl text-center text-cyan-400 shadow-xs has-[:checked]:ring-2 has-[:checked]:ring-cyan-400">
                             <input type="radio" name="themeSelect" value="Neon" onchange="applyTheme('Neon')" class="sr-only">
@@ -365,17 +176,14 @@
                         </label>
                     </div>
                 </div>
-
                 <button onclick="createNewLedger()" data-i18n="initializeBtn" class="w-full theme-btn bg-lime-400 hover:bg-lime-500 text-slate-900 py-3 text-xs font-black uppercase tracking-wider rounded-xl cursor-pointer">Initialize Ledger</button>
             </div>
 
-            <!-- Recall Existing Form -->
+            <!-- Recall Form -->
             <div id="recallSection" class="space-y-4 hidden">
                 <div id="archiveDropdownContainer" class="space-y-1">
                     <label data-i18n="selectArchiveLabel" class="text-xs font-extrabold text-slate-800">Select Archive</label>
-                    <select id="archiveSelect" class="w-full theme-input px-3 py-2 text-sm cursor-pointer">
-                        <option value="">Select archive...</option>
-                    </select>
+                    <select id="archiveSelect" class="w-full theme-input px-3 py-2 text-sm cursor-pointer"></select>
                 </div>
                 <div id="directTabDisplay" class="hidden space-y-1">
                     <label data-i18n="accessingSharedLabel" class="text-xs font-extrabold text-slate-800">Accessing Shared Ledger</label>
@@ -390,7 +198,49 @@
         </div>
     </div>
 
-    <!-- SHARE LINK POPUP MODAL -->
+    <!-- Settings Modal -->
+    <div id="settingsModal" class="hidden fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div class="theme-card bg-white p-6 max-w-md w-full space-y-5 shadow-2xl text-slate-900">
+            <div class="flex justify-between items-center border-b border-slate-200 pb-3">
+                <h3 class="text-sm font-black uppercase tracking-wider">Ledger Settings</h3>
+                <button onclick="closeSettingsModal()" class="text-slate-500 hover:text-slate-900 text-xl font-bold cursor-pointer">×</button>
+            </div>
+
+            <div class="space-y-1">
+                <label class="text-xs font-extrabold text-slate-800 block">Currency</label>
+                <select id="settingsCurrencySelect" class="w-full theme-input px-3 py-2 text-sm cursor-pointer text-slate-900">
+                    <option value="USD">USD ($)</option>
+                    <option value="EUR">EUR (€)</option>
+                    <option value="TRY">TRY (₺)</option>
+                </select>
+            </div>
+
+            <div class="space-y-1.5">
+                <label class="text-xs font-extrabold text-slate-800 block">Visual Template</label>
+                <div class="grid grid-cols-3 gap-2">
+                    <label class="cursor-pointer border border-slate-300 bg-slate-50 p-2 rounded-xl text-center shadow-xs has-[:checked]:ring-2 has-[:checked]:ring-blue-500">
+                        <input type="radio" name="modalThemeSelect" value="Silk" onchange="applyTheme('Silk')" class="sr-only">
+                        <span class="block text-xs font-black font-sans">Silk</span>
+                        <span class="text-[9px] block text-slate-500 font-sans">Minimal</span>
+                    </label>
+                    <label class="cursor-pointer border-2 border-slate-900 bg-amber-100 p-2 rounded-xl text-center shadow-[2px_2px_0px_#0f172a] has-[:checked]:ring-2 has-[:checked]:ring-amber-500">
+                        <input type="radio" name="modalThemeSelect" value="Toon" onchange="applyTheme('Toon')" class="sr-only">
+                        <span class="block text-xs font-black font-serif">Toon</span>
+                        <span class="text-[9px] block text-slate-600 font-sans">Cartoon</span>
+                    </label>
+                    <label class="cursor-pointer border border-cyan-500 bg-slate-950 p-2 rounded-xl text-center text-cyan-400 shadow-xs has-[:checked]:ring-2 has-[:checked]:ring-cyan-400">
+                        <input type="radio" name="modalThemeSelect" value="Neon" onchange="applyTheme('Neon')" class="sr-only">
+                        <span class="block text-xs font-black font-mono">Neon</span>
+                        <span class="text-[9px] block text-cyan-300 font-mono">Cyber</span>
+                    </label>
+                </div>
+            </div>
+
+            <button onclick="saveSettings()" class="w-full theme-btn bg-lime-400 hover:bg-lime-500 text-slate-900 py-3 text-xs font-black uppercase tracking-wider rounded-xl cursor-pointer">Save Settings</button>
+        </div>
+    </div>
+
+    <!-- Share Link Modal -->
     <div id="shareModal" class="hidden fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
         <div class="theme-card bg-white p-6 max-w-md w-full space-y-4 shadow-2xl text-slate-900">
             <div class="flex justify-between items-center border-b border-slate-200 pb-2">
@@ -400,12 +250,12 @@
             <p data-i18n="shareLinkSub" class="text-xs font-medium text-slate-600">Anyone with this link will only need to enter the 4-digit PIN to access this ledger.</p>
             <div class="flex gap-2">
                 <input type="text" id="shareLinkInput" readonly class="flex-1 theme-input px-3 py-2 text-xs font-mono">
-                <button onclick="copyShareLink()" data-i18n="copyBtn" class="theme-btn px-4 py-2 text-xs font-black uppercase rounded-xl cursor-pointer">Copy</button>
+                <button onclick="copyShareLink()" data-i18n="copyBtn" class="theme-btn action-btn px-4 py-2 text-xs font-black uppercase rounded-xl cursor-pointer">Copy</button>
             </div>
         </div>
     </div>
 
-    <!-- Processing Indicator -->
+    <!-- Processing Modal -->
     <div id="recordingModal" class="hidden fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-50">
         <div class="theme-card bg-white p-6 space-y-4 w-64 text-center text-slate-900">
             <p data-i18n="processingMsg" class="text-xs font-black uppercase tracking-widest theme-font-head">Processing...</p>
@@ -415,915 +265,8 @@
         </div>
     </div>
 
-    <script>
-        let API_URL = "";
-        let currentTab = "";
-        let currentPin = "";
-        let currentCurrency = "USD";
-        let currentTheme = "Toon";
-        let currentLang = "en";
-        let editingExpenseId = null;
-        let state = { members: [], expenses: [], archives: [] };
-
-        const CURRENCY_MAP = { USD: "$", EUR: "€", TRY: "₺" };
-
-        const TRANSLATIONS = {
-            en: {
-                activeLedgerTitle: "Active Confidential Ledger",
-                noLedgerLoaded: "No Ledger Loaded",
-                encryptedSub: "Isolated encrypted tab",
-                shareLinkBtn: "Share Link",
-                deleteBtn: "Delete",
-                participantsTitle: "Participants",
-                participantsSub: "Add or remove people from this group.",
-                namePlaceholder: "Name...",
-                addBtn: "Add",
-                noParticipants: "No participants added.",
-                newExpenseTitle: "New Expense",
-                newExpenseSub: "Log a transaction to split.",
-                editExpenseTitle: "Edit Expense",
-                editExpenseSub: "Modifying selected entry. Click Update or Delete below.",
-                dateLabel: "Date",
-                categoryLabel: "Category",
-                descLabel: "Description",
-                descPlaceholder: "e.g. Dinner",
-                amountLabel: "Amount",
-                paidByLabel: "Paid By",
-                splitBetweenLabel: "Split Between:",
-                selectAllBtn: "Select All",
-                addMembersFirstMsg: "Add participants first.",
-                recordExpenseBtn: "Record Expense",
-                updateExpenseBtn: "Update Expense",
-                cancelBtn: "Cancel",
-                settlementTitle: "Settlement Matrix",
-                copySummaryBtn: "Copy Summary",
-                awaitingLedgerMsg: "Awaiting ledger input...",
-                allAccountsBalanced: "All accounts balanced.",
-                historyTitle: "Ledger History",
-                clickToEditSub: "(Click item to edit)",
-                generateReportBtn: "Generate Report",
-                noExpenseEntries: "No expense entries.",
-                modalSub: "Create or open a confidential group ledger.",
-                tabCreate: "Create New",
-                tabRecall: "Recall Existing",
-                ledgerNameLabel: "Ledger Name",
-                ledgerNamePh: "e.g. dinner-club",
-                setPinLabel: "Set 4-Digit PIN",
-                initializeBtn: "Initialize Ledger",
-                selectArchiveLabel: "Select Archive",
-                selectArchivePh: "Select archive...",
-                accessingSharedLabel: "Accessing Shared Ledger",
-                enterPinLabel: "Enter 4-Digit PIN",
-                accessLedgerBtn: "Access Ledger",
-                shareLinkHeader: "Share Ledger Link",
-                shareLinkSub: "Anyone with this link will only need to enter the 4-digit PIN to access this ledger.",
-                copyBtn: "Copy",
-                processingMsg: "Processing...",
-                editingBadge: "Editing",
-                pays: "pays",
-                categories: {
-                    "General": "General",
-                    "Food & Dining": "Food & Dining",
-                    "Transportation": "Transportation",
-                    "Accommodation": "Accommodation",
-                    "Entertainment": "Entertainment",
-                    "Shopping": "Shopping",
-                    "Groceries": "Groceries",
-                    "Utilities": "Utilities"
-                }
-            },
-            tr: {
-                activeLedgerTitle: "Aktif Gizli Defter",
-                noLedgerLoaded: "Defter Yüklenmedi",
-                encryptedSub: "İzole edilmiş şifreli sekme",
-                shareLinkBtn: "Bağlantı Paylaş",
-                deleteBtn: "Sil",
-                participantsTitle: "Katılımcılar",
-                participantsSub: "Gruba kişi ekleyin veya çıkarın.",
-                namePlaceholder: "İsim...",
-                addBtn: "Ekle",
-                noParticipants: "Katılımcı eklenmedi.",
-                newExpenseTitle: "Yeni Harcama",
-                newExpenseSub: "Bölüşülecek harcamayı girin.",
-                editExpenseTitle: "Harcamayı Düzenle",
-                editExpenseSub: "Seçili harcama güncelleniyor.",
-                dateLabel: "Tarih",
-                categoryLabel: "Kategori",
-                descLabel: "Açıklama",
-                descPlaceholder: "örn. Akşam Yemeği",
-                amountLabel: "Tutar",
-                paidByLabel: "Ödeyen",
-                splitBetweenLabel: "Bölüşecek Kişiler:",
-                selectAllBtn: "Tümünü Seç",
-                addMembersFirstMsg: "Önce katılımcı ekleyin.",
-                recordExpenseBtn: "Harcamayı Kaydet",
-                updateExpenseBtn: "Harcamayı Güncelle",
-                cancelBtn: "İptal",
-                settlementTitle: "Hesaplaşma Tablosu",
-                copySummaryBtn: "Özeti Kopyala",
-                awaitingLedgerMsg: "Defter verisi bekleniyor...",
-                allAccountsBalanced: "Tüm hesaplar dengede.",
-                historyTitle: "Harcama Geçmişi",
-                clickToEditSub: "(Düzenlemek için tıklayın)",
-                generateReportBtn: "Rapor Oluştur",
-                noExpenseEntries: "Harcama kaydı yok.",
-                modalSub: "Gizli grup defteri oluşturun veya açın.",
-                tabCreate: "Yeni Oluştur",
-                tabRecall: "Mevcut Defteri Aç",
-                ledgerNameLabel: "Defter Adı",
-                ledgerNamePh: "örn. tatil-grubu",
-                setPinLabel: "4 Haneli PIN Belirleyin",
-                initializeBtn: "Defteri Başlat",
-                selectArchiveLabel: "Arşiv Seçin",
-                selectArchivePh: "Arşiv seçin...",
-                accessingSharedLabel: "Paylaşılan Deftere Erişiliyor",
-                enterPinLabel: "4 Haneli PIN Girin",
-                accessLedgerBtn: "Deftere Eriş",
-                shareLinkHeader: "Defter Bağlantısını Paylaş",
-                shareLinkSub: "Bu bağlantıya sahip kişiler yalnızca 4 haneli PIN girerek deftere erişebilir.",
-                copyBtn: "Kopyala",
-                processingMsg: "İşleniyor...",
-                editingBadge: "Düzenleniyor",
-                pays: "öder",
-                categories: {
-                    "General": "Genel",
-                    "Food & Dining": "Yeme & İçme",
-                    "Transportation": "Ulaşım",
-                    "Accommodation": "Konaklama",
-                    "Entertainment": "Eğlence",
-                    "Shopping": "Alışveriş",
-                    "Groceries": "Market",
-                    "Utilities": "Faturalar"
-                }
-            },
-            de: {
-                activeLedgerTitle: "Aktives Vertrauliches Buch",
-                noLedgerLoaded: "Kein Buch Geladen",
-                encryptedSub: "Isolierte verschlüsselte Kartei",
-                shareLinkBtn: "Link Teilen",
-                deleteBtn: "Löschen",
-                participantsTitle: "Teilnehmer",
-                participantsSub: "Personen hinzufügen oder entfernen.",
-                namePlaceholder: "Name...",
-                addBtn: "Hinzufügen",
-                noParticipants: "Keine Teilnehmer hinzugefügt.",
-                newExpenseTitle: "Neue Ausgabe",
-                newExpenseSub: "Transaktion zum Teilen eintragen.",
-                editExpenseTitle: "Ausgabe Bearbeiten",
-                editExpenseSub: "Ausgewählten Eintrag ändern.",
-                dateLabel: "Datum",
-                categoryLabel: "Kategorie",
-                descLabel: "Beschreibung",
-                descPlaceholder: "z.B. Abendessen",
-                amountLabel: "Betrag",
-                paidByLabel: "Bezahlt Von",
-                splitBetweenLabel: "Aufteilen Zwischen:",
-                selectAllBtn: "Alle Auswählen",
-                addMembersFirstMsg: "Zuerst Teilnehmer hinzufügen.",
-                recordExpenseBtn: "Ausgabe Speichern",
-                updateExpenseBtn: "Ausgabe Aktualisieren",
-                cancelBtn: "Abbrechen",
-                settlementTitle: "Abrechnungsmatrix",
-                copySummaryBtn: "Zusammenfassung Kopieren",
-                awaitingLedgerMsg: "Warte auf Bucheingabe...",
-                allAccountsBalanced: "Alle Konten ausgeglichen.",
-                historyTitle: "Verlauf",
-                clickToEditSub: "(Klicken zum Bearbeiten)",
-                generateReportBtn: "Bericht Erstellen",
-                noExpenseEntries: "Keine Ausgaben vorhanden.",
-                modalSub: "Vertrauliches Gruppenbuch erstellen oder öffnen.",
-                tabCreate: "Neu Erstellen",
-                tabRecall: "Öffnen",
-                ledgerNameLabel: "Name des Buches",
-                ledgerNamePh: "z.B. reise-gruppe",
-                setPinLabel: "4-stelligen PIN Festlegen",
-                initializeBtn: "Buch Initialisieren",
-                selectArchiveLabel: "Archiv Auswählen",
-                selectArchivePh: "Archiv wählen...",
-                accessingSharedLabel: "Zugriff auf Geteiltes Buch",
-                enterPinLabel: "Enter 4-Digit PIN",
-                accessLedgerBtn: "Buch Öffnen",
-                shareLinkHeader: "Link Teilen",
-                shareLinkSub: "Jeder mit diesem Link benötigt nur den 4-stelligen PIN für den Zugriff.",
-                copyBtn: "Kopieren",
-                processingMsg: "Verarbeitung...",
-                editingBadge: "Bearbeitung",
-                pays: "zahlt an",
-                categories: {
-                    "General": "Allgemein",
-                    "Food & Dining": "Essen & Trinken",
-                    "Transportation": "Transport",
-                    "Accommodation": "Unterkunft",
-                    "Entertainment": "Unterhaltung",
-                    "Shopping": "Einkaufen",
-                    "Groceries": "Lebensmittel",
-                    "Utilities": "Nebenkosten"
-                }
-            }
-        };
-
-        function applyTheme(themeName) {
-            const validThemes = ["Toon", "Silk", "Neon"];
-            currentTheme = validThemes.includes(themeName) ? themeName : "Toon";
-            document.documentElement.setAttribute('data-theme', currentTheme.toLowerCase());
-            document.getElementById('themeBadge').innerText = `Theme: ${currentTheme}`;
-        }
-
-        function escapeHTML(str) {
-            if (str === null || str === undefined) return '';
-            return String(str)
-                .replace(/&/g, '&amp;')
-                .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;')
-                .replace(/"/g, '&quot;')
-                .replace(/'/g, '&#039;');
-        }
-
-        function toInputDateFormat(rawDateStr) {
-            if (!rawDateStr) return new Date().toISOString().split('T')[0];
-            const str = String(rawDateStr).trim();
-            if (/^\d{4}-\d{2}-\d{2}$/.test(str)) return str;
-            const match = str.match(/^(\d{4})[\/\-]?(\d{2})[\/\-]?(\d{2})/);
-            if (match) return `${match[1]}-${match[2]}-${match[3]}`;
-            return new Date().toISOString().split('T')[0];
-        }
-
-        function setStatus(text) { document.getElementById('statusMsg').innerText = text; }
-        function showLoading(show) {
-            const modal = document.getElementById('recordingModal');
-            if (show) modal.classList.remove('hidden'); else modal.classList.add('hidden');
-        }
-
-        function getCurrencySymbol() { return CURRENCY_MAP[currentCurrency] || "$"; }
-
-        function updateCurrencyDisplays() {
-            const symbols = document.querySelectorAll('.currencySymbol');
-            symbols.forEach(el => el.innerText = getCurrencySymbol());
-            document.getElementById('currencySelect').value = currentCurrency;
-        }
-
-        function setDefaultDate() {
-            const dateInput = document.getElementById('expenseDate');
-            if (dateInput && !dateInput.value) {
-                dateInput.value = new Date().toISOString().split('T')[0];
-            }
-        }
-
-        function formatDateYYYYMMDD(rawDateStr) {
-            if (!rawDateStr) return '-';
-            const str = String(rawDateStr);
-            const match = str.match(/^(\d{4})[\/\-]?(\d{2})[\/\-]?(\d{2})/);
-            if (match) return `${match[1]}${match[2]}${match[3]}`;
-            const digits = str.replace(/\D/g, '');
-            if (digits.length >= 8) return digits.substring(0, 8);
-            return rawDateStr;
-        }
-
-        function switchLanguage(lang) {
-            if (!TRANSLATIONS[lang]) return;
-            currentLang = lang;
-
-            ['tr', 'en', 'de'].forEach(l => {
-                const btn = document.getElementById(`lang-${l}`);
-                if (btn) {
-                    btn.className = (l === lang)
-                        ? "hover:text-amber-600 cursor-pointer transition text-slate-900 font-extrabold border-b-2 border-slate-900 pb-0.5"
-                        : "hover:text-amber-600 cursor-pointer transition text-slate-400 font-bold";
-                }
-            });
-
-            document.querySelectorAll('[data-i18n]').forEach(el => {
-                const key = el.getAttribute('data-i18n');
-                if (TRANSLATIONS[lang][key]) el.innerText = TRANSLATIONS[lang][key];
-            });
-
-            document.querySelectorAll('[data-i18n-ph]').forEach(el => {
-                const key = el.getAttribute('data-i18n-ph');
-                if (TRANSLATIONS[lang][key]) el.placeholder = TRANSLATIONS[lang][key];
-            });
-
-            const catSelect = document.getElementById('expenseCategory');
-            const currentCatVal = catSelect.value || "General";
-            const catMap = TRANSLATIONS[lang].categories;
-            catSelect.innerHTML = Object.keys(catMap).map(k => `<option value="${escapeHTML(k)}">${escapeHTML(catMap[k])}</option>`).join('');
-            catSelect.value = currentCatVal;
-
-            render();
-        }
-
-        function goHome() {
-            currentTab = "";
-            currentPin = "";
-            window.location.hash = "";
-            state.members = [];
-            state.expenses = [];
-            applyTheme("Toon");
-            resetExpenseForm();
-            render();
-            openWelcomeModal();
-        }
-
-        function openWelcomeModal() {
-            document.getElementById('welcomeModal').classList.remove('hidden');
-            fetchArchivesList();
-            
-            const hash = window.location.hash.replace('#', '').trim();
-            if (hash) {
-                switchModalTab('recall');
-                document.getElementById('modalTabsHeader').classList.add('hidden');
-                document.getElementById('archiveDropdownContainer').classList.add('hidden');
-                document.getElementById('directTabDisplay').classList.remove('hidden');
-                document.getElementById('directTabName').value = hash;
-                document.getElementById('recallLedgerPin').focus();
-            } else {
-                switchModalTab('create');
-                document.getElementById('modalTabsHeader').classList.remove('hidden');
-                document.getElementById('archiveDropdownContainer').classList.remove('hidden');
-                document.getElementById('directTabDisplay').classList.add('hidden');
-            }
-        }
-
-        function closeWelcomeModal() { document.getElementById('welcomeModal').classList.add('hidden'); }
-
-        function switchModalTab(mode) {
-            const createBtn = document.getElementById('tabCreateBtn');
-            const recallBtn = document.getElementById('tabRecallBtn');
-            const createSec = document.getElementById('createSection');
-            const recallSec = document.getElementById('recallSection');
-
-            if (mode === 'create') {
-                createBtn.className = "flex-1 theme-btn py-2 text-xs font-black uppercase tracking-wider bg-amber-300 text-slate-900 rounded-xl cursor-pointer";
-                recallBtn.className = "flex-1 theme-btn py-2 text-xs font-black uppercase tracking-wider bg-slate-100 text-slate-500 rounded-xl cursor-pointer";
-                createSec.classList.remove('hidden');
-                recallSec.classList.add('hidden');
-            } else {
-                recallBtn.className = "flex-1 theme-btn py-2 text-xs font-black uppercase tracking-wider bg-amber-300 text-slate-900 rounded-xl cursor-pointer";
-                createBtn.className = "flex-1 theme-btn py-2 text-xs font-black uppercase tracking-wider bg-slate-100 text-slate-500 rounded-xl cursor-pointer";
-                recallSec.classList.remove('hidden');
-                createSec.classList.add('hidden');
-            }
-        }
-
-        async function initApp() {
-            setDefaultDate();
-            switchLanguage('en');
-            try {
-                const configRes = await fetch('config.json');
-                const config = await configRes.json();
-                API_URL = config.API_URL;
-                openWelcomeModal();
-            } catch (err) {
-                setStatus("Config Missing");
-            }
-        }
-
-        async function fetchArchivesList() {
-            try {
-                const response = await fetch(API_URL);
-                const data = await response.json();
-                state.archives = data.archives || [];
-                const select = document.getElementById('archiveSelect');
-                const phText = TRANSLATIONS[currentLang].selectArchivePh;
-                select.innerHTML = `<option value="">${escapeHTML(phText)}</option>` + 
-                    state.archives.map(a => `<option value="${escapeHTML(a)}">${escapeHTML(a)}</option>`).join('');
-            } catch (err) {
-                console.error("Failed to fetch archives", err);
-            }
-        }
-
-        async function createNewLedger() {
-            const name = document.getElementById('newLedgerName').value.trim();
-            const pin = document.getElementById('newLedgerPin').value.trim();
-            const themeRadio = document.querySelector('input[name="themeSelect"]:checked');
-            const theme = themeRadio ? themeRadio.value : "Toon";
-
-            if (!name) { alert("Please provide a ledger name."); return; }
-            if (!/^\d{4}$/.test(pin)) { alert("Please enter a valid 4-digit PIN."); return; }
-
-            showLoading(true);
-            try {
-                await fetch(API_URL, {
-                    method: "POST",
-                    mode: "no-cors",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ action: "createLedger", name, pin, theme })
-                });
-
-                setTimeout(async () => {
-                    await fetchArchivesList();
-                    const sanitizedTarget = name.replace(/[\/\\?\*\[\]:]/g, "_");
-                    const createdTab = state.archives.find(a => a.includes(sanitizedTarget));
-                    
-                    if (createdTab) {
-                        currentTab = createdTab;
-                        currentPin = pin;
-                        window.location.hash = createdTab;
-                        document.getElementById('newLedgerName').value = '';
-                        document.getElementById('newLedgerPin').value = '';
-                        closeWelcomeModal();
-                        await fetchLedgerData();
-                    } else {
-                        alert("Ledger initialized. Select it from 'Recall Existing'.");
-                    }
-                    showLoading(false);
-                }, 1500);
-            } catch (err) {
-                alert("Connection error.");
-                showLoading(false);
-            }
-        }
-
-        async function recallLedger() {
-            const hash = window.location.hash.replace('#', '').trim();
-            const selectedTab = hash || document.getElementById('archiveSelect').value;
-            const pin = document.getElementById('recallLedgerPin').value.trim();
-
-            if (!selectedTab) { alert("Please select an archive from the list."); return; }
-            if (!/^\d{4}$/.test(pin)) { alert("Please enter a valid 4-digit PIN."); return; }
-
-            currentTab = selectedTab;
-            currentPin = pin;
-            window.location.hash = selectedTab;
-
-            showLoading(true);
-            try {
-                const success = await fetchLedgerData();
-                if (success) {
-                    document.getElementById('recallLedgerPin').value = '';
-                    closeWelcomeModal();
-                }
-            } finally {
-                showLoading(false);
-            }
-        }
-
-        async function fetchLedgerData() {
-            if (!currentTab || !currentPin) return false;
-            setStatus("Syncing...");
-            try {
-                const response = await fetch(`${API_URL}?tab=${encodeURIComponent(currentTab)}&pin=${encodeURIComponent(currentPin)}`);
-                const data = await response.json();
-                
-                if (data.status === "error") {
-                    alert(data.message || "Incorrect PIN.");
-                    setStatus("Access Denied");
-                    return false;
-                }
-
-                currentCurrency = data.currency || "USD";
-                applyTheme(data.theme || "Toon");
-                state.members = data.members || [];
-                state.expenses = data.expenses || [];
-                editingExpenseId = null;
-                setStatus("Idle");
-                render();
-                return true;
-            } catch (err) {
-                setStatus("Sync Error");
-                return false;
-            }
-        }
-
-        async function sendAction(payload) {
-            if (!currentTab || !currentPin) { openWelcomeModal(); return; }
-            showLoading(true);
-            try {
-                payload.tab = currentTab;
-                payload.pin = currentPin;
-                
-                await fetch(API_URL, {
-                    method: "POST",
-                    mode: "no-cors",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(payload)
-                });
-                
-                setTimeout(async () => {
-                    await fetchLedgerData();
-                    showLoading(false);
-                }, 1000);
-            } catch (err) {
-                alert("Action failed");
-                showLoading(false);
-            }
-        }
-
-        function changeCurrency() {
-            const newCur = document.getElementById('currencySelect').value;
-            currentCurrency = newCur;
-            updateCurrencyDisplays();
-            sendAction({ action: "updateCurrency", currency: newCur });
-        }
-
-        async function deleteActiveLedger() {
-            if (!currentTab || !currentPin) return;
-            if (!confirm(`Are you sure you want to PERMANENTLY DELETE ledger "${currentTab}"?\n\nThis cannot be undone.`)) return;
-
-            showLoading(true);
-            try {
-                await fetch(API_URL, {
-                    method: "POST",
-                    mode: "no-cors",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ action: "deleteLedger", tab: currentTab, pin: currentPin })
-                });
-
-                setTimeout(() => {
-                    alert(`Ledger "${currentTab}" has been permanently deleted.`);
-                    goHome();
-                    showLoading(false);
-                }, 1200);
-            } catch (err) {
-                alert("Failed to delete ledger.");
-                showLoading(false);
-            }
-        }
-
-        function openShareModal() {
-            if (!currentTab) return;
-            const link = `${window.location.origin}${window.location.pathname}#${currentTab}`;
-            document.getElementById('shareLinkInput').value = link;
-            document.getElementById('shareModal').classList.remove('hidden');
-        }
-
-        function closeShareModal() { document.getElementById('shareModal').classList.add('hidden'); }
-
-        function copyShareLink() {
-            const input = document.getElementById('shareLinkInput');
-            input.select();
-            navigator.clipboard.writeText(input.value);
-            alert("Share link copied to clipboard!");
-            closeShareModal();
-        }
-
-        function addMember() {
-            const name = document.getElementById('memberName').value.trim();
-            if (!name) return;
-            document.getElementById('memberName').value = '';
-            sendAction({ action: "addMember", name });
-        }
-
-        function removeMember(name) {
-            if (confirm(`Remove participant "${name}"?`)) {
-                sendAction({ action: "removeMember", name });
-            }
-        }
-
-        function toggleSelectAll(select) {
-            document.querySelectorAll('.split-checkbox').forEach(cb => cb.checked = select);
-        }
-
-        function addExpense() {
-            const date = document.getElementById('expenseDate').value;
-            const category = document.getElementById('expenseCategory').value;
-            const desc = document.getElementById('expenseDesc').value.trim();
-            const amount = parseFloat(document.getElementById('expenseAmount').value);
-            const paidBy = document.getElementById('expensePaidBy').value;
-
-            const splitWith = Array.from(document.querySelectorAll('.split-checkbox:checked')).map(cb => cb.value);
-
-            if (!date || !desc || isNaN(amount) || amount <= 0 || !paidBy) { 
-                alert('Please fill in valid expense fields.'); 
-                return; 
-            }
-            if (splitWith.length === 0) { 
-                alert('Select at least one person to split the expense with.'); 
-                return; 
-            }
-
-            resetExpenseForm();
-            sendAction({ action: "addExpense", date, category, desc, amount, paidBy, splitWith });
-        }
-
-        function selectExpenseForEdit(id) {
-            const exp = (state.expenses || []).find(e => e.id.toString() === id.toString());
-            if (!exp) return;
-
-            editingExpenseId = exp.id;
-            render();
-
-            document.getElementById('expenseDate').value = toInputDateFormat(exp.date);
-            document.getElementById('expenseCategory').value = exp.category || "General";
-            document.getElementById('expenseDesc').value = exp.desc || "";
-            document.getElementById('expenseAmount').value = exp.amount || "";
-            document.getElementById('expensePaidBy').value = exp.paidBy || "";
-
-            const activeSplit = exp.splitWith && exp.splitWith.length > 0 ? exp.splitWith : state.members;
-            document.querySelectorAll('.split-checkbox').forEach(cb => {
-                cb.checked = activeSplit.includes(cb.value);
-            });
-
-            document.getElementById('expenseFormSection').scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
-
-        function updateExpenseFromForm() {
-            if (!editingExpenseId) return;
-
-            const date = document.getElementById('expenseDate').value;
-            const category = document.getElementById('expenseCategory').value;
-            const desc = document.getElementById('expenseDesc').value.trim();
-            const amount = parseFloat(document.getElementById('expenseAmount').value);
-            const paidBy = document.getElementById('expensePaidBy').value;
-
-            const splitWith = Array.from(document.querySelectorAll('.split-checkbox:checked')).map(cb => cb.value);
-
-            if (!date || !desc || isNaN(amount) || amount <= 0 || !paidBy) { 
-                alert('Please fill in valid expense fields.'); 
-                return; 
-            }
-            if (splitWith.length === 0) { 
-                alert('Select at least one person to split the expense with.'); 
-                return; 
-            }
-
-            const idToUpdate = editingExpenseId;
-            resetExpenseForm();
-            sendAction({ action: "updateExpense", id: idToUpdate, date, category, desc, amount, paidBy, splitWith });
-        }
-
-        function deleteExpenseFromForm() {
-            if (!editingExpenseId) return;
-            if (confirm("Delete this expense entry?")) {
-                const idToDelete = editingExpenseId;
-                resetExpenseForm();
-                sendAction({ action: "deleteExpense", id: idToDelete });
-            }
-        }
-
-        function resetExpenseForm() {
-            editingExpenseId = null;
-            setDefaultDate();
-            document.getElementById('expenseCategory').value = 'General';
-            document.getElementById('expenseDesc').value = '';
-            document.getElementById('expenseAmount').value = '';
-            render();
-            toggleSelectAll(true);
-        }
-
-        function calculateSettlements() {
-            if (!state.members || state.members.length === 0) return [];
-            
-            let balances = {};
-            state.members.forEach(m => balances[m] = 0);
-
-            (state.expenses || []).forEach(exp => {
-                if (!state.members.includes(exp.paidBy)) return;
-
-                const rawSplitGroup = (exp.splitWith && exp.splitWith.length > 0) ? exp.splitWith : state.members;
-                const activeSplitGroup = rawSplitGroup.filter(m => state.members.includes(m));
-
-                if (activeSplitGroup.length === 0) return;
-
-                const splitAmount = exp.amount / activeSplitGroup.length;
-                balances[exp.paidBy] += exp.amount;
-                
-                activeSplitGroup.forEach(m => { balances[m] -= splitAmount; });
-            });
-
-            let debtors = [], creditors = [];
-            for (let m in balances) {
-                let b = parseFloat(balances[m].toFixed(2));
-                if (b < -0.009) debtors.push({ name: m, amount: -b });
-                if (b > 0.009) creditors.push({ name: m, amount: b });
-            }
-
-            let transactions = [];
-            let i = 0, j = 0;
-            const sym = getCurrencySymbol();
-            const paysWord = TRANSLATIONS[currentLang].pays || "pays";
-
-            while (i < debtors.length && j < creditors.length) {
-                let d = debtors[i], c = creditors[j];
-                let amt = Math.min(d.amount, c.amount);
-                transactions.push(`${escapeHTML(d.name)} ${paysWord} ${escapeHTML(c.name)} ${sym}${amt.toFixed(2)}`);
-                d.amount -= amt; c.amount -= amt;
-                if (d.amount < 0.009) i++;
-                if (c.amount < 0.009) j++;
-            }
-            return transactions;
-        }
-
-        function copySettlementSummary() {
-            const settlements = calculateSettlements();
-            if (settlements.length === 0) {
-                alert("No settlements to copy.");
-                return;
-            }
-
-            const sym = getCurrencySymbol();
-            let summaryText = `*Settlr Summary [${currentTab}]*\n`;
-            summaryText += `Currency: ${currentCurrency} (${sym})\n\n`;
-            summaryText += `*Settlements:*\n`;
-            settlements.forEach(s => summaryText += `• ${s}\n`);
-
-            navigator.clipboard.writeText(summaryText);
-            alert("Settlement summary copied to clipboard!");
-        }
-
-        function generateReport() {
-            if (!currentTab || !state.expenses) return;
-
-            const reportWindow = window.open('', '_blank');
-            const dateToday = formatDateYYYYMMDD(new Date().toISOString().split('T')[0]);
-            const sym = getCurrencySymbol();
-            const t = TRANSLATIONS[currentLang];
-
-            let totalSpent = 0;
-            let categoryTotals = {};
-
-            (state.expenses || []).forEach(e => {
-                const amt = Number(e.amount) || 0;
-                totalSpent += amt;
-                const cat = e.category || "General";
-                categoryTotals[cat] = (categoryTotals[cat] || 0) + amt;
-            });
-
-            let html = `
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <title>Report - ${escapeHTML(currentTab)}</title>
-                <style>
-                    body { font-family: 'JetBrains Mono', Courier, monospace; background: #fff; color: #000; padding: 40px; max-width: 800px; margin: 0 auto; }
-                    h1 { font-size: 20px; text-transform: uppercase; border-bottom: 2px solid #000; padding-bottom: 5px; margin-bottom: 5px; }
-                    .meta { font-size: 12px; margin-bottom: 30px; text-transform: uppercase; }
-                    table { width: 100%; border-collapse: collapse; margin-bottom: 30px; text-align: left; font-size: 13px; }
-                    th, td { border-bottom: 1px solid #ccc; padding: 8px 4px; }
-                    th { border-bottom: 2px solid #000; text-transform: uppercase; }
-                    .total-box { border-top: 2px solid #000; border-bottom: 2px solid #000; padding: 10px 0; margin-bottom: 30px; font-weight: bold; font-size: 14px; }
-                    .category-section { border-top: 1px dashed #000; padding-top: 15px; font-size: 12px; }
-                    .category-row { display: flex; justify-content: space-between; padding: 3px 0; }
-                    @media print { body { padding: 0; } }
-                </style>
-            </head>
-            <body>
-                <h1>LEDGER REPORT: ${escapeHTML(currentTab)}</h1>
-                <div class="meta">
-                    <div>Generated On: ${escapeHTML(dateToday)}</div>
-                    <div>Currency: ${escapeHTML(currentCurrency)} (${sym})</div>
-                    <div>Theme: ${escapeHTML(currentTheme)}</div>
-                    <div>Total Entries: ${state.expenses.length}</div>
-                </div>
-
-                <table>
-                    <thead>
-                        <tr>
-                            <th>${escapeHTML(t.dateLabel)}</th>
-                            <th>${escapeHTML(t.categoryLabel)}</th>
-                            <th>${escapeHTML(t.descLabel)}</th>
-                            <th>${escapeHTML(t.paidByLabel)}</th>
-                            <th style="text-align: right;">${escapeHTML(t.amountLabel)}</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-            `;
-
-            (state.expenses || []).forEach(e => {
-                const catLabel = t.categories[e.category] || e.category || 'General';
-                html += `
-                    <tr>
-                        <td>${escapeHTML(formatDateYYYYMMDD(e.date))}</td>
-                        <td>${escapeHTML(catLabel)}</td>
-                        <td>${escapeHTML(e.desc)}</td>
-                        <td>${escapeHTML(e.paidBy)}</td>
-                        <td style="text-align: right;">${sym}${Number(e.amount).toFixed(2)}</td>
-                    </tr>
-                `;
-            });
-
-            html += `
-                    </tbody>
-                </table>
-
-                <div class="total-box">
-                    TOTAL EXPENSES: ${sym}${totalSpent.toFixed(2)}
-                </div>
-
-                <div class="category-section">
-                    <div style="font-weight: bold; margin-bottom: 8px; text-transform: uppercase;">Category Allocation Breakdown:</div>
-            `;
-
-            for (let cat in categoryTotals) {
-                let catAmount = categoryTotals[cat];
-                let pct = totalSpent > 0 ? ((catAmount / totalSpent) * 100).toFixed(1) : "0.0";
-                let catLabel = t.categories[cat] || cat;
-                html += `
-                    <div class="category-row">
-                        <span>${escapeHTML(catLabel)}: ${sym}${catAmount.toFixed(2)}</span>
-                        <span>${pct}%</span>
-                    </div>
-                `;
-            }
-
-            html += `
-                </div>
-            </body>
-            </html>
-            `;
-
-            reportWindow.document.write(html);
-            reportWindow.document.close();
-        }
-
-        function render() {
-            const t = TRANSLATIONS[currentLang];
-
-            document.getElementById('activeTabNameDisplay').innerText = currentTab ? escapeHTML(currentTab) : t.noLedgerLoaded;
-            document.getElementById('viewModeIndicator').innerText = currentTab ? `Mode: Active Ledger [${escapeHTML(currentTab)}]` : "Mode: Awaiting Authentication...";
-
-            const deleteBtn = document.getElementById('deleteLedgerBtn');
-            const shareBtn = document.getElementById('shareBtn');
-            if (currentTab) {
-                deleteBtn.classList.remove('hidden');
-                shareBtn.classList.remove('hidden');
-            } else {
-                deleteBtn.classList.add('hidden');
-                shareBtn.classList.add('hidden');
-            }
-
-            updateCurrencyDisplays();
-
-            // Form Title & Action Buttons
-            const formTitle = document.getElementById('expenseFormTitle');
-            const formSub = document.getElementById('expenseFormSub');
-            const formButtons = document.getElementById('expenseFormButtons');
-
-            if (editingExpenseId) {
-                formTitle.innerText = t.editExpenseTitle;
-                formSub.innerText = t.editExpenseSub;
-                formButtons.innerHTML = `
-                    <div class="flex flex-col sm:flex-row gap-2 pt-1">
-                        <button onclick="updateExpenseFromForm()" class="flex-1 theme-btn py-2.5 text-xs font-black uppercase cursor-pointer">${t.updateExpenseBtn}</button>
-                        <button onclick="deleteExpenseFromForm()" class="theme-btn bg-rose-500 hover:bg-rose-600 text-white px-4 py-2.5 text-xs font-black uppercase cursor-pointer">${t.deleteBtn}</button>
-                        <button onclick="resetExpenseForm()" class="theme-btn opacity-60 hover:opacity-100 px-4 py-2.5 text-xs font-black uppercase cursor-pointer">${t.cancelBtn}</button>
-                    </div>
-                `;
-            } else {
-                formTitle.innerText = t.newExpenseTitle;
-                formSub.innerText = t.newExpenseSub;
-                formButtons.innerHTML = `
-                    <button onclick="addExpense()" class="w-full theme-btn py-3 text-sm font-black uppercase cursor-pointer">${t.recordExpenseBtn}</button>
-                `;
-            }
-
-            // Members List
-            document.getElementById('memberList').innerHTML = (state.members || []).map(m => `
-                <span class="border border-current px-3 py-1 rounded-xl text-xs font-bold flex items-center gap-1.5">
-                    ${escapeHTML(m)}
-                    <button onclick="removeMember('${escapeHTML(m)}')" class="text-rose-500 hover:text-rose-700 font-extrabold cursor-pointer text-sm">×</button>
-                </span>
-            `).join('') || `<span class="opacity-50 text-xs italic font-medium">${t.noParticipants}</span>`;
-            
-            document.getElementById('expensePaidBy').innerHTML = (state.members || []).map(m => `<option value="${escapeHTML(m)}" class="text-slate-900">${escapeHTML(m)}</option>`).join('') || `<option class="text-slate-900">${t.addMembersFirstMsg}</option>`;
-
-            // Split Checkboxes
-            const splitCheckboxesContainer = document.getElementById('splitCheckboxes');
-            if (state.members && state.members.length > 0) {
-                splitCheckboxesContainer.innerHTML = state.members.map(m => `
-                    <label class="flex items-center gap-2 cursor-pointer border border-current px-3 py-1.5 rounded-xl font-bold text-xs">
-                        <input type="checkbox" value="${escapeHTML(m)}" class="split-checkbox w-4 h-4 accent-amber-500 rounded" checked>
-                        <span>${escapeHTML(m)}</span>
-                    </label>
-                `).join('');
-            } else {
-                splitCheckboxesContainer.innerHTML = `<span class="opacity-50 text-xs italic font-medium">${t.addMembersFirstMsg}</span>`;
-            }
-
-            // Expense History
-            const sym = getCurrencySymbol();
-            document.getElementById('expenseHistory').innerHTML = (state.expenses || []).map(exp => {
-                const isSelected = editingExpenseId === exp.id;
-                const activeSplit = exp.splitWith ? exp.splitWith.filter(m => state.members.includes(m)) : state.members;
-                const isPayerActive = state.members.includes(exp.paidBy);
-                const formattedDate = formatDateYYYYMMDD(exp.date);
-                const catLabel = t.categories[exp.category] || exp.category || 'General';
-
-                return `
-                    <li onclick="selectExpenseForEdit('${exp.id}')" title="Click to edit" class="border border-current p-3 rounded-xl mb-2 flex justify-between items-center cursor-pointer hover:opacity-80 transition-opacity ${isSelected ? 'ring-2 ring-amber-500 font-bold' : ''}">
-                        <div>
-                            <div class="flex items-center gap-2 flex-wrap">
-                                <span class="text-[10px] border border-current font-mono px-1.5 py-0.5 rounded-md font-bold">${escapeHTML(formattedDate)}</span>
-                                <span class="text-[10px] border border-current opacity-80 px-1.5 py-0.5 rounded-md font-bold">${escapeHTML(catLabel)}</span>
-                                <p class="font-extrabold text-sm">${escapeHTML(exp.desc)}</p>
-                            </div>
-                            <p class="text-[11px] opacity-70 font-semibold mt-1">Paid by ${escapeHTML(exp.paidBy)} ${!isPayerActive ? '(Removed)' : ''} (Split: ${activeSplit.length > 0 ? activeSplit.map(escapeHTML).join(', ') : 'None'})</p>
-                        </div>
-                        <div class="flex items-center gap-2">
-                            <span class="theme-font-head text-base font-bold">${sym}${Number(exp.amount).toFixed(2)}</span>
-                            ${isSelected ? `<span class="text-[10px] border border-current px-1.5 py-0.5 rounded-md font-bold uppercase">${t.editingBadge}</span>` : ''}
-                        </div>
-                    </li>
-                `;
-            }).join('') || `<span class="opacity-50 italic text-xs font-medium">${t.noExpenseEntries}</span>`;
-
-            // Settlements
-            const settlements = calculateSettlements();
-            document.getElementById('settlementList').innerHTML = settlements.length > 0
-                ? settlements.map(s => `<div class="border border-current p-2.5 text-xs rounded-xl font-bold">→ ${s}</div>`).join('')
-                : `<span class="opacity-50 italic font-medium text-xs">${t.allAccountsBalanced}</span>`;
-        }
-
-        initApp();
-    </script>
+    <!-- Scripts -->
+    <script src="js/i18n.js"></script>
+    <script src="js/app.js"></script>
 </body>
 </html>

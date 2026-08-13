@@ -10,10 +10,8 @@
 <body class="min-h-screen p-3 sm:p-8 antialiased">
     <div class="max-w-5xl mx-auto space-y-6">
         
-        <!-- Refactored Mobile-Optimized Header -->
+        <!-- Header -->
         <header class="theme-card theme-header p-4 sm:p-6 space-y-4">
-            
-            <!-- Top Row: Branding (Left) & App Controls (Right) -->
             <div class="flex items-center justify-between gap-3">
                 <div class="flex items-center gap-3 cursor-pointer group" onclick="goHome()" title="Back to Main Page">
                     <div class="relative w-12 h-12 sm:w-16 sm:h-16 rounded-full looney-target flex items-center justify-center border-3 sm:border-4 border-slate-900 shadow-[2px_2px_0px_#0f172a] sm:shadow-[3px_3px_0px_#0f172a] group-hover:scale-105 transition-transform flex-shrink-0">
@@ -30,7 +28,6 @@
                 </div>
             </div>
 
-            <!-- Bottom Row: Active Ledger Title & Actions Banner -->
             <div id="activeLedgerBar" class="pt-3 border-t border-current/15 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <p id="viewModeIndicator" class="text-base sm:text-xl font-black uppercase tracking-wider theme-font-head opacity-90 break-words leading-tight">
                     AWAITING AUTHENTICATION...
@@ -40,10 +37,9 @@
                     <button id="deleteLedgerBtn" onclick="deleteActiveLedger()" data-i18n="deleteBtn" class="hidden theme-btn text-xs bg-rose-500 hover:bg-rose-600 text-white px-3 py-1.5 font-bold cursor-pointer">Delete</button>
                 </div>
             </div>
-
         </header>
 
-        <!-- Full-Width Participants Section (Matches New Expense Frame Width) -->
+        <!-- Full-Width Participants Section -->
         <section class="theme-card theme-frame-2 p-6 flex flex-col justify-between space-y-4">
             <div>
                 <h2 data-i18n="participantsTitle" class="text-xs font-black uppercase tracking-wider opacity-70">Participants</h2>
@@ -151,11 +147,11 @@
             <div id="createSection" class="space-y-4">
                 <div class="space-y-1">
                     <label data-i18n="ledgerNameLabel" class="text-xs font-extrabold text-slate-800">Ledger Name</label>
-                    <input type="text" id="newLedgerName" data-i18n-ph="ledgerNamePh" placeholder="e.g. dinner-club" class="w-full theme-input px-3 py-2 text-sm">
+                    <input type="text" id="newLedgerName" data-i18n-ph="ledgerNamePh" placeholder="e.g. dinner-club" class="w-full theme-input px-3 py-2 text-sm" onkeypress="if(event.key==='Enter') createNewLedger()">
                 </div>
                 <div class="space-y-1">
                     <label data-i18n="setPinLabel" class="text-xs font-extrabold text-slate-800">Set 4-Digit PIN</label>
-                    <input type="text" id="newLedgerPin" maxlength="4" placeholder="1234" class="w-full theme-input px-3 py-2 text-sm font-mono tracking-widest">
+                    <input type="text" id="newLedgerPin" maxlength="4" placeholder="1234" class="w-full theme-input px-3 py-2 text-sm font-mono tracking-widest" onkeypress="if(event.key==='Enter') createNewLedger()">
                 </div>
                 <div class="space-y-1.5">
                     <label class="text-xs font-extrabold text-slate-800 block">Choose Visual Template</label>
@@ -192,7 +188,7 @@
                 </div>
                 <div class="space-y-1">
                     <label data-i18n="enterPinLabel" class="text-xs font-extrabold text-slate-800">Enter 4-Digit PIN</label>
-                    <input type="text" id="recallLedgerPin" maxlength="4" placeholder="1234" class="w-full theme-input px-3 py-2 text-sm font-mono tracking-widest">
+                    <input type="text" id="recallLedgerPin" maxlength="4" placeholder="1234" class="w-full theme-input px-3 py-2 text-sm font-mono tracking-widest" onkeypress="if(event.key==='Enter') recallLedger()">
                 </div>
                 <button onclick="recallLedger()" data-i18n="accessLedgerBtn" class="w-full theme-btn bg-cyan-400 hover:bg-cyan-500 text-slate-900 py-3 text-xs font-black uppercase tracking-wider rounded-xl cursor-pointer">Access Ledger</button>
             </div>

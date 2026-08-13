@@ -11,14 +11,23 @@
     <div class="max-w-5xl mx-auto space-y-6">
         
         <!-- Header -->
-        <header class="theme-card theme-header p-4 sm:p-6 flex flex-col sm:flex-row justify-between items-center gap-4">
+        <header class="theme-card theme-header p-4 sm:p-6 flex flex-col md:flex-row justify-between items-center gap-4">
             <div class="flex items-center gap-4 cursor-pointer group" onclick="goHome()" title="Back to Main Page">
                 <div class="relative w-16 h-16 sm:w-20 sm:h-20 rounded-full looney-target flex items-center justify-center border-4 border-slate-900 shadow-[3px_3px_0px_#0f172a] group-hover:scale-105 transition-transform">
                     <img src="logo.png" alt="Settlr Logo" class="h-12 sm:h-14 w-auto object-contain drop-shadow-md">
                 </div>
                 <div>
                     <h1 class="text-3xl sm:text-4xl font-extrabold tracking-wide uppercase theme-font-head">Settlr!</h1>
-                    <p id="viewModeIndicator" class="text-xs font-bold opacity-80 mt-1 inline-block">Mode: Awaiting Authentication...</p>
+                    <!-- Doubled font-size (text-2xl) and uppercaseActive Ledger label -->
+                    <div class="flex flex-wrap items-center gap-3 mt-1">
+                        <p id="viewModeIndicator" class="text-2xl font-black uppercase tracking-wider theme-font-head opacity-90 inline-block">
+                            AWAITING AUTHENTICATION...
+                        </p>
+                        <div class="flex items-center gap-2">
+                            <button id="shareBtn" onclick="openShareModal()" data-i18n="shareLinkBtn" class="hidden theme-btn action-btn text-xs px-3 py-1.5 font-bold cursor-pointer">Share Link</button>
+                            <button id="deleteLedgerBtn" onclick="deleteActiveLedger()" data-i18n="deleteBtn" class="hidden theme-btn text-xs bg-rose-500 hover:bg-rose-600 text-white px-3 py-1.5 font-bold cursor-pointer">Delete</button>
+                        </div>
+                    </div>
                 </div>
             </div>
             <div class="flex items-center gap-2">
@@ -27,23 +36,8 @@
             </div>
         </header>
 
-        <!-- Top Row -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <section class="theme-card theme-frame-1 p-6 flex flex-col justify-between space-y-4">
-                <div>
-                    <h2 data-i18n="activeLedgerTitle" class="text-xs font-black uppercase tracking-wider opacity-70">Active Confidential Ledger</h2>
-                    <p id="activeTabNameDisplay" class="text-2xl theme-font-head font-bold mt-1">No Ledger Loaded</p>
-                </div>
-                <div class="flex justify-between items-center pt-3 border-t border-current/20">
-                    <p data-i18n="encryptedSub" class="text-xs font-bold opacity-70">Isolated encrypted tab</p>
-                    <div class="flex items-center gap-2">
-                        <button id="shareBtn" onclick="openShareModal()" data-i18n="shareLinkBtn" class="hidden theme-btn action-btn text-xs px-3 py-1.5 font-bold cursor-pointer">Share Link</button>
-                        <button id="deleteLedgerBtn" onclick="deleteActiveLedger()" data-i18n="deleteBtn" class="hidden theme-btn text-xs bg-rose-500 hover:bg-rose-600 text-white px-3 py-1.5 font-bold cursor-pointer">Delete</button>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Participant Staging Section -->
+        <!-- Centered Participants Section (Ledger Frame Removed) -->
+        <div class="max-w-2xl mx-auto w-full">
             <section class="theme-card theme-frame-2 p-6 flex flex-col justify-between space-y-4">
                 <div>
                     <h2 data-i18n="participantsTitle" class="text-xs font-black uppercase tracking-wider opacity-70">Participants</h2>
@@ -126,7 +120,7 @@
         </div>
     </div>
 
-    <!-- Welcome Modal -->
+    <!-- Modals & Overlay structure -->
     <div id="welcomeModal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
         <div class="theme-card p-6 sm:p-8 max-w-md w-full space-y-6 shadow-2xl bg-white text-slate-900">
             <div class="border-b border-slate-200 pb-5 text-center space-y-3">

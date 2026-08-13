@@ -10,33 +10,40 @@
 <body class="min-h-screen p-3 sm:p-8 antialiased">
     <div class="max-w-5xl mx-auto space-y-6">
         
-        <!-- Header -->
-        <header class="theme-card theme-header p-4 sm:p-6 flex flex-col md:flex-row justify-between items-center gap-4">
-            <div class="flex items-center gap-4 cursor-pointer group" onclick="goHome()" title="Back to Main Page">
-                <div class="relative w-16 h-16 sm:w-20 sm:h-20 rounded-full looney-target flex items-center justify-center border-4 border-slate-900 shadow-[3px_3px_0px_#0f172a] group-hover:scale-105 transition-transform">
-                    <img src="logo.png" alt="Settlr Logo" class="h-12 sm:h-14 w-auto object-contain drop-shadow-md">
-                </div>
-                <div>
-                    <h1 class="text-3xl sm:text-4xl font-extrabold tracking-wide uppercase theme-font-head">Settlr!</h1>
-                    <!-- Doubled font-size (text-2xl) and uppercaseActive Ledger label -->
-                    <div class="flex flex-wrap items-center gap-3 mt-1">
-                        <p id="viewModeIndicator" class="text-2xl font-black uppercase tracking-wider theme-font-head opacity-90 inline-block">
-                            AWAITING AUTHENTICATION...
-                        </p>
-                        <div class="flex items-center gap-2">
-                            <button id="shareBtn" onclick="openShareModal()" data-i18n="shareLinkBtn" class="hidden theme-btn action-btn text-xs px-3 py-1.5 font-bold cursor-pointer">Share Link</button>
-                            <button id="deleteLedgerBtn" onclick="deleteActiveLedger()" data-i18n="deleteBtn" class="hidden theme-btn text-xs bg-rose-500 hover:bg-rose-600 text-white px-3 py-1.5 font-bold cursor-pointer">Delete</button>
-                        </div>
+        <!-- Refactored Mobile-Optimized Header -->
+        <header class="theme-card theme-header p-4 sm:p-6 space-y-4">
+            
+            <!-- Top Row: Branding (Left) & App Controls (Right) -->
+            <div class="flex items-center justify-between gap-3">
+                <div class="flex items-center gap-3 cursor-pointer group" onclick="goHome()" title="Back to Main Page">
+                    <div class="relative w-12 h-12 sm:w-16 sm:h-16 rounded-full looney-target flex items-center justify-center border-3 sm:border-4 border-slate-900 shadow-[2px_2px_0px_#0f172a] sm:shadow-[3px_3px_0px_#0f172a] group-hover:scale-105 transition-transform flex-shrink-0">
+                        <img src="logo.png" alt="Settlr Logo" class="h-8 sm:h-11 w-auto object-contain drop-shadow-md">
+                    </div>
+                    <div>
+                        <h1 class="text-2xl sm:text-3xl font-extrabold tracking-wide uppercase theme-font-head leading-none">Settlr!</h1>
                     </div>
                 </div>
+
+                <div class="flex items-center gap-2 flex-shrink-0">
+                    <button id="settingsBtn" onclick="openSettingsModal()" data-i18n="settingsBtn" class="hidden theme-btn text-xs px-2.5 py-1.5 font-bold cursor-pointer">⚙ Settings</button>
+                    <div id="statusMsg" class="text-[10px] sm:text-xs font-black px-2.5 py-1.5 rounded-xl border border-current uppercase">Idle</div>
+                </div>
             </div>
-            <div class="flex items-center gap-2">
-                <button id="settingsBtn" onclick="openSettingsModal()" data-i18n="settingsBtn" class="hidden theme-btn text-xs px-3 py-1.5 font-bold cursor-pointer">⚙ Settings</button>
-                <div id="statusMsg" class="text-xs font-black px-3 py-1.5 rounded-xl border border-current uppercase">Idle</div>
+
+            <!-- Bottom Row: Active Ledger Title & Actions Banner -->
+            <div id="activeLedgerBar" class="pt-3 border-t border-current/15 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <p id="viewModeIndicator" class="text-base sm:text-xl font-black uppercase tracking-wider theme-font-head opacity-90 break-words leading-tight">
+                    AWAITING AUTHENTICATION...
+                </p>
+                <div class="flex items-center gap-2 flex-wrap">
+                    <button id="shareBtn" onclick="openShareModal()" data-i18n="shareLinkBtn" class="hidden theme-btn action-btn text-xs px-3 py-1.5 font-bold cursor-pointer">Share Link</button>
+                    <button id="deleteLedgerBtn" onclick="deleteActiveLedger()" data-i18n="deleteBtn" class="hidden theme-btn text-xs bg-rose-500 hover:bg-rose-600 text-white px-3 py-1.5 font-bold cursor-pointer">Delete</button>
+                </div>
             </div>
+
         </header>
 
-        <!-- Centered Participants Section (Ledger Frame Removed) -->
+        <!-- Centered Participants Section -->
         <div class="max-w-2xl mx-auto w-full">
             <section class="theme-card theme-frame-2 p-6 flex flex-col justify-between space-y-4">
                 <div>
@@ -120,7 +127,7 @@
         </div>
     </div>
 
-    <!-- Modals & Overlay structure -->
+    <!-- Welcome Modal -->
     <div id="welcomeModal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
         <div class="theme-card p-6 sm:p-8 max-w-md w-full space-y-6 shadow-2xl bg-white text-slate-900">
             <div class="border-b border-slate-200 pb-5 text-center space-y-3">

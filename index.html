@@ -195,12 +195,22 @@
         </div>
     </div>
 
-    <!-- Settings Modal -->
+    <!-- Settings Modal (Updated with Language Select) -->
     <div id="settingsModal" class="hidden fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
         <div class="theme-card bg-white p-6 max-w-md w-full space-y-5 shadow-2xl text-slate-900">
             <div class="flex justify-between items-center border-b border-slate-200 pb-3">
                 <h3 class="text-sm font-black uppercase tracking-wider">Ledger Settings</h3>
                 <button type="button" onclick="closeSettingsModal()" class="text-slate-500 hover:text-slate-900 text-xl font-bold cursor-pointer">×</button>
+            </div>
+
+            <!-- Language Option -->
+            <div class="space-y-1">
+                <label class="text-xs font-extrabold text-slate-800 block">Language</label>
+                <select id="settingsLangSelect" class="w-full theme-input px-3 py-2 text-sm cursor-pointer text-slate-900">
+                    <option value="en">English</option>
+                    <option value="tr">Türkçe</option>
+                    <option value="de">Deutsch</option>
+                </select>
             </div>
 
             <div class="space-y-1">

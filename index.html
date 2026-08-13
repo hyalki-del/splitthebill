@@ -23,7 +23,7 @@
                 </div>
 
                 <div class="flex items-center gap-2 flex-shrink-0">
-                    <button id="settingsBtn" onclick="openSettingsModal()" data-i18n="settingsBtn" class="hidden theme-btn text-xs px-2.5 py-1.5 font-bold cursor-pointer">⚙ Settings</button>
+                    <button id="settingsBtn" type="button" onclick="openSettingsModal()" data-i18n="settingsBtn" class="hidden theme-btn text-xs px-2.5 py-1.5 font-bold cursor-pointer">⚙ Settings</button>
                     <div id="statusMsg" class="text-[10px] sm:text-xs font-black px-2.5 py-1.5 rounded-xl border border-current uppercase">Idle</div>
                 </div>
             </div>
@@ -33,8 +33,8 @@
                     AWAITING AUTHENTICATION...
                 </p>
                 <div class="flex items-center gap-2 flex-wrap">
-                    <button id="shareBtn" onclick="openShareModal()" data-i18n="shareLinkBtn" class="hidden theme-btn action-btn text-xs px-3 py-1.5 font-bold cursor-pointer">Share Link</button>
-                    <button id="deleteLedgerBtn" onclick="deleteActiveLedger()" data-i18n="deleteBtn" class="hidden theme-btn text-xs bg-rose-500 hover:bg-rose-600 text-white px-3 py-1.5 font-bold cursor-pointer">Delete</button>
+                    <button id="shareBtn" type="button" onclick="openShareModal()" data-i18n="shareLinkBtn" class="hidden theme-btn action-btn text-xs px-3 py-1.5 font-bold cursor-pointer">Share Link</button>
+                    <button id="deleteLedgerBtn" type="button" onclick="deleteActiveLedger()" data-i18n="deleteBtn" class="hidden theme-btn text-xs bg-rose-500 hover:bg-rose-600 text-white px-3 py-1.5 font-bold cursor-pointer">Delete</button>
                 </div>
             </div>
         </header>
@@ -48,10 +48,10 @@
             <div class="space-y-3">
                 <div class="flex gap-2">
                     <input type="text" id="memberName" data-i18n-ph="namePlaceholder" placeholder="Name..." class="flex-1 theme-input px-3 py-2 text-sm" onkeypress="if(event.key==='Enter') stageMember()">
-                    <button onclick="stageMember()" data-i18n="addBtn" class="theme-btn px-4 py-2 text-xs font-extrabold cursor-pointer">Add</button>
+                    <button type="button" onclick="stageMember()" data-i18n="addBtn" class="theme-btn px-4 py-2 text-xs font-extrabold cursor-pointer">Add</button>
                 </div>
                 <div id="memberList" class="text-sm flex flex-wrap gap-2 pt-1"></div>
-                <button id="saveMembersBtn" onclick="saveStagedMembers()" data-i18n="saveMembersBtn" class="hidden w-full theme-btn bg-lime-400 hover:bg-lime-500 text-slate-900 py-2 text-xs font-black uppercase tracking-wider rounded-xl cursor-pointer">Save New Participants</button>
+                <button id="saveMembersBtn" type="button" onclick="saveStagedMembers()" data-i18n="saveMembersBtn" class="hidden w-full theme-btn bg-lime-400 hover:bg-lime-500 text-slate-900 py-2 text-xs font-black uppercase tracking-wider rounded-xl cursor-pointer">Save New Participants</button>
             </div>
         </section>
 
@@ -94,7 +94,7 @@
             </div>
 
             <div id="expenseFormButtons">
-                <button onclick="addExpense()" data-i18n="recordExpenseBtn" class="w-full theme-btn py-3 text-sm font-extrabold cursor-pointer">Record Expense</button>
+                <button type="button" onclick="addExpense()" data-i18n="recordExpenseBtn" class="w-full theme-btn py-3 text-sm font-extrabold cursor-pointer">Record Expense</button>
             </div>
         </section>
 
@@ -103,7 +103,7 @@
             <section class="theme-card theme-frame-4 p-6 space-y-4">
                 <div class="flex justify-between items-center border-b border-current/10 pb-3">
                     <h2 data-i18n="settlementTitle" class="text-xs font-black uppercase tracking-wider opacity-70">Settlement Matrix</h2>
-                    <button onclick="copySettlementSummary()" data-i18n="copySummaryBtn" class="theme-btn action-btn text-xs px-3 py-1.5 font-extrabold cursor-pointer">Copy Summary</button>
+                    <button type="button" onclick="copySettlementSummary()" data-i18n="copySummaryBtn" class="theme-btn action-btn text-xs px-3 py-1.5 font-extrabold cursor-pointer">Copy Summary</button>
                 </div>
                 <div id="settlementList" class="space-y-2 text-xs min-h-[100px]"></div>
             </section>
@@ -114,7 +114,7 @@
                         <h2 data-i18n="historyTitle" class="text-xs font-black uppercase tracking-wider opacity-70">Ledger History</h2>
                         <span data-i18n="clickToEditSub" class="text-[10px] opacity-70 italic font-medium">(Click item to edit)</span>
                     </div>
-                    <button onclick="generateReport()" data-i18n="generateReportBtn" class="theme-btn action-btn text-xs px-3 py-1.5 font-extrabold cursor-pointer">Generate Report</button>
+                    <button type="button" onclick="generateReport()" data-i18n="generateReportBtn" class="theme-btn action-btn text-xs px-3 py-1.5 font-extrabold cursor-pointer">Generate Report</button>
                 </div>
                 <ul id="expenseHistory" class="space-y-2 text-xs min-h-[100px] max-h-[300px] overflow-y-auto pr-1"></ul>
             </section>
@@ -129,18 +129,18 @@
                     <img src="logo.png" alt="Settlr Logo" class="h-16 w-auto object-contain drop-shadow-md">
                 </div>
                 <div class="text-xs font-black tracking-widest text-slate-800 flex justify-center items-center gap-2 pt-1 uppercase">
-                    <button id="lang-tr" onclick="switchLanguage('tr')" class="hover:text-amber-600 cursor-pointer transition">TÜRKÇE</button>
+                    <button id="lang-tr" type="button" onclick="switchLanguage('tr')" class="hover:text-amber-600 cursor-pointer transition">TÜRKÇE</button>
                     <span class="text-slate-300 font-normal">|</span>
-                    <button id="lang-en" onclick="switchLanguage('en')" class="hover:text-amber-600 cursor-pointer transition">ENGLISH</button>
+                    <button id="lang-en" type="button" onclick="switchLanguage('en')" class="hover:text-amber-600 cursor-pointer transition">ENGLISH</button>
                     <span class="text-slate-300 font-normal">|</span>
-                    <button id="lang-de" onclick="switchLanguage('de')" class="hover:text-amber-600 cursor-pointer transition">DEUTSCH</button>
+                    <button id="lang-de" type="button" onclick="switchLanguage('de')" class="hover:text-amber-600 cursor-pointer transition">DEUTSCH</button>
                 </div>
                 <p data-i18n="modalSub" class="text-xs font-bold text-slate-600">Create or open a confidential group ledger.</p>
             </div>
 
             <div id="modalTabsHeader" class="flex gap-2">
-                <button id="tabCreateBtn" onclick="switchModalTab('create')" data-i18n="tabCreate" class="flex-1 theme-btn py-2 text-xs font-black uppercase tracking-wider bg-amber-300 text-slate-900 rounded-xl cursor-pointer">Create New</button>
-                <button id="tabRecallBtn" onclick="switchModalTab('recall')" data-i18n="tabRecall" class="flex-1 theme-btn py-2 text-xs font-black uppercase tracking-wider bg-slate-100 text-slate-500 rounded-xl cursor-pointer">Recall Existing</button>
+                <button id="tabCreateBtn" type="button" onclick="switchModalTab('create')" data-i18n="tabCreate" class="flex-1 theme-btn py-2 text-xs font-black uppercase tracking-wider bg-amber-300 text-slate-900 rounded-xl cursor-pointer">Create New</button>
+                <button id="tabRecallBtn" type="button" onclick="switchModalTab('recall')" data-i18n="tabRecall" class="flex-1 theme-btn py-2 text-xs font-black uppercase tracking-wider bg-slate-100 text-slate-500 rounded-xl cursor-pointer">Recall Existing</button>
             </div>
 
             <!-- Create Form -->
@@ -173,7 +173,7 @@
                         </label>
                     </div>
                 </div>
-                <button onclick="createNewLedger()" data-i18n="initializeBtn" class="w-full theme-btn bg-lime-400 hover:bg-lime-500 text-slate-900 py-3 text-xs font-black uppercase tracking-wider rounded-xl cursor-pointer">Initialize Ledger</button>
+                <button type="button" onclick="createNewLedger()" data-i18n="initializeBtn" class="w-full theme-btn bg-lime-400 hover:bg-lime-500 text-slate-900 py-3 text-xs font-black uppercase tracking-wider rounded-xl cursor-pointer">Initialize Ledger</button>
             </div>
 
             <!-- Recall Form -->
@@ -190,7 +190,7 @@
                     <label data-i18n="enterPinLabel" class="text-xs font-extrabold text-slate-800">Enter 4-Digit PIN</label>
                     <input type="text" id="recallLedgerPin" maxlength="4" placeholder="1234" class="w-full theme-input px-3 py-2 text-sm font-mono tracking-widest" onkeypress="if(event.key==='Enter') recallLedger()">
                 </div>
-                <button onclick="recallLedger()" data-i18n="accessLedgerBtn" class="w-full theme-btn bg-cyan-400 hover:bg-cyan-500 text-slate-900 py-3 text-xs font-black uppercase tracking-wider rounded-xl cursor-pointer">Access Ledger</button>
+                <button type="button" onclick="recallLedger()" data-i18n="accessLedgerBtn" class="w-full theme-btn bg-cyan-400 hover:bg-cyan-500 text-slate-900 py-3 text-xs font-black uppercase tracking-wider rounded-xl cursor-pointer">Access Ledger</button>
             </div>
         </div>
     </div>
@@ -200,7 +200,7 @@
         <div class="theme-card bg-white p-6 max-w-md w-full space-y-5 shadow-2xl text-slate-900">
             <div class="flex justify-between items-center border-b border-slate-200 pb-3">
                 <h3 class="text-sm font-black uppercase tracking-wider">Ledger Settings</h3>
-                <button onclick="closeSettingsModal()" class="text-slate-500 hover:text-slate-900 text-xl font-bold cursor-pointer">×</button>
+                <button type="button" onclick="closeSettingsModal()" class="text-slate-500 hover:text-slate-900 text-xl font-bold cursor-pointer">×</button>
             </div>
 
             <div class="space-y-1">
@@ -233,7 +233,7 @@
                 </div>
             </div>
 
-            <button onclick="saveSettings()" class="w-full theme-btn bg-lime-400 hover:bg-lime-500 text-slate-900 py-3 text-xs font-black uppercase tracking-wider rounded-xl cursor-pointer">Save Settings</button>
+            <button type="button" onclick="saveSettings()" class="w-full theme-btn bg-lime-400 hover:bg-lime-500 text-slate-900 py-3 text-xs font-black uppercase tracking-wider rounded-xl cursor-pointer">Save Settings</button>
         </div>
     </div>
 
@@ -242,12 +242,12 @@
         <div class="theme-card bg-white p-6 max-w-md w-full space-y-4 shadow-2xl text-slate-900">
             <div class="flex justify-between items-center border-b border-slate-200 pb-2">
                 <h3 data-i18n="shareLinkHeader" class="text-xs font-black uppercase tracking-wider">Share Ledger Link</h3>
-                <button onclick="closeShareModal()" class="text-slate-500 hover:text-slate-900 text-xl font-bold cursor-pointer">×</button>
+                <button type="button" onclick="closeShareModal()" class="text-slate-500 hover:text-slate-900 text-xl font-bold cursor-pointer">×</button>
             </div>
             <p data-i18n="shareLinkSub" class="text-xs font-medium text-slate-600">Anyone with this link will only need to enter the 4-digit PIN to access this ledger.</p>
             <div class="flex gap-2">
                 <input type="text" id="shareLinkInput" readonly class="flex-1 theme-input px-3 py-2 text-xs font-mono">
-                <button onclick="copyShareLink()" data-i18n="copyBtn" class="theme-btn action-btn px-4 py-2 text-xs font-black uppercase rounded-xl cursor-pointer">Copy</button>
+                <button type="button" onclick="copyShareLink()" data-i18n="copyBtn" class="theme-btn action-btn px-4 py-2 text-xs font-black uppercase rounded-xl cursor-pointer">Copy</button>
             </div>
         </div>
     </div>

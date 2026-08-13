@@ -121,7 +121,7 @@
         </div>
     </div>
 
-    <!-- Welcome Modal -->
+    <!-- Welcome Modal (Theme selection removed) -->
     <div id="welcomeModal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
         <div class="theme-card p-6 sm:p-8 max-w-md w-full space-y-6 shadow-2xl bg-white text-slate-900">
             <div class="border-b border-slate-200 pb-5 text-center space-y-3">
@@ -153,26 +153,6 @@
                     <label data-i18n="setPinLabel" class="text-xs font-extrabold text-slate-800">Set 4-Digit PIN</label>
                     <input type="text" id="newLedgerPin" maxlength="4" placeholder="1234" class="w-full theme-input px-3 py-2 text-sm font-mono tracking-widest" onkeypress="if(event.key==='Enter') createNewLedger()">
                 </div>
-                <div class="space-y-1.5">
-                    <label class="text-xs font-extrabold text-slate-800 block">Choose Visual Template</label>
-                    <div class="grid grid-cols-3 gap-2">
-                        <label class="cursor-pointer border border-slate-300 bg-slate-50 p-2 rounded-xl text-center shadow-xs has-[:checked]:ring-2 has-[:checked]:ring-blue-500">
-                            <input type="radio" name="themeSelect" value="Silk" checked onchange="applyTheme('Silk')" class="sr-only">
-                            <span class="block text-xs font-black font-sans">Silk</span>
-                            <span class="text-[9px] block text-slate-500 font-sans">Minimal</span>
-                        </label>
-                        <label class="cursor-pointer border-2 border-slate-900 bg-amber-100 p-2 rounded-xl text-center shadow-[2px_2px_0px_#0f172a] has-[:checked]:ring-2 has-[:checked]:ring-amber-500">
-                            <input type="radio" name="themeSelect" value="Toon" onchange="applyTheme('Toon')" class="sr-only">
-                            <span class="block text-xs font-black font-serif">Toon</span>
-                            <span class="text-[9px] block text-slate-600 font-sans">Cartoon</span>
-                        </label>
-                        <label class="cursor-pointer border border-cyan-500 bg-slate-950 p-2 rounded-xl text-center text-cyan-400 shadow-xs has-[:checked]:ring-2 has-[:checked]:ring-cyan-400">
-                            <input type="radio" name="themeSelect" value="Neon" onchange="applyTheme('Neon')" class="sr-only">
-                            <span class="block text-xs font-black font-mono">Neon</span>
-                            <span class="text-[9px] block text-cyan-300 font-mono">Cyber</span>
-                        </label>
-                    </div>
-                </div>
                 <button type="button" onclick="createNewLedger()" data-i18n="initializeBtn" class="w-full theme-btn bg-lime-400 hover:bg-lime-500 text-slate-900 py-3 text-xs font-black uppercase tracking-wider rounded-xl cursor-pointer">Initialize Ledger</button>
             </div>
 
@@ -195,7 +175,7 @@
         </div>
     </div>
 
-    <!-- Settings Modal (Updated with Language Select) -->
+    <!-- Settings Modal -->
     <div id="settingsModal" class="hidden fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
         <div class="theme-card bg-white p-6 max-w-md w-full space-y-5 shadow-2xl text-slate-900">
             <div class="flex justify-between items-center border-b border-slate-200 pb-3">
@@ -273,7 +253,7 @@
     </div>
 
     <!-- Scripts -->
-    <script src="js/i18n.js?v=3.0"></script>
-<script src="js/app.js?v=3.0"></script>
+    <script src="js/i18n.js"></script>
+    <script src="js/app.js"></script>
 </body>
 </html>

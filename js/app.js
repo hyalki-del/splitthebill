@@ -1,3 +1,8 @@
+/**
+ * Settlr - Client-Side Controller
+ * Architecture: Modular Event-Driven UI with Global Scope Binding & Atomic Settings Persistence
+ */
+
 const FALLBACK_API_URL = "https://script.google.com/macros/s/AKfycbyA9QSZKFNWJMenmVJuaR56Ma1BnvZ2r3_AlceA8Mdgew-CUeqfSyZd0-VrPSjQL6eF8g/exec";
 let API_URL = FALLBACK_API_URL;
 
@@ -19,15 +24,21 @@ function applyTheme(themeName) {
 }
 
 function openSettingsModal() {
-    alert("Settings modal triggered");
-    const curSel = document.getElementById('settingsCurrencySelect');
-    if (curSel) curSel.value = currentCurrency;
+    try {
+        const curSel = document.getElementById('settingsCurrencySelect');
+        if (curSel) curSel.value = currentCurrency;
 
-    const langSel = document.getElementById('settingsLangSelect');
-    if (langSel) langSel.value = currentLang;
+        const langSel = document.getElementById('settingsLangSelect');
+        if (langSel) langSel.value = currentLang;
 
-    const modal = document.getElementById('settingsModal');
-    if (modal) modal.classList.remove('hidden');
+        const themeRadios = document.querySelectorAll('input[name="modalThemeSelect"]');
+        themeRadios.forEach(r => { if (r) r.checked = (r.value === currentTheme); });
+
+        const modal = document.getElementById('settingsModal');
+        if (modal) modal.classList.remove('hidden');
+    } catch (e) {
+        console.error("Error opening settings modal:", e);
+    }
 }
 
 function closeSettingsModal() {
@@ -36,32 +47,36 @@ function closeSettingsModal() {
 }
 
 async function saveSettings() {
-    const curEl = document.getElementById('settingsCurrencySelect');
-    const newCur = curEl ? curEl.value : currentCurrency;
+    try {
+        const curEl = document.getElementById('settingsCurrencySelect');
+        const newCur = curEl ? curEl.value : currentCurrency;
 
-    const langEl = document.getElementById('settingsLangSelect');
-    const newLang = langEl ? langEl.value : currentLang;
+        const langEl = document.getElementById('settingsLangSelect');
+        const newLang = langEl ? langEl.value : currentLang;
 
-    const selectedRadio = document.querySelector('input[name="modalThemeSelect"]:checked');
-    const newTheme = selectedRadio ? selectedRadio.value : currentTheme;
+        const selectedRadio = document.querySelector('input[name="modalThemeSelect"]:checked');
+        const newTheme = selectedRadio ? selectedRadio.value : currentTheme;
 
-    currentCurrency = newCur;
-    currentLang = newLang;
-    
-    if (typeof switchLanguage === 'function') {
-        switchLanguage(newLang);
+        currentCurrency = newCur;
+        currentLang = newLang;
+        
+        if (typeof switchLanguage === 'function') {
+            switchLanguage(newLang);
+        }
+
+        applyTheme(newTheme);
+        updateCurrencyDisplays();
+        closeSettingsModal();
+
+        await sendAction({ 
+            action: "updateSettings", 
+            currency: newCur, 
+            theme: newTheme,
+            language: newLang
+        });
+    } catch (e) {
+        console.error("Error saving settings:", e);
     }
-
-    applyTheme(newTheme);
-    updateCurrencyDisplays();
-    closeSettingsModal();
-
-    await sendAction({ 
-        action: "updateSettings", 
-        currency: newCur, 
-        theme: newTheme,
-        language: newLang
-    });
 }
 
 function escapeHTML(str) {
@@ -84,28 +99,37 @@ function toInputDateFormat(rawDateStr) {
 }
 
 function setStatus(text) { 
-    const el = document.getElementById('statusMsg');
-    if (el) el.innerText = text; 
+    try {
+        const el = document.getElementById('statusMsg');
+        if (el) el.innerText = text; 
+    } catch (e) {}
 }
 
 function showLoading(show) {
-    const modal = document.getElementById('recordingModal');
-    if (!modal) return;
-    if (show) modal.classList.remove('hidden'); else modal.classList.add('hidden');
+    try {
+        const modal = document.getElementById('recordingModal');
+        if (!modal) return;
+        if (show) modal.classList.remove('hidden'); 
+        else modal.classList.add('hidden');
+    } catch (e) {}
 }
 
 function getCurrencySymbol() { return CURRENCY_MAP[currentCurrency] || "$"; }
 
 function updateCurrencyDisplays() {
-    const symbols = document.querySelectorAll('.currencySymbol');
-    symbols.forEach(el => { if (el) el.innerText = getCurrencySymbol(); });
+    try {
+        const symbols = document.querySelectorAll('.currencySymbol');
+        symbols.forEach(el => { if (el) el.innerText = getCurrencySymbol(); });
+    } catch (e) {}
 }
 
 function setDefaultDate() {
-    const dateInput = document.getElementById('expenseDate');
-    if (dateInput && !dateInput.value) {
-        dateInput.value = new Date().toISOString().split('T')[0];
-    }
+    try {
+        const dateInput = document.getElementById('expenseDate');
+        if (dateInput && !dateInput.value) {
+            dateInput.value = new Date().toISOString().split('T')[0];
+        }
+    } catch (e) {}
 }
 
 function formatDateYYYYMMDD(rawDateStr) {
@@ -132,92 +156,106 @@ function goHome() {
 }
 
 function openWelcomeModal() {
-    const modal = document.getElementById('welcomeModal');
-    if (modal) modal.classList.remove('hidden');
-    
-    fetchArchivesList();
-    
-    const hash = window.location.hash.replace('#', '').trim();
-    const tabsHeader = document.getElementById('modalTabsHeader');
-    if (tabsHeader) tabsHeader.classList.remove('hidden');
-
-    if (hash) {
-        switchModalTab('recall');
-        const container = document.getElementById('archiveDropdownContainer');
-        if (container) container.classList.add('hidden');
-        const directDisplay = document.getElementById('directTabDisplay');
-        if (directDisplay) directDisplay.classList.remove('hidden');
-        const directInput = document.getElementById('directTabName');
-        if (directInput) directInput.value = hash;
-        const pinInput = document.getElementById('recallLedgerPin');
-        if (pinInput) pinInput.focus();
-    } else {
-        switchModalTab('create');
-        const container = document.getElementById('archiveDropdownContainer');
-        if (container) container.classList.remove('hidden');
-        const directDisplay = document.getElementById('directTabDisplay');
-        if (directDisplay) directDisplay.classList.add('hidden');
-    }
-}
-
-function closeWelcomeModal() { 
-    if (!currentTab) {
-        alert("Please create or access a ledger first!");
-        return; 
-    }
-    const modal = document.getElementById('welcomeModal');
-    if (modal) modal.classList.add('hidden'); 
-}
-
-function switchModalTab(mode) {
-    const createBtn = document.getElementById('tabCreateBtn');
-    const recallBtn = document.getElementById('tabRecallBtn');
-    const createSec = document.getElementById('createSection');
-    const recallSec = document.getElementById('recallSection');
-
-    if (mode === 'create') {
-        if (createBtn) createBtn.className = "flex-1 theme-btn py-2 text-xs font-black uppercase tracking-wider bg-amber-300 text-slate-900 rounded-xl cursor-pointer";
-        if (recallBtn) recallBtn.className = "flex-1 theme-btn py-2 text-xs font-black uppercase tracking-wider bg-slate-100 text-slate-500 rounded-xl cursor-pointer";
-        if (createSec) createSec.classList.remove('hidden');
-        if (recallSec) recallSec.classList.add('hidden');
-    } else {
-        if (recallBtn) recallBtn.className = "flex-1 theme-btn py-2 text-xs font-black uppercase tracking-wider bg-amber-300 text-slate-900 rounded-xl cursor-pointer";
-        if (createBtn) createBtn.className = "flex-1 theme-btn py-2 text-xs font-black uppercase tracking-wider bg-slate-100 text-slate-500 rounded-xl cursor-pointer";
-        if (recallSec) recallSec.classList.remove('hidden');
-        if (createSec) createSec.classList.add('hidden');
-
+    try {
+        const modal = document.getElementById('welcomeModal');
+        if (modal) modal.classList.remove('hidden');
+        
+        fetchArchivesList().catch(err => console.warn("Archive fetch skipped:", err));
+        
         const hash = window.location.hash.replace('#', '').trim();
-        if (!hash) {
+        const tabsHeader = document.getElementById('modalTabsHeader');
+        if (tabsHeader) tabsHeader.classList.remove('hidden');
+
+        if (hash) {
+            switchModalTab('recall');
+            const container = document.getElementById('archiveDropdownContainer');
+            if (container) container.classList.add('hidden');
+            const directDisplay = document.getElementById('directTabDisplay');
+            if (directDisplay) directDisplay.classList.remove('hidden');
+            const directInput = document.getElementById('directTabName');
+            if (directInput) directInput.value = hash;
+            const pinInput = document.getElementById('recallLedgerPin');
+            if (pinInput) pinInput.focus();
+        } else {
+            switchModalTab('create');
             const container = document.getElementById('archiveDropdownContainer');
             if (container) container.classList.remove('hidden');
             const directDisplay = document.getElementById('directTabDisplay');
             if (directDisplay) directDisplay.classList.add('hidden');
         }
+    } catch (e) {
+        console.error("Critical error in openWelcomeModal:", e);
+    }
+}
+
+function closeWelcomeModal() { 
+    if (!currentTab) return; 
+    try {
+        const modal = document.getElementById('welcomeModal');
+        if (modal) modal.classList.add('hidden'); 
+    } catch (e) {}
+}
+
+function switchModalTab(mode) {
+    try {
+        const createBtn = document.getElementById('tabCreateBtn');
+        const recallBtn = document.getElementById('tabRecallBtn');
+        const createSec = document.getElementById('createSection');
+        const recallSec = document.getElementById('recallSection');
+
+        if (mode === 'create') {
+            if (createBtn) createBtn.className = "flex-1 theme-btn py-2 text-xs font-black uppercase tracking-wider bg-amber-300 text-slate-900 rounded-xl cursor-pointer";
+            if (recallBtn) recallBtn.className = "flex-1 theme-btn py-2 text-xs font-black uppercase tracking-wider bg-slate-100 text-slate-500 rounded-xl cursor-pointer";
+            if (createSec) createSec.classList.remove('hidden');
+            if (recallSec) recallSec.classList.add('hidden');
+        } else {
+            if (recallBtn) recallBtn.className = "flex-1 theme-btn py-2 text-xs font-black uppercase tracking-wider bg-amber-300 text-slate-900 rounded-xl cursor-pointer";
+            if (createBtn) createBtn.className = "flex-1 theme-btn py-2 text-xs font-black uppercase tracking-wider bg-slate-100 text-slate-500 rounded-xl cursor-pointer";
+            if (recallSec) recallSec.classList.remove('hidden');
+            if (createSec) createSec.classList.add('hidden');
+
+            const hash = window.location.hash.replace('#', '').trim();
+            if (!hash) {
+                const container = document.getElementById('archiveDropdownContainer');
+                if (container) container.classList.remove('hidden');
+                const directDisplay = document.getElementById('directTabDisplay');
+                if (directDisplay) directDisplay.classList.add('hidden');
+            }
+        }
+    } catch (e) {
+        console.error("Error switching modal tabs:", e);
     }
 }
 
 async function initApp() {
-    setDefaultDate();
     try {
-        const configRes = await fetch('config.json');
-        if (configRes.ok) {
-            const config = await configRes.json();
-            if (config && config.API_URL) API_URL = config.API_URL;
+        setDefaultDate();
+        
+        try {
+            const configRes = await fetch('config.json');
+            if (configRes.ok) {
+                const config = await configRes.json();
+                if (config && config.API_URL) API_URL = config.API_URL;
+            }
+        } catch (err) {
+            console.warn("Config fetch failed, using fallback URL.");
         }
-    } catch (err) {}
 
-    if (typeof switchLanguage === 'function') {
-        switchLanguage('en');
+        if (typeof switchLanguage === 'function') {
+            switchLanguage('en');
+        }
+
+        openWelcomeModal();
+    } catch (e) {
+        console.error("Fatal initialization error:", e);
     }
-
-    openWelcomeModal();
 }
 
 async function fetchArchivesList() {
     if (!API_URL) return;
     try {
         const response = await fetch(API_URL);
-        if (!response.ok) throw new Error("Network failed");
+        if (!response.ok) throw new Error("Network response failed");
         const data = await response.json();
         state.archives = data.archives || [];
         
@@ -230,20 +268,14 @@ async function fetchArchivesList() {
                 state.archives.map(a => `<option value="${escapeHTML(a)}">${escapeHTML(a)}</option>`).join('');
         }
     } catch (err) {
-        console.warn("Archives fetch failed:", err);
+        console.warn("Failed to fetch archives list:", err);
     }
 }
 
-// DIAGNOSTIC HOOK 1: Initialize Ledger Clicked
 async function createNewLedger() {
-    alert("Diagnostic: Initialize Ledger clicked!"); // REMOVE AFTER TESTING
-
     const nameEl = document.getElementById('newLedgerName');
     const pinEl = document.getElementById('newLedgerPin');
-    if (!nameEl || !pinEl) {
-        alert("Error: Name or PIN input element not found in DOM!");
-        return;
-    }
+    if (!nameEl || !pinEl) return;
 
     const name = nameEl.value.trim();
     const pin = pinEl.value.trim();
@@ -294,16 +326,14 @@ async function createNewLedger() {
         await fetchLedgerData();
 
     } catch (err) {
-        alert("Error creating ledger: " + err.message);
+        console.error(err);
+        alert("Error creating ledger. Please verify network connection.");
     } finally {
         showLoading(false);
     }
 }
 
-// DIAGNOSTIC HOOK 2: Access Ledger Clicked
 async function recallLedger() {
-    alert("Diagnostic: Access Ledger clicked!"); // REMOVE AFTER TESTING
-
     let selectedTab = "";
     const directDisplay = document.getElementById('directTabDisplay');
 
@@ -893,6 +923,32 @@ function render() {
     }
 }
 
+// Explicit Global Scope Bindings for DOM HTML onclick attributes
+window.createNewLedger = createNewLedger;
+window.recallLedger = recallLedger;
+window.switchModalTab = switchModalTab;
+window.closeWelcomeModal = closeWelcomeModal;
+window.openSettingsModal = openSettingsModal;
+window.closeSettingsModal = closeSettingsModal;
+window.saveSettings = saveSettings;
+window.stageMember = stageMember;
+window.unstageMember = unstageMember;
+window.saveStagedMembers = saveStagedMembers;
+window.removeMember = removeMember;
+window.toggleSelectAll = toggleSelectAll;
+window.addExpense = addExpense;
+window.updateExpenseFromForm = updateExpenseFromForm;
+window.deleteExpenseFromForm = deleteExpenseFromForm;
+window.resetExpenseForm = resetExpenseForm;
+window.copySettlementSummary = copySettlementSummary;
+window.generateReport = generateReport;
+window.openShareModal = openShareModal;
+window.closeShareModal = closeShareModal;
+window.copyShareLink = copyShareLink;
+window.goHome = goHome;
+window.deleteActiveLedger = deleteActiveLedger;
+
+// Guaranteed Event Loop Bootstrapper
 if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", initApp);
 } else {

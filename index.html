@@ -26,7 +26,7 @@
 
         body { background-color: var(--bg-main); color: var(--text-main); font-family: var(--font-body); transition: background-color 0.3s ease, color 0.3s ease; }
         .theme-font-head { font-family: var(--font-head); }
-        .theme-card { background-color: var(--card-bg); border: 2px solid var(--border-color); border-radius: var(--card-radius); box-shadow: var(--card-shadow); position: relative; min-width: 280px; min-height: 150px; overflow: hidden; }
+        .theme-card { background-color: var(--card-bg); border: 2px solid var(--border-color); border-radius: var(--card-radius); box-shadow: var(--card-shadow); position: relative; min-width: 280px; min-height: 150px; overflow: hidden; transition: transform 0.2s ease, opacity 0.2s ease; }
         [data-theme="toon"] .theme-card { border: 3px solid var(--border-color); }
         .theme-header { border-bottom-width: 3px; }
 
@@ -34,13 +34,6 @@
         .slide-out-left { transform: translateX(-100%); opacity: 0; }
         .slide-in-right { transform: translateX(100%); opacity: 0; }
         .slide-reset { transform: translateX(0); opacity: 1; }
-
-        .resize-handle {
-            position: absolute; right: 4px; bottom: 4px; width: 14px; height: 14px; cursor: nwse-resize; z-index: 20; opacity: 0.4; transition: opacity 0.2s ease;
-            background: linear-gradient(135deg, transparent 50%, currentColor 50%);
-        }
-        .theme-card:hover .resize-handle { opacity: 0.8; }
-        body.is-resizing { user-select: none !important; cursor: nwse-resize !important; }
 
         .theme-input { background-color: var(--card-bg); border: 2px solid var(--border-color); border-radius: 0.85rem; color: var(--text-main); outline: none; }
         .theme-input:focus { border-color: var(--text-main); box-shadow: 0 0 0 2px rgba(15, 23, 42, 0.1); }
@@ -54,17 +47,14 @@
         [data-theme="silk"] .theme-frame-4 { background-color: #f1f5f9; border: 2.5px solid #64748b; box-shadow: 0 10px 20px -3px rgba(15, 23, 42, 0.12); }
         [data-theme="toon"] .theme-frame-4 { background-color: #fef08a; border: 4px solid #0f172a; box-shadow: 6px 6px 0px #0f172a; }
         [data-theme="neon"] .theme-frame-4 { background-color: #0e1424; border: 2.5px solid #f43f5e; box-shadow: 0 0 25px rgba(244, 63, 94, 0.3); }
-
-        @keyframes scan { 0% { left: -100%; } 50% { left: 100%; } 100% { left: -100%; } }
-        .scanner-bar { position: absolute; top: 0; bottom: 0; width: 50%; background: linear-gradient(90deg, transparent, rgba(56, 189, 248, 0.8), transparent); animation: scan 1.5s infinite ease-in-out; }
     </style>
 </head>
 <body class="min-h-screen p-3 sm:p-8 antialiased">
-    <div class="max-w-5xl mx-auto space-y-6">
+    <div id="appContainer" class="max-w-5xl mx-auto space-y-6">
         
         <!-- Header -->
-        <header class="theme-card theme-header p-4 sm:p-6">
-            <div class="flex items-center justify-between gap-4 flex-wrap sm:flex-nowrap">
+        <header class="theme-card theme-header p-4 sm:p-6" draggable="true" data-card-id="header">
+            <div class="flex items-center justify-between gap-4 flex-wrap sm:flex-nowrap pointer-events-auto">
                 <div class="flex items-center cursor-pointer group flex-shrink-0" onclick="window.goHome()" title="Home">
                     <div class="relative w-72 h-32 sm:w-96 sm:h-40 flex items-center justify-center group-hover:scale-105 transition-transform">
                         <img src="logo.png" alt="Brand Logo" class="w-full h-full object-contain drop-shadow-md" onerror="this.src='https://placehold.co/300x120?text=SPENSE'">
@@ -85,10 +75,10 @@
         </header>
 
         <!-- Participants Section -->
-        <section class="theme-card theme-frame-2 p-6 flex flex-col justify-between space-y-4">
+        <section class="theme-card theme-frame-2 p-6 flex flex-col justify-between space-y-4" draggable="true" data-card-id="participants">
             <div>
                 <h2 data-i18n="participantsTitle" class="text-xs font-black uppercase tracking-wider opacity-70">Participants</h2>
-                <p data-i18n="participantsSub" class="text-xs font-medium opacity-70 mt-0.5">Add or remove people from this group.</p>
+                <p data-i18n="participantsSub" class="text-xs font-medium opacity-70 mt-0.5">Add or remove people from this group. <span class="text-[10px] italic opacity-60">(Drag card to reorder & sync to sheet)</span></p>
             </div>
             <div class="space-y-3">
                 <div class="flex gap-2">
@@ -101,7 +91,7 @@
         </section>
 
         <!-- Expense Form -->
-        <section id="expenseFormSection" class="theme-card theme-frame-3 p-6 space-y-5">
+        <section id="expenseFormSection" class="theme-card theme-frame-3 p-6 space-y-5" draggable="true" data-card-id="expense">
             <div>
                 <h2 id="expenseFormTitle" data-i18n="newExpenseTitle" class="text-xs font-black uppercase tracking-wider opacity-70">New Expense</h2>
                 <p id="expenseFormSub" data-i18n="newExpenseSub" class="text-xs font-medium opacity-70 mt-0.5">Log a transaction to split.</p>
@@ -143,34 +133,31 @@
             </div>
         </section>
 
-        <!-- Settlement & History -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <section class="theme-card theme-frame-4 p-6 space-y-4">
-                <div class="flex justify-between items-center border-b border-current/10 pb-3">
-                    <h2 data-i18n="settlementTitle" class="text-xs font-black uppercase tracking-wider opacity-70">Settlement Matrix</h2>
-                    <button type="button" onclick="window.copySettlementSummary()" data-i18n="copySummaryBtn" class="theme-btn action-btn text-xs px-3 py-1.5 font-extrabold cursor-pointer">Copy Summary</button>
-                </div>
-                <div id="settlementList" class="space-y-2 text-xs min-h-[100px]"></div>
-            </section>
+        <!-- Settlement & History Cards -->
+        <section class="theme-card theme-frame-4 p-6 space-y-4" draggable="true" data-card-id="settlement">
+            <div class="flex justify-between items-center border-b border-current/10 pb-3">
+                <h2 data-i18n="settlementTitle" class="text-xs font-black uppercase tracking-wider opacity-70">Settlement Matrix</h2>
+                <button type="button" onclick="window.copySettlementSummary()" data-i18n="copySummaryBtn" class="theme-btn action-btn text-xs px-3 py-1.5 font-extrabold cursor-pointer">Copy Summary</button>
+            </div>
+            <div id="settlementList" class="space-y-2 text-xs min-h-[100px]"></div>
+        </section>
 
-            <section class="theme-card theme-frame-5 p-6 space-y-4">
-                <div class="flex justify-between items-center border-b border-current/10 pb-3">
-                    <div class="flex items-center gap-2">
-                        <h2 data-i18n="historyTitle" class="text-xs font-black uppercase tracking-wider opacity-70">Ledger History</h2>
-                        <span data-i18n="clickToEditSub" class="text-[10px] opacity-70 italic font-medium">(Click item to edit)</span>
-                    </div>
-                    <button type="button" onclick="window.generateReport()" data-i18n="generateReportBtn" class="theme-btn action-btn text-xs px-3 py-1.5 font-extrabold cursor-pointer">Generate Report</button>
+        <section class="theme-card theme-frame-5 p-6 space-y-4" draggable="true" data-card-id="history">
+            <div class="flex justify-between items-center border-b border-current/10 pb-3">
+                <div class="flex items-center gap-2">
+                    <h2 data-i18n="historyTitle" class="text-xs font-black uppercase tracking-wider opacity-70">Ledger History</h2>
+                    <span data-i18n="clickToEditSub" class="text-[10px] opacity-70 italic font-medium">(Click item to edit)</span>
                 </div>
-                <ul id="expenseHistory" class="space-y-2 text-xs min-h-[100px] max-h-[300px] overflow-y-auto pr-1"></ul>
-            </section>
-        </div>
+                <button type="button" onclick="window.generateReport()" data-i18n="generateReportBtn" class="theme-btn action-btn text-xs px-3 py-1.5 font-extrabold cursor-pointer">Generate Report</button>
+            </div>
+            <ul id="expenseHistory" class="space-y-2 text-xs min-h-[100px] max-h-[300px] overflow-y-auto pr-1"></ul>
+        </section>
     </div>
 
     <!-- Welcome Modal -->
-    <div id="welcomeModal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-        <div class="theme-card p-6 sm:p-8 max-w-lg w-full space-y-6 shadow-2xl bg-white text-slate-900 pointer-events-auto">
+    <div id="welcomeModal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 pointer-events-auto">
+        <div class="theme-card p-6 sm:p-8 max-w-lg w-full space-y-6 shadow-2xl bg-white text-slate-900">
             <div class="border-b border-slate-200 pb-5 text-center space-y-3">
-                
                 <div class="w-full max-w-[400px] mx-auto py-2">
                     <img src="logo.png" alt="Brand Logo" class="w-full h-auto object-contain drop-shadow-md" onerror="this.src='https://placehold.co/300x120?text=SPENSE'">
                 </div>
@@ -223,8 +210,8 @@
     </div>
 
     <!-- Settings Modal -->
-    <div id="settingsModal" class="hidden fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-        <div class="theme-card bg-white p-6 max-w-md w-full space-y-5 shadow-2xl text-slate-900 pointer-events-auto">
+    <div id="settingsModal" class="hidden fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 pointer-events-auto">
+        <div class="theme-card bg-white p-6 max-w-md w-full space-y-5 shadow-2xl text-slate-900">
             <div class="flex justify-between items-center border-b border-slate-200 pb-3">
                 <h3 class="text-sm font-black uppercase tracking-wider">Ledger Settings</h3>
                 <button type="button" onclick="window.closeSettingsModal()" class="text-slate-500 hover:text-slate-900 text-xl font-bold cursor-pointer">×</button>
@@ -271,8 +258,8 @@
     </div>
 
     <!-- Share Link Modal -->
-    <div id="shareModal" class="hidden fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-        <div class="theme-card bg-white p-6 max-w-md w-full space-y-4 shadow-2xl text-slate-900 pointer-events-auto">
+    <div id="shareModal" class="hidden fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 pointer-events-auto">
+        <div class="theme-card bg-white p-6 max-w-md w-full space-y-4 shadow-2xl text-slate-900">
             <div class="flex justify-between items-center border-b border-slate-200 pb-2">
                 <h3 data-i18n="shareLinkHeader" class="text-xs font-black uppercase tracking-wider">Share Ledger Link</h3>
                 <button type="button" onclick="window.closeShareModal()" class="text-slate-500 hover:text-slate-900 text-xl font-bold cursor-pointer">×</button>
@@ -285,7 +272,7 @@
         </div>
     </div>
 
-    <!-- Embedded Scripts with Synchronized Direct-Sync Participant Engine -->
+    <!-- Embedded Scripts with Card Layout Sheet Persistence -->
     <script>
         const TRANSLATIONS = {
             en: {
@@ -380,41 +367,77 @@
             taglineInterval = setInterval(rotateTagline, 3000);
         }
 
-        function initResizableFrames() {
-            document.querySelectorAll('.theme-card').forEach((card, index) => {
-                if (card.closest('#welcomeModal') || card.closest('#settingsModal') || card.closest('#shareModal') || card.closest('#recordingModal')) return;
-                const storageKey = `spense_frame_dim_${index}`;
-                const savedDim = localStorage.getItem(storageKey);
-                if (savedDim) {
-                    try {
-                        const { width, height } = JSON.parse(savedDim);
-                        if (width) card.style.width = width;
-                        if (height) card.style.height = height;
-                    } catch (e) {}
-                }
-                if (card.querySelector('.resize-handle')) return;
-                const handle = document.createElement('div');
-                handle.className = 'resize-handle';
-                card.appendChild(handle);
+        function initCardDragging() {
+            const container = document.getElementById('appContainer');
+            if (!container) return;
+            const cards = container.querySelectorAll('.theme-card');
 
-                handle.addEventListener('mousedown', (e) => {
-                    e.preventDefault();
-                    const startX = e.clientX, startY = e.clientY, startW = card.offsetWidth, startH = card.offsetHeight;
-                    document.body.classList.add('is-resizing');
+            cards.forEach(card => {
+                card.classList.add('cursor-grab', 'active:cursor-grabbing');
 
-                    const onMouseMove = (e) => {
-                        card.style.width = `${Math.max(280, startW + e.clientX - startX)}px`;
-                        card.style.height = `${Math.max(150, startH + e.clientY - startY)}px`;
-                    };
-                    const onMouseUp = () => {
-                        document.body.classList.remove('is-resizing');
-                        window.removeEventListener('mousemove', onMouseMove);
-                        window.removeEventListener('mouseup', onMouseUp);
-                        localStorage.setItem(storageKey, JSON.stringify({ width: card.style.width, height: card.style.height }));
-                    };
-                    window.addEventListener('mousemove', onMouseMove);
-                    window.addEventListener('mouseup', onMouseUp);
+                card.addEventListener('dragstart', (e) => {
+                    e.dataTransfer.setData('text/plain', '');
+                    card.classList.add('opacity-40', 'scale-95');
+                    window._draggedCard = card;
                 });
+
+                card.addEventListener('dragend', (e) => {
+                    card.classList.remove('opacity-40', 'scale-95');
+                    container.querySelectorAll('.theme-card').forEach(c => c.classList.remove('border-amber-400', 'border-4', 'border-dashed'));
+                    window._draggedCard = null;
+                });
+
+                card.addEventListener('dragover', (e) => { e.preventDefault(); });
+
+                card.addEventListener('dragenter', (e) => {
+                    e.preventDefault();
+                    if (window._draggedCard && window._draggedCard !== card) {
+                        card.classList.add('border-amber-400', 'border-4', 'border-dashed');
+                    }
+                });
+
+                card.addEventListener('dragleave', (e) => {
+                    card.classList.remove('border-amber-400', 'border-4', 'border-dashed');
+                });
+
+                card.addEventListener('drop', async (e) => {
+                    e.preventDefault();
+                    card.classList.remove('border-amber-400', 'border-4', 'border-dashed');
+
+                    if (window._draggedCard && window._draggedCard !== card) {
+                        const dragged = window._draggedCard;
+                        const parent = card.parentNode;
+
+                        const tempNode = document.createTextNode('');
+                        parent.replaceChild(tempNode, dragged);
+                        parent.replaceChild(dragged, card);
+                        parent.replaceChild(card, tempNode);
+
+                        if (currentTab) {
+                            const newOrder = getCurrentCardOrder();
+                            await callBackend('updateSettings', { cardOrder: newOrder });
+                        }
+                    }
+                });
+            });
+        }
+
+        function getCurrentCardOrder() {
+            const container = document.getElementById('appContainer');
+            if (!container) return [];
+            return Array.from(container.querySelectorAll('.theme-card'))
+                .map(card => card.getAttribute('data-card-id'))
+                .filter(Boolean);
+        }
+
+        function applyCardOrder(orderArray) {
+            if (!Array.isArray(orderArray) || orderArray.length === 0) return;
+            const container = document.getElementById('appContainer');
+            if (!container) return;
+
+            orderArray.forEach(id => {
+                const card = container.querySelector(`[data-card-id="${id}"]`);
+                if (card) container.appendChild(card);
             });
         }
 
@@ -513,7 +536,16 @@
             const pinVal = pinInput.value.trim();
             if (!nameVal || pinVal.length !== 4) { alert("Enter valid name and 4-digit PIN."); return; }
 
-            const res = await callBackend('createLedger', { name: nameVal, pin: pinVal, theme: currentTheme, currency: currentCurrency, language: currentLang });
+            const initialOrder = getCurrentCardOrder();
+            const res = await callBackend('createLedger', { 
+                name: nameVal, 
+                pin: pinVal, 
+                theme: currentTheme, 
+                currency: currentCurrency, 
+                language: currentLang,
+                cardOrder: initialOrder 
+            });
+
             if (res && res.status === "success") {
                 currentTab = res.createdTab;
                 currentPin = pinVal;
@@ -545,6 +577,11 @@
                 currentCurrency = data.currency || "USD";
                 currentLang = data.language || "en";
                 applyTheme(currentTheme);
+
+                if (data.cardOrder) {
+                    applyCardOrder(data.cardOrder);
+                }
+
                 ledgerData.members = data.members || [];
                 ledgerData.expenses = data.expenses || [];
                 document.getElementById('welcomeModal')?.classList.add('hidden');
@@ -560,7 +597,6 @@
             goHome();
         }
 
-        // --- Synchronized Direct-Sync Participant Engine ---
         async function stageMember() {
             const input = document.getElementById('memberName');
             if (!input) return;
@@ -641,7 +677,8 @@
             const themeRadio = document.querySelector('input[name="modalThemeSelect"]:checked');
             if (themeRadio) applyTheme(themeRadio.value);
 
-            await callBackend('updateSettings', { theme: currentTheme, currency: currentCurrency, language: currentLang });
+            const currentOrder = getCurrentCardOrder();
+            await callBackend('updateSettings', { theme: currentTheme, currency: currentCurrency, language: currentLang, cardOrder: currentOrder });
 
             closeSettingsModal(); 
             render();
@@ -712,7 +749,7 @@
 
         document.addEventListener('DOMContentLoaded', () => {
             initTaglineCarousel();
-            initResizableFrames();
+            initCardDragging();
             const dateInput = document.getElementById('expenseDate');
             if (dateInput) dateInput.valueAsDate = new Date();
             render();

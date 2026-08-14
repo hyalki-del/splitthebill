@@ -197,7 +197,30 @@ body.is-resizing {
     border: 2.5px solid #f43f5e;
     box-shadow: 0 0 25px rgba(244, 63, 94, 0.3);
 }
+/* --- Synchronized Action Buttons Style (.action-btn) --- */
+.action-btn {
+    transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
 
+[data-theme="silk"] .action-btn {
+    background-color: #f1f5f9;
+    color: #0f172a;
+    border-color: #cbd5e1;
+}
+
+[data-theme="toon"] .action-btn {
+    background-color: #facc15; /* Neobrutalist theme accent yellow */
+    color: #0f172a;
+    border: 3px solid #0f172a;
+    box-shadow: 3px 3px 0px #0f172a;
+}
+
+[data-theme="neon"] .action-btn {
+    background-color: #0b0f19;
+    color: #06b6d4; /* Cyberpunk neon cyan */
+    border: 2px solid #06b6d4;
+    box-shadow: 0 0 10px rgba(6, 182, 212, 0.2);
+}
 /* --- Processing Scanner Bar Animation --- */
 @keyframes scan {
     0% { left: -100%; }

@@ -101,21 +101,48 @@ function initTaglineCarousel() {
     spot.classList.add('slide-reset');
 
     function rotateTagline() {
-        spot.classList.remove('slide-reset');
-        spot.classList.add('slide-out-left');
+        // --- Randomized 4-Directional Tagline Carousel Engine ---
+let taglineInterval = null;
+let currentTaglineIndex = 0;
+
+function initTaglineCarousel() {
+    const spot = document.getElementById('taglineSpot');
+    if (!spot) return;
+
+    if (taglineInterval) clearInterval(taglineInterval);
+
+    const t = TRANSLATIONS[currentLang] || TRANSLATIONS['en'];
+    const activeTaglines = t.taglines;
+
+    const directions = [
+        { outClass: 'slide-out-left',   inClass: 'slide-in-right' },
+        { outClass: 'slide-out-right',  inClass: 'slide-in-left' },
+        { outClass: 'slide-out-top',    inClass: 'slide-in-bottom' },
+        { outClass: 'slide-out-bottom', inClass: 'slide-in-top' }
+    ];
+
+    spot.innerHTML = activeTaglines[currentTaglineIndex % activeTaglines.length];
+    spot.className = "w-full text-slate-900 text-xl sm:text-2xl font-bold text-center leading-snug slide-reset";
+
+    function rotateTagline() {
+        // Pick a random direction vector (Left, Right, Top, or Bottom)
+        const dir = directions[Math.floor(Math.random() * directions.length)];
+
+        spot.className = "w-full text-slate-900 text-xl sm:text-2xl font-bold text-center leading-snug " + dir.outClass;
 
         setTimeout(() => {
             currentTaglineIndex = (currentTaglineIndex + 1) % activeTaglines.length;
             spot.innerHTML = activeTaglines[currentTaglineIndex];
-            spot.classList.remove('slide-out-left');
-            spot.classList.add('slide-in-right');
-            void spot.offsetWidth;
+            
+            spot.className = "w-full text-slate-900 text-xl sm:text-2xl font-bold text-center leading-snug " + dir.inClass;
+            void spot.offsetWidth; // Force DOM Reflow
+
             setTimeout(() => {
-                spot.classList.remove('slide-in-right');
-                spot.classList.add('slide-reset');
+                spot.className = "w-full text-slate-900 text-xl sm:text-2xl font-bold text-center leading-snug slide-reset";
             }, 50);
         }, 400);
     }
+
     taglineInterval = setInterval(rotateTagline, 3000);
 }
 

@@ -3,18 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Group Expense Splitter</title>
+    <title>SPENSE</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="css/styles.css">
 </head>
 <body class="min-h-screen p-3 sm:p-8 antialiased">
     <div class="max-w-5xl mx-auto space-y-6">
         
-        <!-- Header (Clean Active Workspace: Logo | x2 Ledger Info | Action Buttons) -->
+        <!-- Header (Horizontal Order: Logo | Middle Section x2 Font Size | Buttons) -->
         <header class="theme-card theme-header p-4 sm:p-6">
             <div class="flex items-center justify-between gap-4 flex-wrap sm:flex-nowrap">
                 
-                <!-- 1. Logo -->
+                <!-- 1. Logo (Doubled size) -->
                 <div class="flex items-center cursor-pointer group flex-shrink-0" onclick="goHome()" title="Home">
                     <div class="relative w-72 h-32 sm:w-96 sm:h-40 flex items-center justify-center group-hover:scale-105 transition-transform">
                         <img src="logo.png" alt="Brand Logo" class="w-full h-full object-contain drop-shadow-md">
@@ -119,7 +119,7 @@
         </div>
     </div>
 
-    <!-- Welcome Modal (Landing Box with Triple Tagline Sequence) -->
+    <!-- Welcome Modal -->
     <div id="welcomeModal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
         <div class="theme-card p-6 sm:p-8 max-w-lg w-full space-y-6 shadow-2xl bg-white text-slate-900">
             <div class="border-b border-slate-200 pb-5 text-center space-y-3">
@@ -129,20 +129,11 @@
                     <img src="logo.png" alt="Brand Logo" class="w-full h-auto object-contain drop-shadow-md">
                 </div>
 
-                <!-- Triple Taglines (Strictly on Landing Box, Dark Navy #0f172a, First phrases Extra Bold) -->
-                <div class="space-y-1 py-1 text-slate-900 font-medium text-xs sm:text-sm leading-relaxed">
-                    <p>
-                        <strong class="font-extrabold text-[#0f172a]">Spend simply.</strong> 
-                        <span class="text-slate-700">/ Enjoy the moment. / Leave the expense tracking to SPENSE.</span>
-                    </p>
-                    <p>
-                        <strong class="font-extrabold text-[#0f172a]">Just add what you spent.</strong> 
-                        <span class="text-slate-700">/ Who paid? Who shares it? / SPENSE does the math.</span>
-                    </p>
-                    <p>
-                        <strong class="font-extrabold text-[#0f172a]">Settle easily.</strong> 
-                        <span class="text-slate-700">/ See exactly who owes whom — / and how much.</span>
-                    </p>
+                <!-- Text-Only Rotating Tagline Spot -->
+                <div class="py-2 min-h-[50px] flex items-center justify-center">
+                    <div id="taglineSpot" class="w-full text-slate-900 text-xs sm:text-sm font-medium transition-opacity duration-300 text-center">
+                        <!-- Dynamically injected via app.js -->
+                    </div>
                 </div>
 
                 <!-- Language Selector -->

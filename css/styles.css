@@ -1,6 +1,6 @@
 /* ==========================================
    SPENSE - Core Design System & Stylesheet
-   Architecture: Multi-Theme Modular CSS (Turkish Glyph Optimized)
+   Architecture: Multi-Theme Modular CSS with Resizable Frames
    ========================================== */
 
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700;800&family=Inter:wght@400;600;800&family=Fredoka:wght@500;600;700&display=swap');
@@ -26,7 +26,7 @@
     --text-main: #0f172a;
     --border-color: #0f172a;
     --accent-btn: #facc15;
-    --font-head: 'Fredoka', sans-serif; /* Fully supports Turkish diacritics with a friendly cartoon weight */
+    --font-head: 'Fredoka', sans-serif;
     --font-body: 'Inter', sans-serif;
     --card-radius: 1.25rem;
     --card-shadow: 4px 4px 0px #0f172a;
@@ -59,13 +59,17 @@ body {
     font-family: var(--font-head);
 }
 
-/* --- Universal Component Base --- */
+/* --- Universal Component Base & Resizable Cards --- */
 .theme-card {
     background-color: var(--card-bg);
     border: 2px solid var(--border-color);
     border-radius: var(--card-radius);
     box-shadow: var(--card-shadow);
-    transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.3s ease, border-color 0.3s ease;
+    transition: box-shadow 0.2s ease, background-color 0.3s ease, border-color 0.3s ease;
+    position: relative;
+    min-width: 280px;
+    min-height: 150px;
+    overflow: hidden;
 }
 
 [data-theme="toon"] .theme-card {
@@ -74,6 +78,29 @@ body {
 
 .theme-header {
     border-bottom-width: 3px;
+}
+
+/* --- Corner Resize Grip Handle --- */
+.resize-handle {
+    position: absolute;
+    right: 4px;
+    bottom: 4px;
+    width: 14px;
+    height: 14px;
+    cursor: nwse-resize;
+    z-index: 20;
+    opacity: 0.4;
+    transition: opacity 0.2s ease;
+    background: linear-gradient(135deg, transparent 50%, currentColor 50%);
+}
+
+.theme-card:hover .resize-handle {
+    opacity: 0.8;
+}
+
+body.is-resizing {
+    user-select: none !important;
+    cursor: nwse-resize !important;
 }
 
 /* --- Form Controls & Inputs --- */
@@ -132,22 +159,18 @@ body {
 /* ==========================================
    Settlement Matrix Frame Highlighting (.theme-frame-4)
    ========================================== */
-
-/* Silk Theme */
 [data-theme="silk"] .theme-frame-4 {
     background-color: #f1f5f9;
     border: 2.5px solid #64748b;
     box-shadow: 0 10px 20px -3px rgba(15, 23, 42, 0.12);
 }
 
-/* Toon Theme */
 [data-theme="toon"] .theme-frame-4 {
     background-color: #fef08a;
     border: 4px solid #0f172a;
     box-shadow: 6px 6px 0px #0f172a;
 }
 
-/* Neon Theme */
 [data-theme="neon"] .theme-frame-4 {
     background-color: #0e1424;
     border: 2.5px solid #f43f5e;

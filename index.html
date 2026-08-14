@@ -10,21 +10,21 @@
 <body class="min-h-screen p-3 sm:p-8 antialiased">
     <div class="max-w-5xl mx-auto space-y-6">
         
-        <!-- Header (Horizontal Order: Logo | Vertically Ordered Ledger Info | Vertically Ordered Buttons) -->
+        <!-- Header (Clean Active Workspace: Logo | x2 Ledger Info | Action Buttons) -->
         <header class="theme-card theme-header p-4 sm:p-6">
             <div class="flex items-center justify-between gap-4 flex-wrap sm:flex-nowrap">
                 
-                <!-- 1. Logo (Doubled size) -->
+                <!-- 1. Logo -->
                 <div class="flex items-center cursor-pointer group flex-shrink-0" onclick="goHome()" title="Home">
                     <div class="relative w-72 h-32 sm:w-96 sm:h-40 flex items-center justify-center group-hover:scale-105 transition-transform">
                         <img src="logo.png" alt="Brand Logo" class="w-full h-full object-contain drop-shadow-md">
                     </div>
                 </div>
 
-                <!-- 2. Ledger Info (Vertically ordered: "active ledger:" and "ledger name") -->
+                <!-- 2. Middle Section (x2 Font Size: Vertically ordered with bold ledger name) -->
                 <div id="viewModeIndicator" class="flex flex-col text-left sm:text-center flex-grow min-w-[200px]">
-                    <span class="text-xs font-medium uppercase tracking-wider opacity-70">Active ledger:</span>
-                    <span class="text-base sm:text-xl font-extrabold break-words leading-tight mt-0.5">AWAITING AUTHENTICATION...</span>
+                    <span class="text-sm sm:text-base font-medium uppercase tracking-wider opacity-70">Active ledger:</span>
+                    <span class="text-2xl sm:text-4xl font-extrabold break-words leading-tight mt-0.5">AWAITING AUTHENTICATION...</span>
                 </div>
 
                 <!-- 3. Buttons (Vertically ordered) -->
@@ -119,22 +119,41 @@
         </div>
     </div>
 
-    <!-- Welcome Modal -->
+    <!-- Welcome Modal (Landing Box with Triple Tagline Sequence) -->
     <div id="welcomeModal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
         <div class="theme-card p-6 sm:p-8 max-w-lg w-full space-y-6 shadow-2xl bg-white text-slate-900">
             <div class="border-b border-slate-200 pb-5 text-center space-y-3">
+                
+                <!-- Logo -->
                 <div class="w-full max-w-[400px] mx-auto py-2">
                     <img src="logo.png" alt="Brand Logo" class="w-full h-auto object-contain drop-shadow-md">
                 </div>
 
-                <div class="text-xs font-black tracking-widest text-slate-800 flex justify-center items-center gap-2 pt-1 uppercase">
+                <!-- Triple Taglines (Strictly on Landing Box, Dark Navy #0f172a, First phrases Extra Bold) -->
+                <div class="space-y-1 py-1 text-slate-900 font-medium text-xs sm:text-sm leading-relaxed">
+                    <p>
+                        <strong class="font-extrabold text-[#0f172a]">Spend simply.</strong> 
+                        <span class="text-slate-700">/ Enjoy the moment. / Leave the expense tracking to SPENSE.</span>
+                    </p>
+                    <p>
+                        <strong class="font-extrabold text-[#0f172a]">Just add what you spent.</strong> 
+                        <span class="text-slate-700">/ Who paid? Who shares it? / SPENSE does the math.</span>
+                    </p>
+                    <p>
+                        <strong class="font-extrabold text-[#0f172a]">Settle easily.</strong> 
+                        <span class="text-slate-700">/ See exactly who owes whom — / and how much.</span>
+                    </p>
+                </div>
+
+                <!-- Language Selector -->
+                <div class="text-xs font-black tracking-widest text-slate-800 flex justify-center items-center gap-2 pt-2 uppercase">
                     <button id="lang-tr" type="button" onclick="switchLanguage('tr')" class="hover:text-amber-600 cursor-pointer transition">TÜRKÇE</button>
                     <span class="text-slate-300 font-normal">|</span>
                     <button id="lang-en" type="button" onclick="switchLanguage('en')" class="hover:text-amber-600 cursor-pointer transition">ENGLISH</button>
                     <span class="text-slate-300 font-normal">|</span>
                     <button id="lang-de" type="button" onclick="switchLanguage('de')" class="hover:text-amber-600 cursor-pointer transition">DEUTSCH</button>
                 </div>
-                <p data-i18n="modalSub" class="text-xs font-bold text-slate-600">Create or open a confidential group ledger.</p>
+                <p data-i18n="modalSub" class="text-xs font-bold text-slate-600 pt-1">Create or open a confidential group ledger.</p>
             </div>
 
             <div id="modalTabsHeader" class="flex gap-2">

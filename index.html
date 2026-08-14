@@ -10,25 +10,30 @@
 <body class="min-h-screen p-3 sm:p-8 antialiased">
     <div class="max-w-5xl mx-auto space-y-6">
         
-        <!-- Header -->
-        <header class="theme-card theme-header p-4 sm:p-6 space-y-4">
-            <div class="flex items-center justify-between gap-3">
-                <div class="flex items-center gap-3 cursor-pointer group" onclick="goHome()" title="Home">
-                    <div class="relative w-56 h-24 sm:w-72 sm:h-32 flex items-center justify-center group-hover:scale-105 transition-transform flex-shrink-0">
+        <!-- Header (Horizontal Order: Logo | Vertically Ordered Ledger Info | Vertically Ordered Buttons) -->
+        <header class="theme-card theme-header p-4 sm:p-6">
+            <div class="flex items-center justify-between gap-4 flex-wrap sm:flex-nowrap">
+                
+                <!-- 1. Logo (Doubled size) -->
+                <div class="flex items-center cursor-pointer group flex-shrink-0" onclick="goHome()" title="Home">
+                    <div class="relative w-72 h-32 sm:w-96 sm:h-40 flex items-center justify-center group-hover:scale-105 transition-transform">
                         <img src="logo.png" alt="Brand Logo" class="w-full h-full object-contain drop-shadow-md">
                     </div>
                 </div>
-            </div>
 
-            <div id="activeLedgerBar" class="pt-3 border-t border-current/15 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <p id="viewModeIndicator" class="text-base sm:text-xl font-normal opacity-90 break-words leading-tight">
-                    AWAITING AUTHENTICATION...
-                </p>
-                <div class="flex items-center gap-2 flex-wrap">
-                    <button id="settingsBtn" type="button" onclick="openSettingsModal()" data-i18n="settingsBtn" class="hidden theme-btn text-xs px-3 py-1.5 font-bold cursor-pointer">⚙ Settings</button>
-                    <button id="shareBtn" type="button" onclick="openShareModal()" data-i18n="shareLinkBtn" class="hidden theme-btn action-btn text-xs px-3 py-1.5 font-bold cursor-pointer">Share Link</button>
-                    <button id="deleteLedgerBtn" type="button" onclick="deleteActiveLedger()" data-i18n="deleteBtn" class="hidden theme-btn text-xs bg-rose-500 hover:bg-rose-600 text-white px-3 py-1.5 font-bold cursor-pointer">Delete</button>
+                <!-- 2. Ledger Info (Vertically ordered: "active ledger:" and "ledger name") -->
+                <div id="viewModeIndicator" class="flex flex-col text-left sm:text-center flex-grow min-w-[200px]">
+                    <span class="text-xs font-medium uppercase tracking-wider opacity-70">Active ledger:</span>
+                    <span class="text-base sm:text-xl font-extrabold break-words leading-tight mt-0.5">AWAITING AUTHENTICATION...</span>
                 </div>
+
+                <!-- 3. Buttons (Vertically ordered) -->
+                <div class="flex flex-col gap-2 flex-shrink-0">
+                    <button id="settingsBtn" type="button" onclick="openSettingsModal()" data-i18n="settingsBtn" class="hidden theme-btn text-xs px-3 py-1.5 font-bold cursor-pointer text-center">⚙ Settings</button>
+                    <button id="shareBtn" type="button" onclick="openShareModal()" data-i18n="shareLinkBtn" class="hidden theme-btn action-btn text-xs px-3 py-1.5 font-bold cursor-pointer text-center">Share Link</button>
+                    <button id="deleteLedgerBtn" type="button" onclick="deleteActiveLedger()" data-i18n="deleteBtn" class="hidden theme-btn text-xs bg-rose-500 hover:bg-rose-600 text-white px-3 py-1.5 font-bold cursor-pointer text-center">Delete</button>
+                </div>
+
             </div>
         </header>
 

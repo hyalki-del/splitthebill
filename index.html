@@ -72,6 +72,14 @@
             font-size: 14px; opacity: 0.6; transition: opacity 0.2s, background 0.2s; user-select: none;
         }
         .card-drag-handle:hover { opacity: 1; background: rgba(0,0,0,0.12); }
+
+        /* Settings Active Selection framing */
+        .option-btn-selected {
+            border-color: #0f172a !important;
+            background-color: #fef3c7 !important;
+            box-shadow: 0 0 0 2px #0f172a !important;
+            transform: scale(1.02);
+        }
     </style>
 </head>
 <body class="min-h-screen p-3 sm:p-8 antialiased">
@@ -208,7 +216,7 @@
                     <div id="taglineSpot" class="w-full text-center leading-snug"></div>
                 </div>
 
-                <!-- Language Selector -->
+                <!-- Welcome Modal Language Selector -->
                 <div class="text-sm sm:text-base font-black tracking-widest text-slate-800 flex justify-center items-center gap-4 sm:gap-6 pt-2 uppercase">
                     <button id="btnLangTR" type="button" onclick="window.switchLanguage('tr')" class="hover:text-amber-600 cursor-pointer transition px-1">TÜRKÇE</button>
                     <span class="text-slate-300 font-normal">|</span>
@@ -254,47 +262,62 @@
         </div>
     </div>
 
-    <!-- Settings Modal -->
+    <!-- Refactored Settings Modal (Zero Dropdowns, Explicit Selection Frames, SVG Flags & Currency Icons) -->
     <div id="settingsModal" class="hidden fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 pointer-events-auto">
-        <div class="theme-card bg-white p-6 max-w-md w-full space-y-5 shadow-2xl text-slate-900">
+        <div class="theme-card bg-white p-6 max-w-md w-full space-y-6 shadow-2xl text-slate-900">
             <div class="flex justify-between items-center border-b border-slate-200 pb-3">
                 <h3 class="text-sm font-black uppercase tracking-wider">Ledger Settings</h3>
                 <button id="btnCloseSettings" type="button" onclick="window.closeSettingsModal()" class="text-slate-500 hover:text-slate-900 text-xl font-bold cursor-pointer">×</button>
             </div>
 
-            <div class="space-y-1">
-                <label class="text-xs font-extrabold text-slate-800 block">Language</label>
-                <select id="settingsLangSelect" class="w-full theme-input px-3 py-2 text-sm cursor-pointer text-slate-900">
-                    <option value="en">English</option>
-                    <option value="tr">Türkçe</option>
-                    <option value="de">Deutsch</option>
-                </select>
-            </div>
-
-            <div class="space-y-1">
-                <label class="text-xs font-extrabold text-slate-800 block">Currency</label>
-                <select id="settingsCurrencySelect" class="w-full theme-input px-3 py-2 text-sm cursor-pointer text-slate-900">
-                    <option value="USD">USD ($)</option>
-                    <option value="EUR">EUR (€)</option>
-                    <option value="TRY">TRY (₺)</option>
-                </select>
-            </div>
-
-            <div class="space-y-1.5">
-                <label class="text-xs font-extrabold text-slate-800 block">Visual Template</label>
+            <!-- Language Buttons with Flags -->
+            <div class="space-y-2">
+                <label class="text-xs font-extrabold text-slate-800 block uppercase tracking-wider">Language</label>
                 <div class="grid grid-cols-3 gap-2">
-                    <label class="cursor-pointer border border-slate-300 bg-slate-50 p-2 rounded-xl text-center shadow-xs">
-                        <input type="radio" name="modalThemeSelect" value="Silk" class="sr-only">
-                        <span class="block text-xs font-black font-sans">Silk</span>
-                    </label>
-                    <label class="cursor-pointer border-2 border-slate-900 bg-amber-100 p-2 rounded-xl text-center shadow-[2px_2px_0px_#0f172a]">
-                        <input type="radio" name="modalThemeSelect" value="Toon" class="sr-only">
-                        <span class="block text-xs font-black font-serif">Toon</span>
-                    </label>
-                    <label class="cursor-pointer border border-cyan-500 bg-slate-950 p-2 rounded-xl text-center text-cyan-400 shadow-xs">
-                        <input type="radio" name="modalThemeSelect" value="Neon" class="sr-only">
-                        <span class="block text-xs font-black font-mono">Neon</span>
-                    </label>
+                    <button type="button" onclick="window.selectSettingsLang('tr')" id="setLangTR" class="theme-btn py-2.5 px-3 flex items-center justify-center gap-2 text-xs font-extrabold border-2 border-slate-200 rounded-xl hover:border-slate-400 bg-slate-50 transition cursor-pointer">
+                        <svg class="w-5 h-3.5 rounded-xs shadow-xs" viewBox="0 0 1200 800" fill="none"><rect width="1200" height="800" fill="#E30A17"/><circle cx="425" cy="400" r="200" fill="#FFFFFF"/><circle cx="475" cy="400" r="160" fill="#E30A17"/><path d="M583.333 400L700 437.938L627.915 338.73L627.915 461.27L700 362.062L583.333 400Z" fill="#FFFFFF"/></svg>
+                        TÜRKÇE
+                    </button>
+                    <button type="button" onclick="window.selectSettingsLang('en')" id="setLangEN" class="theme-btn py-2.5 px-3 flex items-center justify-center gap-2 text-xs font-extrabold border-2 border-slate-200 rounded-xl hover:border-slate-400 bg-slate-50 transition cursor-pointer">
+                        <svg class="w-5 h-3.5 rounded-xs shadow-xs" viewBox="0 0 60 30" fill="none"><clipPath id="a"><path d="M0 0h60v30H0z"/></clipPath><g clip-path="url(#a)"><path d="M0 0h60v30H0z" fill="#012169"/><path d="M0 0l60 30m0-30L0 30" stroke="#fff" stroke-width="6"/><path d="M0 0l60 30m0-30L0 30" stroke="#C8102E" stroke-width="4"/><path d="M30 0v30M0 15h60" stroke="#fff" stroke-width="10"/><path d="M30 0v30M0 15h60" stroke="#C8102E" stroke-width="6"/></g></svg>
+                        ENGLISH
+                    </button>
+                    <button type="button" onclick="window.selectSettingsLang('de')" id="setLangDE" class="theme-btn py-2.5 px-3 flex items-center justify-center gap-2 text-xs font-extrabold border-2 border-slate-200 rounded-xl hover:border-slate-400 bg-slate-50 transition cursor-pointer">
+                        <svg class="w-5 h-3.5 rounded-xs shadow-xs" viewBox="0 0 5 3" fill="none"><rect width="5" height="1" fill="#000"/><rect y="1" width="5" height="1" fill="#D00"/><rect y="2" width="5" height="1" fill="#FFCE00"/></svg>
+                        DEUTSCH
+                    </button>
+                </div>
+            </div>
+
+            <!-- Currency Buttons with Icons -->
+            <div class="space-y-2">
+                <label class="text-xs font-extrabold text-slate-800 block uppercase tracking-wider">Currency</label>
+                <div class="grid grid-cols-3 gap-2">
+                    <button type="button" onclick="window.selectSettingsCurrency('USD')" id="setCurrUSD" class="theme-btn py-2.5 px-3 flex items-center justify-center gap-1.5 text-xs font-extrabold border-2 border-slate-200 rounded-xl hover:border-slate-400 bg-slate-50 transition cursor-pointer">
+                        <span class="text-base font-black">$</span> USD
+                    </button>
+                    <button type="button" onclick="window.selectSettingsCurrency('EUR')" id="setCurrEUR" class="theme-btn py-2.5 px-3 flex items-center justify-center gap-1.5 text-xs font-extrabold border-2 border-slate-200 rounded-xl hover:border-slate-400 bg-slate-50 transition cursor-pointer">
+                        <span class="text-base font-black">€</span> EUR
+                    </button>
+                    <button type="button" onclick="window.selectSettingsCurrency('TRY')" id="setCurrTRY" class="theme-btn py-2.5 px-3 flex items-center justify-center gap-1.5 text-xs font-extrabold border-2 border-slate-200 rounded-xl hover:border-slate-400 bg-slate-50 transition cursor-pointer">
+                        <span class="text-base font-black">₺</span> TRY
+                    </button>
+                </div>
+            </div>
+
+            <!-- Visual Theme Selection Buttons -->
+            <div class="space-y-2">
+                <label class="text-xs font-extrabold text-slate-800 block uppercase tracking-wider">Visual Template</label>
+                <div class="grid grid-cols-3 gap-2">
+                    <button type="button" onclick="window.selectSettingsTheme('Silk')" id="setThemeSilk" class="theme-btn py-3 px-2 border-2 border-slate-200 bg-slate-50 rounded-xl text-center transition cursor-pointer">
+                        <span class="block text-xs font-black font-sans text-slate-900">Silk</span>
+                    </button>
+                    <button type="button" onclick="window.selectSettingsTheme('Toon')" id="setThemeToon" class="theme-btn py-3 px-2 border-2 border-slate-200 bg-amber-100 rounded-xl text-center transition cursor-pointer">
+                        <span class="block text-xs font-black font-serif text-slate-900">Toon</span>
+                    </button>
+                    <button type="button" onclick="window.selectSettingsTheme('Neon')" id="setThemeNeon" class="theme-btn py-3 px-2 border-2 border-slate-200 bg-slate-950 rounded-xl text-center transition cursor-pointer">
+                        <span class="block text-xs font-black font-mono text-cyan-400">Neon</span>
+                    </button>
                 </div>
             </div>
 

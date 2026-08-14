@@ -178,6 +178,47 @@ body.is-resizing {
 }
 
 /* ==========================================
+   UNIFIED THEME ACTION BUTTONS (Share, Copy, Report)
+   ========================================== */
+.theme-action-btn {
+    transition: all 0.2s ease;
+}
+
+/* Silk Theme: Clean Professional Sky Blue */
+[data-theme="silk"] .theme-action-btn {
+    background-color: #e0f2fe;
+    color: #0369a1;
+    border-color: #bae6fd;
+}
+[data-theme="silk"] .theme-action-btn:hover {
+    background-color: #bae6fd;
+}
+
+/* Toon Theme: Neobrutalist Bright Yellow Accent */
+[data-theme="toon"] .theme-action-btn {
+    background-color: #fef08a;
+    color: #0f172a;
+    border: 3px solid #0f172a;
+    box-shadow: 2px 2px 0px #0f172a;
+}
+[data-theme="toon"] .theme-action-btn:active {
+    transform: translate(1px, 1px);
+    box-shadow: 1px 1px 0px #0f172a;
+}
+
+/* Neon Theme: Cyberpunk Cyan Glow */
+[data-theme="neon"] .theme-action-btn {
+    background-color: rgba(6, 182, 212, 0.15);
+    color: #22d3ee;
+    border: 2px solid #06b6d4;
+    box-shadow: 0 0 10px rgba(6, 182, 212, 0.25);
+}
+[data-theme="neon"] .theme-action-btn:hover {
+    background-color: rgba(6, 182, 212, 0.25);
+    box-shadow: 0 0 15px rgba(6, 182, 212, 0.4);
+}
+
+/* ==========================================
    Settlement Matrix Frame Highlighting (.theme-frame-4)
    ========================================== */
 [data-theme="silk"] .theme-frame-4 {

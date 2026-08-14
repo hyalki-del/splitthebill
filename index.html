@@ -78,7 +78,7 @@
 
                 <div class="flex flex-col gap-2 flex-shrink-0">
                     <button id="settingsBtn" type="button" onclick="window.openSettingsModal()" data-i18n="settingsBtn" class="hidden theme-btn text-xs px-3 py-1.5 font-bold cursor-pointer text-center">⚙ Settings</button>
-                    <button id="shareBtn" type="button" onclick="window.openShareModal()" data-i18n="shareLinkBtn" class="hidden theme-btn action-btn text-xs px-3 py-1.5 font-bold cursor-pointer text-center">Share Link</button>
+                    <button id="shareBtn" type="button" onclick="window.openShareModal()" data-i18n="shareLinkBtn" class="hidden theme-btn action-btn text-xs px-3 py-1.5 font-extrabold cursor-pointer text-center">Share Link</button>
                     <button id="deleteLedgerBtn" type="button" onclick="window.deleteActiveLedger()" data-i18n="deleteBtn" class="hidden theme-btn text-xs bg-rose-500 hover:bg-rose-600 text-white px-3 py-1.5 font-bold cursor-pointer text-center">Delete</button>
                 </div>
             </div>
@@ -285,7 +285,7 @@
         </div>
     </div>
 
-    <!-- Embedded Scripts with Self-Healing Archive Fetcher -->
+    <!-- Embedded Scripts with Synchronized Contracts -->
     <script>
         const TRANSLATIONS = {
             en: {
@@ -418,45 +418,59 @@
             });
         }
 
-        // --- Resilient Self-Healing Archive Loader ---
+        // --- Synchronized Google Sheets API Bridge ---
         async function loadGoogleSheetsArchive() {
             const select = document.getElementById('archiveSelect');
             if (!select) return;
 
-            select.innerHTML = `<option value="">-- Loading Archives... --</option>`;
-
-            let ledgers = [];
+            select.innerHTML = `<option value="">-- Reading config.json & fetching Archives... --</option>`;
 
             try {
                 const configRes = await fetch('config.json');
-                if (configRes.ok) {
-                    const config = await configRes.json();
-                    const sheetUrl = config.sheetUrl || config.googleSheetApiUrl || config.apiUrl;
-                    
-                    if (sheetUrl) {
-                        const res = await fetch(sheetUrl);
-                        if (res.ok) {
-                            const rawData = await res.json();
-                            if (Array.isArray(rawData)) {
-                                ledgers = rawData.map(item => typeof item === 'object' ? (item.name || item.ledger || Object.values(item)[0]) : item);
-                            } else if (typeof rawData === 'object' && rawData !== null) {
-                                ledgers = rawData.sheets || rawData.ledgers || Object.keys(rawData);
-                            }
-                        }
-                    }
+                if (!configRes.ok) throw new Error("Could not load config.json");
+                const config = await configRes.json();
+                const sheetUrl = config.sheetUrl || config.googleSheetApiUrl || config.apiUrl;
+                if (!sheetUrl) throw new Error("Missing sheetUrl in config.json");
+
+                const res = await fetch(sheetUrl);
+                if (!res.ok) throw new Error("Failed to reach Sheets endpoint");
+                
+                const data = await res.json();
+                // Aligned with Code.gs: expecting { archives: [...] }
+                const archives = data.archives || (Array.isArray(data) ? data : []);
+
+                if (archives.length === 0) {
+                    select.innerHTML = `<option value="">-- No archives found --</option>`;
+                    return;
                 }
+
+                select.innerHTML = `<option value="">-- Select a Ledger Tab --</option>` + 
+                    archives.map(name => `<option value="${name}">${name}</option>`).join('');
+
+            } catch (error) {
+                console.error("Archive fetch error:", error);
+                const fallback = JSON.parse(localStorage.getItem('spense_local_archives') || '["dinner-club"]');
+                select.innerHTML = `<option value="">-- Select Archive (Offline Cache) --</option>` + 
+                    fallback.map(name => `<option value="${name}">${name}</option>`).join('');
+            }
+        }
+
+        async function callBackend(action, payload = {}) {
+            try {
+                const configRes = await fetch('config.json');
+                const config = await configRes.json();
+                const sheetUrl = config.sheetUrl || config.googleSheetApiUrl;
+                if (!sheetUrl) return null;
+
+                const response = await fetch(sheetUrl, {
+                    method: 'POST',
+                    body: JSON.stringify({ action, tab: currentTab, pin: currentPin, ...payload })
+                });
+                return await response.json();
             } catch (err) {
-                console.warn("External Sheets fetch restricted/offline. Falling back to local storage archive cache.", err);
+                console.error("Backend communication error:", err);
+                return { status: "error", message: err.toString() };
             }
-
-            // Self-Healing Fallback: If network/sheets fail, use cached or sample archives so app never breaks
-            ledgers = ledgers.filter(Boolean);
-            if (ledgers.length === 0) {
-                ledgers = JSON.parse(localStorage.getItem('spense_local_archives') || '["dinner-club", "roommates-2026"]');
-            }
-
-            select.innerHTML = `<option value="">-- Select a Ledger Tab --</option>` + 
-                ledgers.map(name => `<option value="${name}">${name}</option>`).join('');
         }
 
         function switchModalTab(tab) {
@@ -494,78 +508,130 @@
             document.getElementById('welcomeModal')?.classList.remove('hidden');
             render();
         }
-        function createNewLedger() {
+
+        async function createNewLedger() {
             const nameInput = document.getElementById('newLedgerName'), pinInput = document.getElementById('newLedgerPin');
             if (!nameInput || !pinInput) return;
-            const nameVal = nameInput.value.trim().toLowerCase().replace(/\s+/g, '-');
+            const nameVal = nameInput.value.trim();
             const pinVal = pinInput.value.trim();
             if (!nameVal || pinVal.length !== 4) { alert("Enter valid name and 4-digit PIN."); return; }
-            currentTab = nameVal; currentPin = pinVal;
-            
-            // Cache locally so recall always works
-            let cached = JSON.parse(localStorage.getItem('spense_local_archives') || '[]');
-            if (!cached.includes(nameVal)) { cached.push(nameVal); localStorage.setItem('spense_local_archives', JSON.stringify(cached)); }
 
-            document.getElementById('welcomeModal')?.classList.add('hidden');
-            render();
+            const res = await callBackend('createLedger', { name: nameVal, pin: pinVal, theme: currentTheme, currency: currentCurrency, language: currentLang });
+            if (res && res.status === "success") {
+                currentTab = res.createdTab;
+                currentPin = pinVal;
+                document.getElementById('welcomeModal')?.classList.add('hidden');
+                render();
+            } else {
+                alert("Failed to create ledger: " + (res?.message || "Unknown error"));
+            }
         }
-        function recallLedger() {
+
+        async function recallLedger() {
             const select = document.getElementById('archiveSelect'), pinInput = document.getElementById('recallLedgerPin');
             if (!pinInput) return;
             const target = select ? select.value : '';
             const pinVal = pinInput.value.trim();
             if (!target || pinVal.length !== 4) { alert("Select ledger and enter 4-digit PIN."); return; }
-            currentTab = target; currentPin = pinVal;
-            document.getElementById('welcomeModal')?.classList.add('hidden');
-            render();
+
+            const configRes = await fetch('config.json');
+            const config = await configRes.json();
+            const sheetUrl = config.sheetUrl;
+
+            const res = await fetch(`${sheetUrl}?tab=${encodeURIComponent(target)}&pin=${encodeURIComponent(pinVal)}`);
+            const data = await res.json();
+
+            if (data.status === "success") {
+                currentTab = target;
+                currentPin = pinVal;
+                currentTheme = data.theme || "Silk";
+                currentCurrency = data.currency || "USD";
+                currentLang = data.language || "en";
+                applyTheme(currentTheme);
+                ledgerData.members = data.members || [];
+                ledgerData.expenses = data.expenses || [];
+                document.getElementById('welcomeModal')?.classList.add('hidden');
+                render();
+            } else {
+                alert("Authentication failed: " + (data.message || "Invalid PIN"));
+            }
         }
-        function deleteActiveLedger() { if (confirm("Delete this ledger?")) goHome(); }
-        function stageMember() {
+
+        async function deleteActiveLedger() {
+            if (!confirm("Delete this ledger?")) return;
+            await callBackend('deleteLedger');
+            goHome();
+        }
+
+        async function stageMember() {
             const input = document.getElementById('memberName');
             if (!input) return;
             const name = input.value.trim();
             if (!name) return;
-            if (!ledgerData.members.includes(name) && !stagedMembersList.includes(name)) stagedMembersList.push(name);
-            input.value = '';
-            document.getElementById('saveMembersBtn')?.classList.remove('hidden');
-            renderMembers();
+
+            const res = await callBackend('addMembers', { name });
+            if (res && res.status === "success") {
+                ledgerData.members.push(name);
+                input.value = '';
+                render();
+            } else {
+                alert("Failed to add participant: " + (res?.message || ""));
+            }
         }
-        function saveStagedMembers() {
-            ledgerData.members = [...ledgerData.members, ...stagedMembersList];
-            stagedMembersList = [];
-            document.getElementById('saveMembersBtn')?.classList.add('hidden');
-            render();
-        }
+
+        function saveStagedMembers() { render(); }
         function renderMembers() {
             const container = document.getElementById('memberList');
             if (!container) return;
-            let html = ledgerData.members.map(m => `<span class="px-2.5 py-1 rounded-xl bg-slate-200 text-slate-800 font-bold">${m}</span>`).join('');
-            html += stagedMembersList.map(m => `<span class="px-2.5 py-1 rounded-xl bg-amber-200 text-slate-800 font-bold">${m} (New)</span>`).join('');
-            container.innerHTML = html || '<span class="opacity-60 italic">No participants yet.</span>';
+            container.innerHTML = ledgerData.members.map(m => `<span class="px-2.5 py-1 rounded-xl bg-slate-200 text-slate-800 font-bold">${m}</span>`).join('') || '<span class="opacity-60 italic">No participants yet.</span>';
         }
-        function addExpense() {
+
+        async function addExpense() {
             const date = document.getElementById('expenseDate')?.value;
             const desc = document.getElementById('expenseDesc')?.value.trim();
             const amount = parseFloat(document.getElementById('expenseAmount')?.value);
             const paidBy = document.getElementById('expensePaidBy')?.value;
             if (!date || !desc || isNaN(amount) || amount <= 0 || !paidBy) { alert("Fill all fields correctly."); return; }
-            const splitBetween = Array.from(document.querySelectorAll('.split-checkbox:checked')).map(cb => cb.value);
-            if (splitBetween.length === 0) { alert("Select at least one participant."); return; }
-            ledgerData.expenses.push({ date, category: document.getElementById('expenseCategory')?.value, desc, amount, paidBy, splitBetween });
-            document.getElementById('expenseDesc').value = ''; document.getElementById('expenseAmount').value = '';
-            render();
+            
+            // Aligned with Code.gs: sending splitWith instead of splitBetween
+            const splitWith = Array.from(document.querySelectorAll('.split-checkbox:checked')).map(cb => cb.value);
+            if (splitWith.length === 0) { alert("Select at least one participant."); return; }
+
+            const category = document.getElementById('expenseCategory')?.value || "General";
+            const res = await callBackend('addExpense', { date, category, desc, amount, paidBy, splitWith });
+            
+            if (res && res.status === "success") {
+                ledgerData.expenses.push({ date, category, desc, amount, paidBy, splitWith });
+                document.getElementById('expenseDesc').value = ''; 
+                document.getElementById('expenseAmount').value = '';
+                render();
+            } else {
+                alert("Failed to record expense: " + (res?.message || ""));
+            }
         }
+
         function toggleSelectAll(select) { document.querySelectorAll('.split-checkbox').forEach(cb => cb.checked = select); }
         function copySettlementSummary() { alert("Summary copied!"); }
         function generateReport() { alert("Report generated!"); }
-        function applyTheme(name) { currentTheme = name; document.documentElement.setAttribute('data-theme', name.toLowerCase()); }
-        function saveSettings() {
+
+        function applyTheme(name) { 
+            currentTheme = name; 
+            document.documentElement.setAttribute('data-theme', name.toLowerCase()); 
+        }
+
+        async function saveSettings() {
             currentLang = document.getElementById('settingsLangSelect')?.value || 'en';
             currentCurrency = document.getElementById('settingsCurrencySelect')?.value || 'USD';
             const themeRadio = document.querySelector('input[name="modalThemeSelect"]:checked');
             if (themeRadio) applyTheme(themeRadio.value);
-            closeSettingsModal(); render();
+
+            // Persist directly to Google Sheets cells B2, B3, B4 via Code.gs updateSettings
+            await callBackend('updateSettings', { theme: currentTheme, currency: currentCurrency, language: currentLang });
+
+            closeSettingsModal(); 
+            render();
         }
+
         function switchLanguage(lang) { currentLang = lang; render(); initTaglineCarousel(); }
 
         function render() {
@@ -604,7 +670,7 @@
 
         function renderHistory() {
             const list = document.getElementById('expenseHistory');
-            if (list) list.innerHTML = ledgerData.expenses.length > 0 ? ledgerData.expenses.map(e => `<li class="p-2.5 rounded-xl border border-current/15 flex justify-between items-center bg-current/5"><div><span class="font-bold">${e.desc}</span> (${e.category}) — Paid by <span class="font-bold">${e.paidBy}</span><div class="text-[10px] opacity-70">${e.date} • Split: ${e.splitBetween.join(', ')}</div></div><span class="font-extrabold text-sm">${currentCurrency === 'EUR' ? '€' : currentCurrency === 'TRY' ? '₺' : '$'}${e.amount.toFixed(2)}</span></li>`).join('') : '<li class="opacity-60 italic text-center py-4">No expenses recorded yet.</li>';
+            if (list) list.innerHTML = ledgerData.expenses.length > 0 ? ledgerData.expenses.map(e => `<li class="p-2.5 rounded-xl border border-current/15 flex justify-between items-center bg-current/5"><div><span class="font-bold">${e.desc}</span> (${e.category}) — Paid by <span class="font-bold">${e.paidBy}</span><div class="text-[10px] opacity-70">${e.date} • Split: ${Array.isArray(e.splitWith) ? e.splitWith.join(', ') : ''}</div></div><span class="font-extrabold text-sm">${currentCurrency === 'EUR' ? '€' : currentCurrency === 'TRY' ? '₺' : '$'}${parseFloat(e.amount).toFixed(2)}</span></li>`).join('') : '<li class="opacity-60 italic text-center py-4">No expenses recorded yet.</li>';
         }
 
         function renderSettlement() {

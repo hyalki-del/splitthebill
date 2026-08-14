@@ -1,6 +1,6 @@
 /* ==========================================
    SPENSE - Main Application Logic & Controller
-   Architecture: Modular State, UI Management, Carousel & Resizing
+   Architecture: Explicit Global Binding & Defensive DOM Initialization
    ========================================== */
 
 let currentTab = null;
@@ -11,7 +11,6 @@ let currentTheme = 'Silk';
 let stagedMembersList = [];
 let ledgerData = { members: [], expenses: [] };
 
-// --- 1. Landing Box Tagline Carousel Engine ---
 let taglineInterval = null;
 let currentTaglineIndex = 0;
 
@@ -47,20 +46,19 @@ function initTaglineCarousel() {
             spot.classList.remove('slide-out-left');
             spot.classList.add('slide-in-right');
 
-            void spot.offsetWidth; // Force layout reflow tick
+            void spot.offsetWidth;
 
             setTimeout(() => {
                 spot.classList.remove('slide-in-right');
                 spot.classList.add('slide-reset');
             }, 50);
 
-        }, 400); // Matches CSS slide duration
+        }, 400);
     }
 
-    taglineInterval = setInterval(rotateTagline, 3000); // 3 seconds loop
+    taglineInterval = setInterval(rotateTagline, 3000);
 }
 
-// --- 2. Programmatic Corner-Drag Resizing Engine ---
 function initResizableFrames() {
     const cards = document.querySelectorAll('.theme-card');
 
@@ -126,33 +124,38 @@ function initResizableFrames() {
     });
 }
 
-// --- 3. Modal & Navigation Controllers ---
+// --- Modal & Navigation Controllers ---
 function switchModalTab(tab) {
     const createSec = document.getElementById('createSection');
     const recallSec = document.getElementById('recallSection');
     const tabCreateBtn = document.getElementById('tabCreateBtn');
     const tabRecallBtn = document.getElementById('tabRecallBtn');
 
+    if (!createSec || !recallSec) return;
+
     if (tab === 'create') {
         createSec.classList.remove('hidden');
         recallSec.classList.add('hidden');
-        tabCreateBtn.className = "flex-1 theme-btn py-2 text-xs font-black uppercase tracking-wider bg-amber-300 text-slate-900 rounded-xl cursor-pointer";
-        tabRecallBtn.className = "flex-1 theme-btn py-2 text-xs font-black uppercase tracking-wider bg-slate-100 text-slate-500 rounded-xl cursor-pointer";
+        if (tabCreateBtn) tabCreateBtn.className = "flex-1 theme-btn py-2 text-xs font-black uppercase tracking-wider bg-amber-300 text-slate-900 rounded-xl cursor-pointer";
+        if (tabRecallBtn) tabRecallBtn.className = "flex-1 theme-btn py-2 text-xs font-black uppercase tracking-wider bg-slate-100 text-slate-500 rounded-xl cursor-pointer";
     } else {
         createSec.classList.add('hidden');
         recallSec.classList.remove('hidden');
-        tabRecallBtn.className = "flex-1 theme-btn py-2 text-xs font-black uppercase tracking-wider bg-amber-300 text-slate-900 rounded-xl cursor-pointer";
-        tabCreateBtn.className = "flex-1 theme-btn py-2 text-xs font-black uppercase tracking-wider bg-slate-100 text-slate-500 rounded-xl cursor-pointer";
+        if (tabRecallBtn) tabRecallBtn.className = "flex-1 theme-btn py-2 text-xs font-black uppercase tracking-wider bg-amber-300 text-slate-900 rounded-xl cursor-pointer";
+        if (tabCreateBtn) tabCreateBtn.className = "flex-1 theme-btn py-2 text-xs font-black uppercase tracking-wider bg-slate-100 text-slate-500 rounded-xl cursor-pointer";
         loadArchiveList();
     }
 }
 
 function openSettingsModal() {
-    document.getElementById('settingsModal').classList.remove('hidden');
-    document.getElementById('settingsLangSelect').value = currentLang;
-    document.getElementById('settingsCurrencySelect').value = currentCurrency;
+    const modal = document.getElementById('settingsModal');
+    if (modal) modal.classList.remove('hidden');
     
-    // Set active radio for theme
+    const langSelect = document.getElementById('settingsLangSelect');
+    const currSelect = document.getElementById('settingsCurrencySelect');
+    if (langSelect) langSelect.value = currentLang;
+    if (currSelect) currSelect.value = currentCurrency;
+    
     const radios = document.querySelectorAll('input[name="modalThemeSelect"]');
     radios.forEach(r => {
         if (r.value.toLowerCase() === currentTheme.toLowerCase()) {
@@ -162,21 +165,28 @@ function openSettingsModal() {
 }
 
 function closeSettingsModal() {
-    document.getElementById('settingsModal').classList.add('hidden');
+    const modal = document.getElementById('settingsModal');
+    if (modal) modal.classList.add('hidden');
 }
 
 function openShareModal() {
-    document.getElementById('shareModal').classList.remove('hidden');
-    const shareUrl = `${window.location.origin}${window.location.pathname}?ledger=${encodeURIComponent(currentTab)}`;
-    document.getElementById('shareLinkInput').value = shareUrl;
+    const modal = document.getElementById('shareModal');
+    if (modal) modal.classList.remove('hidden');
+    
+    const input = document.getElementById('shareLinkInput');
+    if (input && currentTab) {
+        input.value = `${window.location.origin}${window.location.pathname}?ledger=${encodeURIComponent(currentTab)}`;
+    }
 }
 
 function closeShareModal() {
-    document.getElementById('shareModal').classList.add('hidden');
+    const modal = document.getElementById('shareModal');
+    if (modal) modal.classList.add('hidden');
 }
 
 function copyShareLink() {
     const input = document.getElementById('shareLinkInput');
+    if (!input) return;
     input.select();
     input.setSelectionRange(0, 99999);
     navigator.clipboard.writeText(input.value);
@@ -187,44 +197,52 @@ function goHome() {
     currentTab = null;
     currentPin = null;
     ledgerData = { members: [], expenses: [] };
-    document.getElementById('welcomeModal').classList.remove('hidden');
+    const modal = document.getElementById('welcomeModal');
+    if (modal) modal.classList.remove('hidden');
     render();
 }
 
-// --- 4. Ledger CRUD & Authentication ---
 function createNewLedger() {
-    const nameInput = document.getElementById('newLedgerName').value.trim().toLowerCase().replace(/\s+/g, '-');
-    const pinInput = document.getElementById('newLedgerPin').value.trim();
+    const nameInput = document.getElementById('newLedgerName');
+    const pinInput = document.getElementById('newLedgerPin');
+    if (!nameInput || !pinInput) return;
 
-    if (!nameInput || pinInput.length !== 4) {
+    const nameVal = nameInput.value.trim().toLowerCase().replace(/\s+/g, '-');
+    const pinVal = pinInput.value.trim();
+
+    if (!nameVal || pinVal.length !== 4) {
         alert("Please enter a valid ledger name and a 4-digit PIN.");
         return;
     }
 
-    currentTab = nameInput;
-    currentPin = pinInput;
-    document.getElementById('welcomeModal').classList.add('hidden');
+    currentTab = nameVal;
+    currentPin = pinVal;
+    const modal = document.getElementById('welcomeModal');
+    if (modal) modal.classList.add('hidden');
     render();
 }
 
 function recallLedger() {
     const archiveSelect = document.getElementById('archiveSelect');
-    const pinInput = document.getElementById('recallLedgerPin').value.trim();
-    
+    const pinInput = document.getElementById('recallLedgerPin');
+    if (!pinInput) return;
+
     let targetLedger = archiveSelect ? archiveSelect.value : '';
     const directName = document.getElementById('directTabName');
     if (directName && !directName.closest('#directTabDisplay').classList.contains('hidden')) {
         targetLedger = directName.value;
     }
 
-    if (!targetLedger || pinInput.length !== 4) {
+    const pinVal = pinInput.value.trim();
+    if (!targetLedger || pinVal.length !== 4) {
         alert("Please select a ledger and enter your 4-digit PIN.");
         return;
     }
 
     currentTab = targetLedger;
-    currentPin = pinInput;
-    document.getElementById('welcomeModal').classList.add('hidden');
+    currentPin = pinVal;
+    const modal = document.getElementById('welcomeModal');
+    if (modal) modal.classList.add('hidden');
     render();
 }
 
@@ -236,13 +254,12 @@ function deleteActiveLedger() {
 function loadArchiveList() {
     const select = document.getElementById('archiveSelect');
     if (!select) return;
-    // Populate dummy or stored local archives
     select.innerHTML = `<option value="sample-group">sample-group</option>`;
 }
 
-// --- 5. Members & Expenses ---
 function stageMember() {
     const input = document.getElementById('memberName');
+    if (!input) return;
     const name = input.value.trim();
     if (!name) return;
 
@@ -251,13 +268,15 @@ function stageMember() {
         renderMembers();
     }
     input.value = '';
-    document.getElementById('saveMembersBtn').classList.remove('hidden');
+    const saveBtn = document.getElementById('saveMembersBtn');
+    if (saveBtn) saveBtn.classList.remove('hidden');
 }
 
 function saveStagedMembers() {
     ledgerData.members = [...ledgerData.members, ...stagedMembersList];
     stagedMembersList = [];
-    document.getElementById('saveMembersBtn').classList.add('hidden');
+    const saveBtn = document.getElementById('saveMembersBtn');
+    if (saveBtn) saveBtn.classList.add('hidden');
     render();
 }
 
@@ -271,11 +290,11 @@ function renderMembers() {
 }
 
 function addExpense() {
-    const date = document.getElementById('expenseDate').value;
-    const category = document.getElementById('expenseCategory').value;
-    const desc = document.getElementById('expenseDesc').value.trim();
-    const amount = parseFloat(document.getElementById('expenseAmount').value);
-    const paidBy = document.getElementById('expensePaidBy').value;
+    const date = document.getElementById('expenseDate')?.value;
+    const category = document.getElementById('expenseCategory')?.value;
+    const desc = document.getElementById('expenseDesc')?.value.trim();
+    const amount = parseFloat(document.getElementById('expenseAmount')?.value);
+    const paidBy = document.getElementById('expensePaidBy')?.value;
 
     if (!date || !desc || isNaN(amount) || amount <= 0 || !paidBy) {
         alert("Please fill in all expense fields correctly.");
@@ -292,9 +311,10 @@ function addExpense() {
 
     ledgerData.expenses.push({ date, category, desc, amount, paidBy, splitBetween });
     
-    // Reset form inputs
-    document.getElementById('expenseDesc').value = '';
-    document.getElementById('expenseAmount').value = '';
+    const descInput = document.getElementById('expenseDesc');
+    const amtInput = document.getElementById('expenseAmount');
+    if (descInput) descInput.value = '';
+    if (amtInput) amtInput.value = '';
     render();
 }
 
@@ -311,15 +331,17 @@ function generateReport() {
     alert("Generating financial report...");
 }
 
-// --- 6. Themes & Localization ---
 function applyTheme(themeName) {
     currentTheme = themeName;
     document.documentElement.setAttribute('data-theme', themeName.toLowerCase());
 }
 
 function saveSettings() {
-    currentLang = document.getElementById('settingsLangSelect').value;
-    currentCurrency = document.getElementById('settingsCurrencySelect').value;
+    const langSel = document.getElementById('settingsLangSelect');
+    const currSel = document.getElementById('settingsCurrencySelect');
+    if (langSel) currentLang = langSel.value;
+    if (currSel) currentCurrency = currSel.value;
+    
     const selectedThemeRadio = document.querySelector('input[name="modalThemeSelect"]:checked');
     if (selectedThemeRadio) {
         applyTheme(selectedThemeRadio.value);
@@ -334,12 +356,10 @@ function switchLanguage(lang) {
     initTaglineCarousel();
 }
 
-// --- 7. Core Rendering Engine ---
 function render() {
     if (typeof TRANSLATIONS === 'undefined') return;
     const t = TRANSLATIONS[currentLang] || TRANSLATIONS['en'];
 
-    // Update static UI translations via data-i18n attributes
     document.querySelectorAll('[data-i18n]').forEach(el => {
         const key = el.getAttribute('data-i18n');
         if (t[key]) el.innerText = t[key];
@@ -350,7 +370,6 @@ function render() {
         if (t[key]) el.placeholder = t[key];
     });
 
-    // Header Ledger Info Indicator
     const indicatorEl = document.getElementById('viewModeIndicator');
     if (indicatorEl) {
         if (currentTab) {
@@ -366,7 +385,6 @@ function render() {
         }
     }
 
-    // Action buttons visibility toggle
     const deleteBtn = document.getElementById('deleteLedgerBtn');
     const shareBtn = document.getElementById('shareBtn');
     const settingsBtn = document.getElementById('settingsBtn');
@@ -440,22 +458,42 @@ function renderSettlement() {
         return;
     }
 
-    // Basic balancing simulation for preview
     container.innerHTML = `<p class="font-bold text-center py-2 text-emerald-600">All balances are currently calculated and balanced.</p>`;
 }
 
 function escapeHTML(str) {
-    return str.replace(/[&<>'"]/g, 
+    if (!str) return '';
+    return str.toString().replace(/[&<>'"]/g, 
         tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
     );
 }
+
+// --- Explicit Global Scope Binding for Window Handlers ---
+window.switchModalTab = switchModalTab;
+window.openSettingsModal = openSettingsModal;
+window.closeSettingsModal = closeSettingsModal;
+window.openShareModal = openShareModal;
+window.closeShareModal = closeShareModal;
+window.copyShareLink = copyShareLink;
+window.goHome = goHome;
+window.createNewLedger = createNewLedger;
+window.recallLedger = recallLedger;
+window.deleteActiveLedger = deleteActiveLedger;
+window.stageMember = stageMember;
+window.saveStagedMembers = saveStagedMembers;
+window.addExpense = addExpense;
+window.toggleSelectAll = toggleSelectAll;
+window.copySettlementSummary = copySettlementSummary;
+window.generateReport = generateReport;
+window.applyTheme = applyTheme;
+window.saveSettings = saveSettings;
+window.switchLanguage = switchLanguage;
 
 // --- Initialization Lifecycle Hook ---
 document.addEventListener('DOMContentLoaded', () => {
     initTaglineCarousel();
     initResizableFrames();
     
-    // Set default date to today
     const dateInput = document.getElementById('expenseDate');
     if (dateInput) {
         dateInput.valueAsDate = new Date();

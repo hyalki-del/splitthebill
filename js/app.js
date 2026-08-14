@@ -1,6 +1,6 @@
 /**
  * SPENSE - Group Expense Tracker Main Controller
- * CS Senior Architecture: Modular State Machine + Motion Engine + Granular Validation
+ * CS Senior Architecture: Modular State Machine + Motion Engine + Deterministic Date Parsing
  */
 
 console.log("%c[SPENSE] Engine & Full Controller Loaded Successfully.", "color: #059669; font-weight: bold;");
@@ -88,6 +88,55 @@ const TRANSLATIONS = {
         ]
     }
 };
+
+// --- DETERMINISTIC DATE NORMALIZATION HELPER ---
+function formatToISODate(rawDate) {
+    if (!rawDate) {
+        const today = new Date();
+        return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+    }
+
+    if (rawDate instanceof Date) {
+        if (isNaN(rawDate.getTime())) rawDate = new Date();
+        return `${rawDate.getFullYear()}-${String(rawDate.getMonth() + 1).padStart(2, '0')}-${String(rawDate.getDate()).padStart(2, '0')}`;
+    }
+
+    const str = rawDate.toString().trim();
+
+    // 1. Strict YYYY-MM-DD
+    if (/^\d{4}-\d{2}-\d{2}$/.test(str)) return str;
+
+    // 2. European / Turkish DD.MM.YYYY or DD/MM/YYYY
+    const dmyMatch = str.match(/^(\d{1,2})[\.\/-](\d{1,2})[\.\/-](\d{4})$/);
+    if (dmyMatch) {
+        const day = dmyMatch[1].padStart(2, '0');
+        const month = dmyMatch[2].padStart(2, '0');
+        const year = dmyMatch[3];
+        return `${year}-${month}-${day}`;
+    }
+
+    // 3. YYYY/MM/DD or YYYY.MM.DD
+    const ymdMatch = str.match(/^(\d{4})[\.\/-](\d{1,2})[\.\/-](\d{1,2})$/);
+    if (ymdMatch) {
+        const year = ymdMatch[1];
+        const month = ymdMatch[2].padStart(2, '0');
+        const day = ymdMatch[3].padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
+
+    // 4. ISO Timestamps or standard date string parsing
+    const parsed = new Date(str);
+    if (!isNaN(parsed.getTime())) {
+        const year = parsed.getFullYear();
+        const month = String(parsed.getMonth() + 1).padStart(2, '0');
+        const day = String(parsed.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
+
+    // Fallback to today
+    const fallback = new Date();
+    return `${fallback.getFullYear()}-${String(fallback.getMonth() + 1).padStart(2, '0')}-${String(fallback.getDate()).padStart(2, '0')}`;
+}
 
 // --- SETTINGS SELECTION ENGINE ---
 function selectSettingsLang(lang) {
@@ -554,7 +603,7 @@ async function deleteMember(name) {
     }
 }
 
-// --- EXPENSE EDITING & VALIDATION (RELAXED HISTORICAL DATES) ---
+// --- EXPENSE EDITING & VALIDATION (HISTORICAL DATE SAFE) ---
 function startEditExpense(id) {
     const exp = ledgerData.expenses.find(e => e.id.toString() === id.toString());
     if (!exp) return;
@@ -567,17 +616,9 @@ function startEditExpense(id) {
     const catInput = document.getElementById('expenseCategory');
     const paidByInput = document.getElementById('expensePaidBy');
 
+    // Deterministically normalize stored date to YYYY-MM-DD for HTML5 date input
     if (dateInput) {
-        if (exp.date) {
-            const parsedDate = new Date(exp.date);
-            if (!isNaN(parsedDate.getTime())) {
-                dateInput.value = parsedDate.toISOString().split('T')[0];
-            } else {
-                dateInput.value = exp.date;
-            }
-        } else {
-            dateInput.value = new Date().toISOString().split('T')[0];
-        }
+        dateInput.value = formatToISODate(exp.date);
     }
 
     if (descInput) descInput.value = exp.desc || '';
@@ -607,7 +648,7 @@ function resetExpenseForm() {
     if (amountInput) amountInput.value = '';
     
     const dateInput = document.getElementById('expenseDate');
-    if (dateInput) dateInput.valueAsDate = new Date();
+    if (dateInput) dateInput.value = formatToISODate(new Date());
 
     document.querySelectorAll('.split-checkbox').forEach(cb => cb.checked = true);
 }
@@ -615,15 +656,14 @@ function resetExpenseForm() {
 async function updateExpense() {
     if (!editingExpenseId) return;
 
-    const date = document.getElementById('expenseDate')?.value;
+    const rawDate = document.getElementById('expenseDate')?.value;
+    const date = formatToISODate(rawDate);
     const desc = document.getElementById('expenseDesc')?.value.trim();
     const amount = parseFloat(document.getElementById('expenseAmount')?.value);
     const paidBy = document.getElementById('expensePaidBy')?.value;
 
-    const isDateValid = date && !isNaN(Date.parse(date));
-
-    if (!isDateValid) {
-        alert("Please enter a valid date.");
+    if (!date) {
+        alert("Please select a valid date.");
         return;
     }
 
@@ -680,14 +720,13 @@ async function deleteExpenseFromEdit() {
 }
 
 async function addExpense() {
-    const date = document.getElementById('expenseDate')?.value;
+    const rawDate = document.getElementById('expenseDate')?.value;
+    const date = formatToISODate(rawDate);
     const desc = document.getElementById('expenseDesc')?.value.trim();
     const amount = parseFloat(document.getElementById('expenseAmount')?.value);
     const paidBy = document.getElementById('expensePaidBy')?.value;
 
-    const isDateValid = date && !isNaN(Date.parse(date));
-
-    if (!isDateValid || !desc || isNaN(amount) || amount <= 0 || !paidBy) {
+    if (!date || !desc || isNaN(amount) || amount <= 0 || !paidBy) {
         alert("Fill all expense fields correctly.");
         return;
     }
@@ -1029,7 +1068,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initCardDragging();
 
     const dateInput = document.getElementById('expenseDate');
-    if (dateInput) dateInput.valueAsDate = new Date();
+    if (dateInput) dateInput.value = formatToISODate(new Date());
 
     render();
 });

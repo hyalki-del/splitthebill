@@ -1,9 +1,9 @@
-/* ==========================================================================
+[cite: 6]/* ==========================================================================
    SPENSE - Internationalization (i18n) Engine
    Architecture: Centralized Multilingual Dictionaries & Localization Registry
    ========================================================================== */
 
-const I18N_TRANSLATIONS = {
+const TRANSLATIONS = {
     en: {
         settingsBtn: "⚙ Settings",
         shareLinkBtn: "Share Link",
@@ -92,12 +92,12 @@ const I18N_TRANSLATIONS = {
         ledgerNamePh: "ör. aksam-yemegi",
         setPinLabel: "4 Haneli PIN Belirleyin",
         initializeBtn: "Defteri Başlat",
-        selectArchiveLabel: "Arşivden Seç",
+        selectArchiveLabel: "Arşiv Seç",
         accessingSharedLabel: "Paylaşılan Deftere Erişiliyor",
         enterPinLabel: "4 Haneli PIN Girin",
         accessLedgerBtn: "Deftere Eriş",
         shareLinkHeader: "Defter Bağlantısını Paylaş",
-        shareLinkSub: "Bu bağlantıya sahip herkes deftere erişmek için yalnızca 4 haneli PIN'i girmelidir.",
+        shareLinkSub: "Bu bağlantıya sahip herkes PIN girmelidir.",
         copyBtn: "Kopyala",
         processingMsg: "İşleniyor...",
         taglines: [
@@ -125,29 +125,29 @@ const I18N_TRANSLATIONS = {
         descPlaceholder: "z.B. Abendessen",
         amountLabel: "Betrag",
         paidByLabel: "Bezahlt von",
-        splitBetweenLabel: "Aufteilen zwischen:",
-        selectAllBtn: "Alle Auswählen",
-        recordExpenseBtn: "Ausgabe Aufzeichnen",
+        splitBetweenLabel: "Aufteilen:",
+        selectAllBtn: "Alle",
+        recordExpenseBtn: "Speichern",
         updateExpenseBtn: "Aktualisieren",
         cancelEditBtn: "Abbrechen",
-        deleteExpenseBtn: "Ausgabe Löschen",
+        deleteExpenseBtn: "Löschen",
         settlementTitle: "Abrechnungsmatrix",
-        copySummaryBtn: "Zusammenfassung Kopieren",
+        copySummaryBtn: "Kopieren",
         historyTitle: "Verlauf",
         clickToEditSub: "(Zum Bearbeiten anklicken)",
         generateReportBtn: "Bericht Erstellen",
-        modalSub: "Erstellen oder öffnen Sie ein vertrauliches Gruppenbuch.",
-        tabCreate: "Neu Erstellen",
-        tabRecall: "Vorhandenes Öffnen",
-        ledgerNameLabel: "Name des Buches",
+        modalSub: "Gruppenbuch öffnen.",
+        tabCreate: "Neu",
+        tabRecall: "Öffnen",
+        ledgerNameLabel: "Name",
         ledgerNamePh: "z.B. club",
-        setPinLabel: "PIN festlegen",
-        initializeBtn: "Initialisieren",
-        selectArchiveLabel: "Aus Archiv Auswählen",
-        accessingSharedLabel: "Zugriff auf geteiltes Buch",
-        enterPinLabel: "PIN eingeben",
+        setPinLabel: "PIN",
+        initializeBtn: "Starten",
+        selectArchiveLabel: "Archiv Wählen",
+        accessingSharedLabel: "Zugriff Auf Geteiltes Buch",
+        enterPinLabel: "PIN Eingeben",
         accessLedgerBtn: "Zugreifen",
-        shareLinkHeader: "Link Teilen",
+        shareLinkHeader: "Teilen",
         shareLinkSub: "PIN erforderlich.",
         copyBtn: "Kopieren",
         processingMsg: "Verarbeitung...",
@@ -158,3 +158,5 @@ const I18N_TRANSLATIONS = {
         ]
     }
 };
+
+let currentLang = 'en';

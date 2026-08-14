@@ -462,9 +462,6 @@ async function createNewLedger() {
         return;
     }
 
-    currentTab = nameVal;
-    currentPin = pinVal;
-
     const initialOrder = getCurrentCardOrder();
     const res = await callBackend('createLedger', { 
         name: nameVal, 
@@ -475,10 +472,17 @@ async function createNewLedger() {
         cardOrder: initialOrder 
     });
 
-    ledgerData = { members: [], expenses: [] };
-    unsavedMembers = [];
-    document.getElementById('welcomeModal')?.classList.add('hidden');
-    render();
+    if (res && res.status === "success") {
+        // CRITICAL: Force currentTab to be the exact server-generated tab name with the date prefix
+        currentTab = res.createdTab;
+        currentPin = pinVal;
+        ledgerData = { members: [], expenses: [] };
+        unsavedMembers = [];
+        document.getElementById('welcomeModal')?.classList.add('hidden');
+        render();
+    } else {
+        alert("Failed to create ledger: " + (res?.message || "Unknown error"));
+    }
 }
 
 async function recallLedger() {

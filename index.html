@@ -3,81 +3,295 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SPENSE</title>
+    <title>SPENSE - Group Expense Tracker</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700;800&family=Inter:wght@400;600;800&family=Fredoka:wght@500;600;700&display=swap');
 
-        :root {
-            --bg-main: #f8fafc; --card-bg: #ffffff; --text-main: #0f172a; --border-color: #cbd5e1;
-            --font-body: 'Inter', sans-serif; --card-radius: 1.5rem;
+        :root, [data-theme="silk"] {
+            --bg-main: #f8fafc; --card-bg: #ffffff; --text-main: #0f172a; --border-color: #cbd5e1; --accent-btn: #38bdf8;
+            --font-head: 'Inter', sans-serif; --font-body: 'Inter', sans-serif; --card-radius: 1.5rem;
+            --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); --btn-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+        [data-theme="toon"] {
+            --bg-main: #f3f4f6; --card-bg: #ffffff; --text-main: #0f172a; --border-color: #0f172a; --accent-btn: #facc15;
+            --font-head: 'Fredoka', sans-serif; --font-body: 'Inter', sans-serif; --card-radius: 1.25rem;
+            --card-shadow: 4px 4px 0px #0f172a; --btn-shadow: 3px 3px 0px #0f172a;
+        }
+        [data-theme="neon"] {
+            --bg-main: #030712; --card-bg: #0b0f19; --text-main: #f8fafc; --border-color: #1e293b; --accent-btn: #06b6d4;
+            --font-head: 'JetBrains Mono', monospace; --font-body: 'JetBrains Mono', monospace; --card-radius: 1rem;
+            --card-shadow: 0 0 15px rgba(6, 182, 212, 0.15); --btn-shadow: 0 0 10px rgba(6, 182, 212, 0.2);
         }
 
-        body { background-color: var(--bg-main); color: var(--text-main); font-family: var(--font-body); }
-        .theme-card { background-color: var(--card-bg); border: 2px solid var(--border-color); border-radius: var(--card-radius); }
-        .theme-input { background-color: var(--card-bg); border: 2px solid var(--border-color); border-radius: 0.85rem; outline: none; }
-        .theme-btn { border: 2px solid var(--border-color); border-radius: 0.85rem; font-weight: 800; }
-        .theme-btn:active { transform: translateY(1px); }
+        body { background-color: var(--bg-main); color: var(--text-main); font-family: var(--font-body); transition: background-color 0.3s ease, color 0.3s ease; }
+        .theme-font-head { font-family: var(--font-head); }
+        .theme-card { background-color: var(--card-bg); border: 2px solid var(--border-color); border-radius: var(--card-radius); box-shadow: var(--card-shadow); position: relative; min-width: 280px; min-height: 140px; overflow: hidden; transition: transform 0.2s ease, opacity 0.2s ease; }
+        [data-theme="toon"] .theme-card { border: 3px solid var(--border-color); }
+        .theme-header { border-bottom-width: 3px; }
+
+        #taglineSpot { transition: transform 0.4s ease-in-out, opacity 0.4s ease-in-out; will-change: transform, opacity; }
+        .slide-out-left { transform: translateX(-100%); opacity: 0; }
+        .slide-in-right { transform: translateX(100%); opacity: 0; }
+        .slide-reset { transform: translateX(0); opacity: 1; }
+
+        .theme-input { background-color: var(--card-bg); border: 2px solid var(--border-color); border-radius: 0.85rem; color: var(--text-main); outline: none; }
+        .theme-input:focus { border-color: var(--text-main); box-shadow: 0 0 0 2px rgba(15, 23, 42, 0.1); }
+        [data-theme="toon"] .theme-input { border: 3px solid var(--border-color); box-shadow: 2px 2px 0px #0f172a; }
+
+        .theme-btn { border: 2px solid var(--border-color); border-radius: 0.85rem; font-weight: 800; box-shadow: var(--btn-shadow); transition: transform 0.1s ease, filter 0.2s ease; }
+        .theme-btn:hover { filter: brightness(1.05); }
+        .theme-btn:active { transform: translateY(2px); box-shadow: none; }
+        [data-theme="toon"] .theme-btn { border: 3px solid var(--border-color); box-shadow: 3px 3px 0px #0f172a; }
+
+        .card-drag-handle {
+            position: absolute; top: 12px; right: 12px; width: 28px; height: 28px; cursor: grab; z-index: 30;
+            background: rgba(0,0,0,0.06); border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            font-size: 14px; opacity: 0.6; transition: opacity 0.2s, background 0.2s; user-select: none;
+        }
+        .card-drag-handle:hover { opacity: 1; background: rgba(0,0,0,0.12); }
     </style>
 </head>
-<body class="min-h-screen p-4 sm:p-8 antialiased">
+<body class="min-h-screen p-3 sm:p-8 antialiased">
+    <div class="max-w-5xl mx-auto space-y-6">
+        
+        <!-- Save Layout Notification Bar -->
+        <div id="layoutActionBar" class="hidden bg-amber-400 border-2 border-slate-900 text-slate-900 px-4 py-2.5 rounded-2xl font-black text-xs flex justify-between items-center shadow-[3px_3px_0px_#0f172a] animate-bounce">
+            <span>Layout modified! Save your new card arrangement to Google Sheets.</span>
+            <button id="btnSaveCardLayout" type="button" class="bg-slate-900 text-amber-300 px-3 py-1 rounded-xl uppercase tracking-wider text-[10px] cursor-pointer hover:bg-slate-800">Save Layout</button>
+        </div>
 
-    <!-- App Main Container -->
-    <div id="appContainer" class="max-w-4xl mx-auto space-y-6">
-        <header class="theme-card p-6 flex justify-between items-center">
-            <h1 class="text-2xl font-black">SPENSE</h1>
-            <div id="viewModeIndicator" class="text-sm font-bold text-slate-500">AWAITING AUTHENTICATION...</div>
-            <button id="settingsBtn" type="button" class="hidden theme-btn px-3 py-1 text-xs">⚙ Settings</button>
-        </header>
+        <div id="appContainer" class="space-y-6">
+            
+            <!-- Header Card -->
+            <header class="theme-card theme-header p-4 sm:p-6" data-card-id="header">
+                <div class="card-drag-handle" draggable="true" title="Drag to reorder card">⠿</div>
+                <div class="flex items-center justify-between gap-4 flex-wrap sm:flex-nowrap pointer-events-auto pr-8">
+                    <div id="brandLogoContainer" class="flex items-center cursor-pointer group flex-shrink-0" title="Home">
+                        <div class="relative w-56 h-24 sm:w-72 sm:h-28 flex items-center justify-center group-hover:scale-105 transition-transform">
+                            <img src="logo.png" alt="SPENSE Logo" class="w-full h-full object-contain drop-shadow-md" onerror="this.src='https://placehold.co/300x120?text=SPENSE'">
+                        </div>
+                    </div>
+
+                    <div id="viewModeIndicator" class="flex flex-col text-left sm:text-center flex-grow min-w-[200px]">
+                        <span class="text-sm sm:text-base font-medium uppercase tracking-wider opacity-70">Active ledger:</span>
+                        <span class="text-2xl sm:text-4xl font-extrabold break-words leading-tight mt-0.5 block">AWAITING AUTHENTICATION...</span>
+                    </div>
+
+                    <div class="flex flex-col gap-2 flex-shrink-0">
+                        <button id="btnOpenSettings" type="button" data-i18n="settingsBtn" class="hidden theme-btn text-xs px-3 py-1.5 font-bold cursor-pointer text-center">⚙ Settings</button>
+                        <button id="btnOpenShare" type="button" data-i18n="shareLinkBtn" class="hidden theme-btn text-xs px-3 py-1.5 font-extrabold cursor-pointer text-center">Share Link</button>
+                        <button id="btnDeleteLedger" type="button" data-i18n="deleteBtn" class="hidden theme-btn text-xs bg-rose-500 hover:bg-rose-600 text-white px-3 py-1.5 font-bold cursor-pointer text-center">Delete</button>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Participants Card -->
+            <section class="theme-card p-6 flex flex-col justify-between space-y-4" data-card-id="participants">
+                <div class="card-drag-handle" draggable="true" title="Drag to reorder card">⠿</div>
+                <div class="pr-8">
+                    <h2 data-i18n="participantsTitle" class="text-xs font-black uppercase tracking-wider opacity-70">Participants</h2>
+                    <p data-i18n="participantsSub" class="text-xs font-medium opacity-70 mt-0.5">Add or remove people from this group.</p>
+                </div>
+                <div class="space-y-3">
+                    <div class="flex gap-2">
+                        <input type="text" id="memberName" data-i18n-ph="namePlaceholder" placeholder="Name..." class="flex-1 theme-input px-3 py-2 text-sm">
+                        <button id="btnAddMember" type="button" data-i18n="addBtn" class="theme-btn px-4 py-2 text-xs font-extrabold cursor-pointer">Add</button>
+                    </div>
+                    <div id="memberList" class="text-sm flex flex-wrap gap-2 pt-1"></div>
+                </div>
+            </section>
+
+            <!-- Expense Form Card -->
+            <section id="expenseFormSection" class="theme-card p-6 space-y-5" data-card-id="expense">
+                <div class="card-drag-handle" draggable="true" title="Drag to reorder card">⠿</div>
+                <div class="pr-8">
+                    <h2 id="expenseFormTitle" data-i18n="newExpenseTitle" class="text-xs font-black uppercase tracking-wider opacity-70">New Expense</h2>
+                    <p id="expenseFormSub" data-i18n="newExpenseSub" class="text-xs font-medium opacity-70 mt-0.5">Log a transaction to split.</p>
+                </div>
+                
+                <div class="grid grid-cols-1 sm:grid-cols-5 gap-3">
+                    <div>
+                        <label data-i18n="dateLabel" class="text-[10px] font-black uppercase tracking-wider opacity-70 block mb-1">Date</label>
+                        <input type="date" id="expenseDate" class="w-full theme-input px-2.5 py-2 text-xs">
+                    </div>
+                    <div>
+                        <label data-i18n="categoryLabel" class="text-[10px] font-black uppercase tracking-wider opacity-70 block mb-1">Category</label>
+                        <select id="expenseCategory" class="w-full theme-input px-2.5 py-2 text-xs cursor-pointer text-slate-900"></select>
+                    </div>
+                    <div>
+                        <label data-i18n="descLabel" class="text-[10px] font-black uppercase tracking-wider opacity-70 block mb-1">Description</label>
+                        <input type="text" id="expenseDesc" data-i18n-ph="descPlaceholder" placeholder="e.g. Dinner" class="w-full theme-input px-3 py-2 text-xs">
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-black uppercase tracking-wider opacity-70 block mb-1"><span data-i18n="amountLabel">Amount</span> (<span id="currencySymbol">$</span>)</label>
+                        <input type="number" step="0.01" id="expenseAmount" placeholder="0.00" class="w-full theme-input px-2.5 py-2 text-xs font-bold">
+                    </div>
+                    <div>
+                        <label data-i18n="paidByLabel" class="text-[10px] font-black uppercase tracking-wider opacity-70 block mb-1">Paid By</label>
+                        <select id="expensePaidBy" class="w-full theme-input px-2.5 py-2 text-xs cursor-pointer text-slate-900"></select>
+                    </div>
+                </div>
+
+                <div class="space-y-2 pt-2 border-t border-current/10">
+                    <div class="flex justify-between items-center">
+                        <label data-i18n="splitBetweenLabel" class="text-[10px] font-black uppercase tracking-wider opacity-70">Split Between:</label>
+                        <button id="btnSelectAllSplits" type="button" data-i18n="selectAllBtn" class="text-xs font-bold opacity-80 hover:opacity-100 underline cursor-pointer">Select All</button>
+                    </div>
+                    <div id="splitCheckboxes" class="flex flex-wrap gap-2 pt-1 text-xs"></div>
+                </div>
+
+                <div>
+                    <button id="btnRecordExpense" type="button" data-i18n="recordExpenseBtn" class="w-full theme-btn py-3 text-sm font-extrabold cursor-pointer">Record Expense</button>
+                </div>
+            </section>
+
+            <!-- Settlement Card -->
+            <section class="theme-card p-6 space-y-4" data-card-id="settlement">
+                <div class="card-drag-handle" draggable="true" title="Drag to reorder card">⠿</div>
+                <div class="flex justify-between items-center border-b border-current/10 pb-3 pr-8">
+                    <h2 data-i18n="settlementTitle" class="text-xs font-black uppercase tracking-wider opacity-70">Settlement Matrix</h2>
+                    <button id="btnCopySummary" type="button" data-i18n="copySummaryBtn" class="theme-btn text-xs px-3 py-1.5 font-extrabold cursor-pointer">Copy Summary</button>
+                </div>
+                <div id="settlementList" class="space-y-2 text-xs min-h-[80px]"></div>
+            </section>
+
+            <!-- History Card -->
+            <section class="theme-card p-6 space-y-4" data-card-id="history">
+                <div class="card-drag-handle" draggable="true" title="Drag to reorder card">⠿</div>
+                <div class="flex justify-between items-center border-b border-current/10 pb-3 pr-8">
+                    <div class="flex items-center gap-2">
+                        <h2 data-i18n="historyTitle" class="text-xs font-black uppercase tracking-wider opacity-70">Ledger History</h2>
+                    </div>
+                    <button id="btnGenerateReport" type="button" data-i18n="generateReportBtn" class="theme-btn text-xs px-3 py-1.5 font-extrabold cursor-pointer">Generate Report</button>
+                </div>
+                <ul id="expenseHistory" class="space-y-2 text-xs min-h-[80px] max-h-[300px] overflow-y-auto pr-1"></ul>
+            </section>
+        </div>
     </div>
 
     <!-- Welcome / Landing Modal -->
     <div id="welcomeModal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-        <div class="theme-card p-6 sm:p-8 max-w-md w-full space-y-6 bg-white text-slate-900 relative">
-            
-            <div class="text-center space-y-2 border-b pb-4">
-                <h2 class="text-3xl font-black tracking-tight">SPENSE</h2>
-                <p class="text-xs text-slate-500 font-semibold">Confidential Group Expense Tracker</p>
+        <div class="theme-card p-6 sm:p-8 max-w-lg w-full space-y-6 shadow-2xl bg-white text-slate-900">
+            <div class="border-b border-slate-200 pb-5 text-center space-y-3">
+                <div class="w-full max-w-[320px] mx-auto py-1">
+                    <img src="logo.png" alt="SPENSE Logo" class="w-full h-auto object-contain drop-shadow-md" onerror="this.src='https://placehold.co/300x120?text=SPENSE'">
+                </div>
+
+                <div class="py-1 min-h-[48px] flex items-center justify-center overflow-hidden">
+                    <div id="taglineSpot" class="w-full text-slate-900 text-xs sm:text-sm font-medium text-center slide-reset"></div>
+                </div>
+
+                <div class="text-xs font-black tracking-widest text-slate-800 flex justify-center items-center gap-2 pt-1 uppercase">
+                    <button id="btnLangTR" type="button" class="hover:text-amber-600 cursor-pointer transition">TÜRKÇE</button>
+                    <span class="text-slate-300 font-normal">|</span>
+                    <button id="btnLangEN" type="button" class="hover:text-amber-600 cursor-pointer transition">ENGLISH</button>
+                    <span class="text-slate-300 font-normal">|</span>
+                    <button id="btnLangDE" type="button" class="hover:text-amber-600 cursor-pointer transition">DEUTSCH</button>
+                </div>
+                <p data-i18n="modalSub" class="text-xs font-bold text-slate-600 pt-1">Create or open a confidential group ledger.</p>
             </div>
 
-            <!-- Tab Switcher Header -->
-            <div class="flex gap-2 p-1 bg-slate-100 rounded-2xl">
-                <button id="btnTabCreate" type="button" class="flex-1 theme-btn py-2 text-xs font-black uppercase tracking-wider bg-amber-300 text-slate-900 rounded-xl cursor-pointer">Create New</button>
-                <button id="btnTabRecall" type="button" class="flex-1 theme-btn py-2 text-xs font-black uppercase tracking-wider bg-transparent text-slate-500 rounded-xl cursor-pointer">Recall Existing</button>
+            <!-- Modal Tab Controls -->
+            <div id="modalTabsHeader" class="flex gap-2 p-1 bg-slate-100 rounded-2xl">
+                <button id="tabCreateBtn" type="button" data-i18n="tabCreate" class="flex-1 theme-btn py-2 text-xs font-black uppercase tracking-wider bg-amber-300 text-slate-900 rounded-xl cursor-pointer">Create New</button>
+                <button id="tabRecallBtn" type="button" data-i18n="tabRecall" class="flex-1 theme-btn py-2 text-xs font-black uppercase tracking-wider bg-transparent text-slate-500 rounded-xl cursor-pointer">Recall Existing</button>
             </div>
 
             <!-- Create Section -->
             <div id="createSection" class="space-y-4">
                 <div class="space-y-1">
-                    <label class="text-xs font-extrabold text-slate-800">Ledger Name</label>
-                    <input type="text" id="newLedgerName" placeholder="e.g. dinner-club" class="w-full theme-input px-3 py-2 text-sm">
+                    <label data-i18n="ledgerNameLabel" class="text-xs font-extrabold text-slate-800">Ledger Name</label>
+                    <input type="text" id="newLedgerName" data-i18n-ph="ledgerNamePh" placeholder="e.g. dinner-club" class="w-full theme-input px-3 py-2 text-sm">
                 </div>
                 <div class="space-y-1">
-                    <label class="text-xs font-extrabold text-slate-800">Set 4-Digit PIN</label>
+                    <label data-i18n="setPinLabel" class="text-xs font-extrabold text-slate-800">Set 4-Digit PIN</label>
                     <input type="text" id="newLedgerPin" maxlength="4" placeholder="1234" class="w-full theme-input px-3 py-2 text-sm font-mono tracking-widest">
                 </div>
-                <button id="btnInitializeLedger" type="button" class="w-full theme-btn bg-lime-400 hover:bg-lime-500 text-slate-900 py-3 text-xs font-black uppercase tracking-wider rounded-xl cursor-pointer">Initialize Ledger</button>
+                <button id="btnInitializeLedger" type="button" data-i18n="initializeBtn" class="w-full theme-btn bg-lime-400 hover:bg-lime-500 text-slate-900 py-3 text-xs font-black uppercase tracking-wider rounded-xl cursor-pointer">Initialize Ledger</button>
             </div>
 
             <!-- Recall Section -->
             <div id="recallSection" class="space-y-4 hidden">
                 <div class="space-y-1">
-                    <label class="text-xs font-extrabold text-slate-800">Select Archive</label>
+                    <label data-i18n="selectArchiveLabel" class="text-xs font-extrabold text-slate-800">Select Archive</label>
                     <select id="archiveSelect" class="w-full theme-input px-3 py-2 text-sm cursor-pointer">
                         <option value="">-- Loading Archives... --</option>
                     </select>
                 </div>
                 <div class="space-y-1">
-                    <label class="text-xs font-extrabold text-slate-800">Enter 4-Digit PIN</label>
+                    <label data-i18n="enterPinLabel" class="text-xs font-extrabold text-slate-800">Enter 4-Digit PIN</label>
                     <input type="text" id="recallLedgerPin" maxlength="4" placeholder="1234" class="w-full theme-input px-3 py-2 text-sm font-mono tracking-widest">
                 </div>
-                <button id="btnAccessLedger" type="button" class="w-full theme-btn bg-cyan-400 hover:bg-cyan-500 text-slate-900 py-3 text-xs font-black uppercase tracking-wider rounded-xl cursor-pointer">Access Ledger</button>
+                <button id="btnAccessLedger" type="button" data-i18n="accessLedgerBtn" class="w-full theme-btn bg-cyan-400 hover:bg-cyan-500 text-slate-900 py-3 text-xs font-black uppercase tracking-wider rounded-xl cursor-pointer">Access Ledger</button>
             </div>
-
         </div>
     </div>
 
-    <!-- Ensure correct relative path to JS file -->
-    <script src="js/app.js"></script>
+    <!-- Settings Modal -->
+    <div id="settingsModal" class="hidden fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div class="theme-card bg-white p-6 max-w-md w-full space-y-5 shadow-2xl text-slate-900">
+            <div class="flex justify-between items-center border-b border-slate-200 pb-3">
+                <h3 class="text-sm font-black uppercase tracking-wider">Ledger Settings</h3>
+                <button id="btnCloseSettings" type="button" class="text-slate-500 hover:text-slate-900 text-xl font-bold cursor-pointer">×</button>
+            </div>
+
+            <div class="space-y-1">
+                <label class="text-xs font-extrabold text-slate-800 block">Language</label>
+                <select id="settingsLangSelect" class="w-full theme-input px-3 py-2 text-sm cursor-pointer text-slate-900">
+                    <option value="en">English</option>
+                    <option value="tr">Türkçe</option>
+                    <option value="de">Deutsch</option>
+                </select>
+            </div>
+
+            <div class="space-y-1">
+                <label class="text-xs font-extrabold text-slate-800 block">Currency</label>
+                <select id="settingsCurrencySelect" class="w-full theme-input px-3 py-2 text-sm cursor-pointer text-slate-900">
+                    <option value="USD">USD ($)</option>
+                    <option value="EUR">EUR (€)</option>
+                    <option value="TRY">TRY (₺)</option>
+                </select>
+            </div>
+
+            <div class="space-y-1.5">
+                <label class="text-xs font-extrabold text-slate-800 block">Visual Template</label>
+                <div class="grid grid-cols-3 gap-2">
+                    <label class="cursor-pointer border border-slate-300 bg-slate-50 p-2 rounded-xl text-center shadow-xs">
+                        <input type="radio" name="modalThemeSelect" value="Silk" class="sr-only">
+                        <span class="block text-xs font-black font-sans">Silk</span>
+                    </label>
+                    <label class="cursor-pointer border-2 border-slate-900 bg-amber-100 p-2 rounded-xl text-center shadow-[2px_2px_0px_#0f172a]">
+                        <input type="radio" name="modalThemeSelect" value="Toon" class="sr-only">
+                        <span class="block text-xs font-black font-serif">Toon</span>
+                    </label>
+                    <label class="cursor-pointer border border-cyan-500 bg-slate-950 p-2 rounded-xl text-center text-cyan-400 shadow-xs">
+                        <input type="radio" name="modalThemeSelect" value="Neon" class="sr-only">
+                        <span class="block text-xs font-black font-mono">Neon</span>
+                    </label>
+                </div>
+            </div>
+
+            <button id="btnSaveSettings" type="button" class="w-full theme-btn bg-lime-400 hover:bg-lime-500 text-slate-900 py-3 text-xs font-black uppercase tracking-wider rounded-xl cursor-pointer">Save Settings</button>
+        </div>
+    </div>
+
+    <!-- Share Link Modal -->
+    <div id="shareModal" class="hidden fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div class="theme-card bg-white p-6 max-w-md w-full space-y-4 shadow-2xl text-slate-900">
+            <div class="flex justify-between items-center border-b border-slate-200 pb-2">
+                <h3 data-i18n="shareLinkHeader" class="text-xs font-black uppercase tracking-wider">Share Ledger Link</h3>
+                <button id="btnCloseShare" type="button" class="text-slate-500 hover:text-slate-900 text-xl font-bold cursor-pointer">×</button>
+            </div>
+            <p data-i18n="shareLinkSub" class="text-xs font-medium text-slate-600">Anyone with this link will only need to enter the 4-digit PIN to access this ledger.</p>
+            <div class="flex gap-2">
+                <input type="text" id="shareLinkInput" readonly class="flex-1 theme-input px-3 py-2 text-xs font-mono">
+                <button id="btnCopyShareLink" type="button" data-i18n="copyBtn" class="theme-btn px-4 py-2 text-xs font-black uppercase rounded-xl cursor-pointer">Copy</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Script loading with fallback paths -->
+    <script src="js/app.js" defer onerror="this.onerror=null; this.src='app.js';"></script>
 </body>
 </html>

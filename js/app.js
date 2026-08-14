@@ -2,7 +2,7 @@
  * ==========================================================================
  * SPENSE - Group Expense Tracker Main Controller
  * CS Senior Architecture: Modular State Machine + Case-Insensitive Balance Resolution 
- *                        + Sparse Array Sanitation + Equal Grid Action Controls
+ *                        + Compact Contiguous Memory Sync + Equal Grid Controls
  * ==========================================================================
  */
 
@@ -451,7 +451,7 @@ async function recallLedger() {
             const rawMembers = Array.isArray(data.members) ? data.members : [];
             const cleanServerMembers = rawMembers
                 .map(m => (m || '').toString().trim())
-                .filter(m => m.length > 0);
+                .filter(m => m.length > 0 && m.toLowerCase() !== 'members');
 
             // Deduplicate case-insensitively using a Map
             const memberMap = new Map();

@@ -1,6 +1,6 @@
 /**
  * SPENSE - Group Expense Tracker Main Controller
- * Computer Science Architecture: Modular State Machine + Control-Plane Metadata Filtering + Motion Engine
+ * CS Senior Architecture: Modular State Machine + Control-Plane Metadata Filtering + Motion Engine + Auto-Persistence
  */
 
 console.log("%c[SPENSE] Engine & Full Controller Loaded Successfully.", "color: #059669; font-weight: bold;");
@@ -377,7 +377,6 @@ async function loadGoogleSheetsArchive() {
     const select = document.getElementById('archiveSelect');
     if (!select) return;
 
-    // Preserve loading indicator only if empty
     if (select.options.length <= 1) {
         select.innerHTML = `<option value="">-- Reading Google Sheets... --</option>`;
     }
@@ -440,7 +439,6 @@ function switchModalTab(tabMode) {
         if (tabRecallBtn) tabRecallBtn.className = "flex-1 theme-btn py-2 text-xs font-black uppercase tracking-wider bg-amber-300 text-slate-900 rounded-xl cursor-pointer";
         if (tabCreateBtn) tabCreateBtn.className = "flex-1 theme-btn py-2 text-xs font-black uppercase tracking-wider bg-transparent text-slate-500 rounded-xl cursor-pointer";
         
-        // Trigger backup load only if prefetch hasn't finished yet
         const select = document.getElementById('archiveSelect');
         if (select && (select.options.length <= 1 || select.value === "")) {
             loadGoogleSheetsArchive();
@@ -522,9 +520,11 @@ async function recallLedger() {
 
             if (data.cardOrder) applyCardOrder(data.cardOrder);
 
-            ledgerData.members = data.members || [];
+            // DEFENSIVE MERGE: Merge incoming server participants with local pending state
+            const serverMembers = Array.isArray(data.members) ? data.members : [];
+            ledgerData.members = Array.from(new Set([...serverMembers, ...unsavedMembers]));
+            
             ledgerData.expenses = data.expenses || [];
-            unsavedMembers = [];
 
             document.getElementById('welcomeModal')?.classList.add('hidden');
             render();
@@ -567,20 +567,38 @@ async function deleteActiveLedger() {
     goHome();
 }
 
-// --- PARTICIPANTS STAGING MODULE ---
-function addMemberDirect() {
+// --- PARTICIPANTS STAGING & AUTO-PERSIST MODULE ---
+async function addMemberDirect() {
     const input = document.getElementById('memberName');
     if (!input) return;
     const name = input.value.trim();
     if (!name) return;
 
-    if (!currentTab) { alert("Access or initialize a ledger first."); return; }
-    if (ledgerData.members.includes(name)) { alert("Participant already exists."); input.value = ''; return; }
+    if (!currentTab) { 
+        alert("Access or initialize a ledger first."); 
+        return; 
+    }
+    
+    if (ledgerData.members.includes(name)) { 
+        alert("Participant already exists."); 
+        input.value = ''; 
+        return; 
+    }
 
+    // 1. Optimistic UI update
     ledgerData.members.push(name);
-    unsavedMembers.push(name);
+    if (!unsavedMembers.includes(name)) unsavedMembers.push(name);
     input.value = '';
     render();
+
+    // 2. Immediate Background Auto-Sync to Google Sheets
+    const res = await callBackend('addMembers', { names: [name] });
+    if (res && res.status === "success") {
+        unsavedMembers = unsavedMembers.filter(m => m !== name);
+        render();
+    } else {
+        console.warn("[SPENSE Warning] Background sync failed for participant:", name);
+    }
 }
 
 async function saveMembers() {
@@ -820,6 +838,7 @@ function copySettlementSummary() {
     });
 }
 
+// --- REPORT GENERATOR (NEW TAB RENDERER) ---
 function generateLedgerReport() {
     if (!currentTab) {
         alert("Please open an active ledger first.");
@@ -862,14 +881,16 @@ function generateLedgerReport() {
     }
     report += `====================================================\n`;
 
+    // Create a Blob containing the plain text report
     const blob = new Blob([report], { type: 'text/plain;charset=utf-8' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = `${currentTab}-report.txt`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(link.href);
+    const reportUrl = URL.createObjectURL(blob);
+
+    // Open the Blob URL directly in a new browser tab
+    const reportWindow = window.open(reportUrl, '_blank');
+
+    if (!reportWindow) {
+        alert("Pop-up blocked! Please allow pop-ups for this site to view the report in a new tab.");
+    }
 }
 
 function getCurrencySymbol() {

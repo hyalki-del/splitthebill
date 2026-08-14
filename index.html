@@ -3,347 +3,250 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SPENSE - Group Expense Tracker</title>
+    <title>SPENSE</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700;800&family=Inter:wght@400;600;800&family=Fredoka:wght@500;600;700&display=swap');
-
-        :root, [data-theme="silk"] {
-            --bg-main: #f8fafc; --card-bg: #ffffff; --text-main: #0f172a; --border-color: #cbd5e1; --accent-btn: #38bdf8;
-            --font-head: 'Inter', sans-serif; --font-body: 'Inter', sans-serif; --card-radius: 1.5rem;
-            --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); --btn-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-        }
-        [data-theme="toon"] {
-            --bg-main: #f3f4f6; --card-bg: #ffffff; --text-main: #0f172a; --border-color: #0f172a; --accent-btn: #facc15;
-            --font-head: 'Fredoka', sans-serif; --font-body: 'Inter', sans-serif; --card-radius: 1.25rem;
-            --card-shadow: 4px 4px 0px #0f172a; --btn-shadow: 3px 3px 0px #0f172a;
-        }
-        [data-theme="neon"] {
-            --bg-main: #030712; --card-bg: #0b0f19; --text-main: #f8fafc; --border-color: #1e293b; --accent-btn: #06b6d4;
-            --font-head: 'JetBrains Mono', monospace; --font-body: 'JetBrains Mono', monospace; --card-radius: 1rem;
-            --card-shadow: 0 0 15px rgba(6, 182, 212, 0.15); --btn-shadow: 0 0 10px rgba(6, 182, 212, 0.2);
-        }
-
-        body { background-color: var(--bg-main); color: var(--text-main); font-family: var(--font-body); transition: background-color 0.3s ease, color 0.3s ease; }
-        .theme-font-head { font-family: var(--font-head); }
-        .theme-card { background-color: var(--card-bg); border: 2px solid var(--border-color); border-radius: var(--card-radius); box-shadow: var(--card-shadow); position: relative; min-width: 280px; min-height: 140px; overflow: hidden; transition: transform 0.2s ease, opacity 0.2s ease; }
-        [data-theme="toon"] .theme-card { border: 3px solid var(--border-color); }
-        .theme-header { border-bottom-width: 3px; }
-
-        /* --- HARDWARE-ACCELERATED 4-DIRECTIONAL KEYFRAME ENGINE --- */
-        @keyframes animLeft {
-            0% { transform: translateX(-120%); opacity: 0; }
-            15%, 85% { transform: translateX(0); opacity: 1; }
-            100% { transform: translateX(120%); opacity: 0; }
-        }
-        @keyframes animRight {
-            0% { transform: translateX(120%); opacity: 0; }
-            15%, 85% { transform: translateX(0); opacity: 1; }
-            100% { transform: translateX(-120%); opacity: 0; }
-        }
-        @keyframes animTop {
-            0% { transform: translateY(-120%); opacity: 0; }
-            15%, 85% { transform: translateY(0); opacity: 1; }
-            100% { transform: translateY(120%); opacity: 0; }
-        }
-        @keyframes animBottom {
-            0% { transform: translateY(120%); opacity: 0; }
-            15%, 85% { transform: translateY(0); opacity: 1; }
-            100% { transform: translateY(-120%); opacity: 0; }
-        }
-
-        .motion-left   { animation: animLeft 3.2s cubic-bezier(0.4, 0, 0.2, 1) infinite; }
-        .motion-right  { animation: animRight 3.2s cubic-bezier(0.4, 0, 0.2, 1) infinite; }
-        .motion-top    { animation: animTop 3.2s cubic-bezier(0.4, 0, 0.2, 1) infinite; }
-        .motion-bottom { animation: animBottom 3.2s cubic-bezier(0.4, 0, 0.2, 1) infinite; }
-
-        .theme-input { background-color: var(--card-bg); border: 2px solid var(--border-color); border-radius: 0.85rem; color: var(--text-main); outline: none; }
-        .theme-input:focus { border-color: var(--text-main); box-shadow: 0 0 0 2px rgba(15, 23, 42, 0.1); }
-        [data-theme="toon"] .theme-input { border: 3px solid var(--border-color); box-shadow: 2px 2px 0px #0f172a; }
-
-        .theme-btn { border: 2px solid var(--border-color); border-radius: 0.85rem; font-weight: 800; box-shadow: var(--btn-shadow); transition: transform 0.1s ease, filter 0.2s ease; }
-        .theme-btn:hover { filter: brightness(1.05); }
-        .theme-btn:active { transform: translateY(2px); box-shadow: none; }
-        [data-theme="toon"] .theme-btn { border: 3px solid var(--border-color); box-shadow: 3px 3px 0px #0f172a; }
-
-        .card-drag-handle {
-            position: absolute; top: 12px; right: 12px; width: 28px; height: 28px; cursor: grab; z-index: 30;
-            background: rgba(0,0,0,0.06); border-radius: 50%; display: flex; align-items: center; justify-content: center;
-            font-size: 14px; opacity: 0.6; transition: opacity 0.2s, background 0.2s; user-select: none;
-        }
-        .card-drag-handle:hover { opacity: 1; background: rgba(0,0,0,0.12); }
-
-        /* Settings Active Selection framing */
-        .option-btn-selected {
-            border-color: #0f172a !important;
-            background-color: #fef3c7 !important;
-            box-shadow: 0 0 0 2px #0f172a !important;
-            transform: scale(1.02);
-        }
-    </style>
+    <link rel="stylesheet" href="css/styles.css">
 </head>
 <body class="min-h-screen p-3 sm:p-8 antialiased">
     <div class="max-w-5xl mx-auto space-y-6">
         
-        <!-- Save Layout Notification Bar -->
-        <div id="layoutActionBar" class="hidden bg-amber-400 border-2 border-slate-900 text-slate-900 px-4 py-2.5 rounded-2xl font-black text-xs flex justify-between items-center shadow-[3px_3px_0px_#0f172a] animate-bounce">
-            <span>Layout modified! Save your new card arrangement to Google Sheets.</span>
-            <button id="btnSaveCardLayout" type="button" onclick="window.saveCardLayout()" class="bg-slate-900 text-amber-300 px-3 py-1 rounded-xl uppercase tracking-wider text-[10px] cursor-pointer hover:bg-slate-800">Save Layout</button>
-        </div>
+        <!-- Header -->
+        <header class="theme-card theme-header p-4 sm:p-6">
+            <div class="flex items-center justify-between gap-4 flex-wrap sm:flex-nowrap">
+                
+                <!-- 1. Logo -->
+                <div class="flex items-center cursor-pointer group flex-shrink-0" onclick="goHome()" title="Home">
+                    <div class="relative w-72 h-32 sm:w-96 sm:h-40 flex items-center justify-center group-hover:scale-105 transition-transform">
+                        <img src="logo.png" alt="Brand Logo" class="w-full h-full object-contain drop-shadow-md" onerror="this.src='https://placehold.co/300x120?text=SPENSE'">
+                    </div>
+                </div>
 
-        <div id="appContainer" class="space-y-6">
+                <!-- 2. Middle Section -->
+                <div id="viewModeIndicator" class="flex flex-col text-left sm:text-center flex-grow min-w-[200px]">
+                    <span class="text-sm sm:text-base font-medium uppercase tracking-wider opacity-70">Active ledger:</span>
+                    <span class="text-2xl sm:text-4xl font-extrabold break-words leading-tight mt-0.5">AWAITING AUTHENTICATION...</span>
+                </div>
+
+                <!-- 3. Buttons -->
+                <div class="flex flex-col gap-2 flex-shrink-0">
+                    <button id="settingsBtn" type="button" onclick="openSettingsModal()" data-i18n="settingsBtn" class="hidden theme-btn text-xs px-3 py-1.5 font-bold cursor-pointer text-center">⚙ Settings</button>
+                    <button id="shareBtn" type="button" onclick="openShareModal()" data-i18n="shareLinkBtn" class="hidden theme-btn action-btn text-xs px-3 py-1.5 font-bold cursor-pointer text-center">Share Link</button>
+                    <button id="deleteLedgerBtn" type="button" onclick="deleteActiveLedger()" data-i18n="deleteBtn" class="hidden theme-btn text-xs bg-rose-500 hover:bg-rose-600 text-white px-3 py-1.5 font-bold cursor-pointer text-center">Delete</button>
+                </div>
+
+            </div>
+        </header>
+
+        <!-- Full-Width Participants Section -->
+        <section class="theme-card theme-frame-2 p-6 flex flex-col justify-between space-y-4">
+            <div>
+                <h2 data-i18n="participantsTitle" class="text-xs font-black uppercase tracking-wider opacity-70">Participants</h2>
+                <p data-i18n="participantsSub" class="text-xs font-medium opacity-70 mt-0.5">Add or remove people from this group.</p>
+            </div>
+            <div class="space-y-3">
+                <div class="flex gap-2">
+                    <input type="text" id="memberName" data-i18n-ph="namePlaceholder" placeholder="Name..." class="flex-1 theme-input px-3 py-2 text-sm" onkeypress="if(event.key==='Enter') addMemberDirect()">
+                    <button type="button" onclick="addMemberDirect()" data-i18n="addBtn" class="theme-btn px-4 py-2 text-xs font-extrabold cursor-pointer">Add</button>
+                </div>
+                <div id="memberList" class="text-sm flex flex-wrap gap-2 pt-1"></div>
+                <button id="btnSaveMembers" type="button" onclick="saveMembers()" data-i18n="saveMembersBtn" class="hidden w-full theme-btn bg-lime-400 hover:bg-lime-500 text-slate-900 py-2 text-xs font-black uppercase tracking-wider rounded-xl cursor-pointer">Save New Participants</button>
+            </div>
+        </section>
+
+        <!-- Expense Form -->
+        <section id="expenseFormSection" class="theme-card theme-frame-3 p-6 space-y-5">
+            <div>
+                <h2 id="expenseFormTitle" data-i18n="newExpenseTitle" class="text-xs font-black uppercase tracking-wider opacity-70">New Expense</h2>
+                <p id="expenseFormSub" data-i18n="newExpenseSub" class="text-xs font-medium opacity-70 mt-0.5">Log a transaction to split.</p>
+            </div>
             
-            <!-- Header Card -->
-            <header class="theme-card theme-header p-4 sm:p-6" data-card-id="header">
-                <div class="card-drag-handle" draggable="true" title="Drag to reorder card">⠿</div>
-                <div class="flex items-center justify-between gap-4 flex-wrap sm:flex-nowrap pointer-events-auto pr-8">
-                    <div id="brandLogoContainer" class="flex items-center cursor-pointer group flex-shrink-0" onclick="window.goHome()" title="Home">
-                        <div class="relative w-56 h-24 sm:w-72 sm:h-28 flex items-center justify-center group-hover:scale-105 transition-transform">
-                            <img src="logo.png" alt="SPENSE Logo" class="w-full h-full object-contain drop-shadow-md" onerror="this.src='https://placehold.co/300x120?text=SPENSE'">
-                        </div>
-                    </div>
-
-                    <div id="viewModeIndicator" class="flex flex-col text-left sm:text-center flex-grow min-w-[200px]">
-                        <span class="text-sm sm:text-base font-medium uppercase tracking-wider opacity-70">Active ledger:</span>
-                        <span class="text-2xl sm:text-4xl font-extrabold break-words leading-tight mt-0.5 block">AWAITING AUTHENTICATION...</span>
-                    </div>
-
-                    <div class="flex flex-col gap-2 flex-shrink-0">
-                        <button id="btnOpenSettings" type="button" onclick="window.openSettingsModal()" data-i18n="settingsBtn" class="hidden theme-btn text-xs px-3 py-1.5 font-bold cursor-pointer text-center">⚙ Settings</button>
-                        <button id="btnOpenShare" type="button" onclick="window.openShareModal()" data-i18n="shareLinkBtn" class="hidden theme-btn text-xs px-3 py-1.5 font-extrabold cursor-pointer text-center">Share Link</button>
-                        <button id="btnDeleteLedger" type="button" onclick="window.deleteActiveLedger()" data-i18n="deleteBtn" class="hidden theme-btn text-xs bg-rose-500 hover:bg-rose-600 text-white px-3 py-1.5 font-bold cursor-pointer text-center">Delete</button>
-                    </div>
+            <div class="grid grid-cols-1 sm:grid-cols-5 gap-3">
+                <div>
+                    <label data-i18n="dateLabel" class="text-[10px] font-black uppercase tracking-wider opacity-70 block mb-1">Date</label>
+                    <input type="date" id="expenseDate" class="w-full theme-input px-2.5 py-2 text-xs">
                 </div>
-            </header>
-
-            <!-- Participants Card -->
-            <section class="theme-card p-6 flex flex-col justify-between space-y-4" data-card-id="participants">
-                <div class="card-drag-handle" draggable="true" title="Drag to reorder card">⠿</div>
-                <div class="pr-8">
-                    <h2 data-i18n="participantsTitle" class="text-xs font-black uppercase tracking-wider opacity-70">Participants</h2>
-                    <p data-i18n="participantsSub" class="text-xs font-medium opacity-70 mt-0.5">Add or remove people from this group.</p>
+                <div>
+                    <label data-i18n="categoryLabel" class="text-[10px] font-black uppercase tracking-wider opacity-70 block mb-1">Category</label>
+                    <select id="expenseCategory" class="w-full theme-input px-2.5 py-2 text-xs cursor-pointer text-slate-900"></select>
                 </div>
-                
-                <div class="space-y-3">
-                    <div class="flex gap-2">
-                        <input type="text" id="memberName" data-i18n-ph="namePlaceholder" placeholder="Name..." class="flex-1 theme-input px-3 py-2 text-sm" onkeypress="if(event.key==='Enter') window.addMemberDirect()">
-                        <button id="btnAddMember" type="button" onclick="window.addMemberDirect()" data-i18n="addBtn" class="theme-btn px-4 py-2 text-xs font-extrabold cursor-pointer">Add</button>
-                    </div>
-                    
-                    <div class="flex justify-end">
-                        <button id="btnSaveMembers" type="button" onclick="window.saveMembers()" data-i18n="saveMembersBtn" class="hidden theme-btn bg-amber-300 hover:bg-amber-400 text-slate-900 px-3 py-1.5 text-xs font-black uppercase tracking-wider cursor-pointer animate-pulse">Save Participants</button>
-                    </div>
-
-                    <div id="memberList" class="text-sm flex flex-wrap gap-2 pt-1"></div>
+                <div>
+                    <label data-i18n="descLabel" class="text-[10px] font-black uppercase tracking-wider opacity-70 block mb-1">Description</label>
+                    <input type="text" id="expenseDesc" data-i18n-ph="descPlaceholder" placeholder="e.g. Dinner" class="w-full theme-input px-3 py-2 text-xs">
                 </div>
-            </section>
-
-            <!-- Expense Form Card -->
-            <section id="expenseFormSection" class="theme-card p-6 space-y-5" data-card-id="expense">
-                <div class="card-drag-handle" draggable="true" title="Drag to reorder card">⠿</div>
-                <div class="pr-8">
-                    <h2 id="expenseFormTitle" data-i18n="newExpenseTitle" class="text-xs font-black uppercase tracking-wider opacity-70">New Expense</h2>
-                    <p id="expenseFormSub" data-i18n="newExpenseSub" class="text-xs font-medium opacity-70 mt-0.5">Log a transaction to split.</p>
+                <div>
+                    <label class="text-[10px] font-black uppercase tracking-wider opacity-70 block mb-1"><span data-i18n="amountLabel">Amount</span> (<span id="currencySymbol">$</span>)</label>
+                    <input type="number" step="0.01" id="expenseAmount" placeholder="0.00" class="w-full theme-input px-2.5 py-2 text-xs font-bold">
                 </div>
-                
-                <div class="grid grid-cols-1 sm:grid-cols-5 gap-3">
-                    <div>
-                        <label data-i18n="dateLabel" class="text-[10px] font-black uppercase tracking-wider opacity-70 block mb-1">Date</label>
-                        <input type="date" id="expenseDate" class="w-full theme-input px-2.5 py-2 text-xs">
-                    </div>
-                    <div>
-                        <label data-i18n="categoryLabel" class="text-[10px] font-black uppercase tracking-wider opacity-70 block mb-1">Category</label>
-                        <select id="expenseCategory" class="w-full theme-input px-2.5 py-2 text-xs cursor-pointer text-slate-900"></select>
-                    </div>
-                    <div>
-                        <label data-i18n="descLabel" class="text-[10px] font-black uppercase tracking-wider opacity-70 block mb-1">Description</label>
-                        <input type="text" id="expenseDesc" data-i18n-ph="descPlaceholder" placeholder="e.g. Dinner" class="w-full theme-input px-3 py-2 text-xs">
-                    </div>
-                    <div>
-                        <label class="text-[10px] font-black uppercase tracking-wider opacity-70 block mb-1"><span data-i18n="amountLabel">Amount</span> (<span id="currencySymbol">$</span>)</label>
-                        <input type="number" step="0.01" id="expenseAmount" placeholder="0.00" class="w-full theme-input px-2.5 py-2 text-xs font-bold">
-                    </div>
-                    <div>
-                        <label data-i18n="paidByLabel" class="text-[10px] font-black uppercase tracking-wider opacity-70 block mb-1">Paid By</label>
-                        <select id="expensePaidBy" class="w-full theme-input px-2.5 py-2 text-xs cursor-pointer text-slate-900"></select>
-                    </div>
+                <div>
+                    <label data-i18n="paidByLabel" class="text-[10px] font-black uppercase tracking-wider opacity-70 block mb-1">Paid By</label>
+                    <select id="expensePaidBy" class="w-full theme-input px-2.5 py-2 text-xs cursor-pointer text-slate-900"></select>
                 </div>
+            </div>
 
-                <div class="space-y-2 pt-2 border-t border-current/10">
-                    <div class="flex justify-between items-center">
-                        <label data-i18n="splitBetweenLabel" class="text-[10px] font-black uppercase tracking-wider opacity-70">Split Between:</label>
-                        <button id="btnSelectAllSplits" type="button" onclick="window.selectAllSplits()" data-i18n="selectAllBtn" class="text-xs font-bold opacity-80 hover:opacity-100 underline cursor-pointer">Select All</button>
-                    </div>
-                    <div id="splitCheckboxes" class="flex flex-wrap gap-2 pt-1 text-xs"></div>
+            <div class="space-y-2 pt-2 border-t border-current/10">
+                <div class="flex justify-between items-center">
+                    <label data-i18n="splitBetweenLabel" class="text-[10px] font-black uppercase tracking-wider opacity-70">Split Between:</label>
+                    <button type="button" onclick="selectAllSplits()" data-i18n="selectAllBtn" class="text-xs font-bold opacity-80 hover:opacity-100 underline cursor-pointer">Select All</button>
                 </div>
+                <div id="splitCheckboxes" class="flex flex-wrap gap-2 pt-1 text-xs"></div>
+            </div>
 
-                <div id="expenseFormActions">
-                    <button id="btnRecordExpense" type="button" onclick="window.addExpense()" data-i18n="recordExpenseBtn" class="w-full theme-btn py-3 text-sm font-extrabold cursor-pointer">Record Expense</button>
-                </div>
-            </section>
+            <div id="expenseFormActions">
+                <button type="button" onclick="addExpense()" data-i18n="recordExpenseBtn" class="w-full theme-btn py-3 text-sm font-extrabold cursor-pointer">Record Expense</button>
+            </div>
+        </section>
 
-            <!-- Settlement Card -->
-            <section class="theme-card p-6 space-y-4" data-card-id="settlement">
-                <div class="card-drag-handle" draggable="true" title="Drag to reorder card">⠿</div>
-                <div class="flex justify-between items-center border-b border-current/10 pb-3 pr-8">
+        <!-- Settlement & History -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <section class="theme-card theme-frame-4 p-6 space-y-4">
+                <div class="flex justify-between items-center border-b border-current/10 pb-3">
                     <h2 data-i18n="settlementTitle" class="text-xs font-black uppercase tracking-wider opacity-70">Settlement Matrix</h2>
-                    <button id="btnCopySummary" type="button" onclick="window.copySettlementSummary()" data-i18n="copySummaryBtn" class="theme-btn text-xs px-3 py-1.5 font-extrabold cursor-pointer">Copy Summary</button>
+                    <button type="button" onclick="copySettlementSummary()" data-i18n="copySummaryBtn" class="theme-btn action-btn text-xs px-3 py-1.5 font-extrabold cursor-pointer">Copy Summary</button>
                 </div>
-                <div id="settlementList" class="space-y-2 text-xs min-h-[80px]"></div>
+                <div id="settlementList" class="space-y-2 text-xs min-h-[100px]"></div>
             </section>
 
-            <!-- History Card -->
-            <section class="theme-card p-6 space-y-4" data-card-id="history">
-                <div class="card-drag-handle" draggable="true" title="Drag to reorder card">⠿</div>
-                <div class="flex justify-between items-center border-b border-current/10 pb-3 pr-8">
+            <section class="theme-card theme-frame-5 p-6 space-y-4">
+                <div class="flex justify-between items-center border-b border-current/10 pb-3">
                     <div class="flex items-center gap-2">
                         <h2 data-i18n="historyTitle" class="text-xs font-black uppercase tracking-wider opacity-70">Ledger History</h2>
+                        <span data-i18n="clickToEditSub" class="text-[10px] opacity-70 italic font-medium">(Click item to edit)</span>
                     </div>
-                    <button id="btnGenerateReport" type="button" onclick="window.generateLedgerReport()" data-i18n="generateReportBtn" class="theme-btn text-xs px-3 py-1.5 font-extrabold cursor-pointer">Generate Report</button>
+                    <button type="button" onclick="generateLedgerReport()" data-i18n="generateReportBtn" class="theme-btn action-btn text-xs px-3 py-1.5 font-extrabold cursor-pointer">Generate Report</button>
                 </div>
-                <ul id="expenseHistory" class="space-y-2 text-xs min-h-[80px] max-h-[300px] overflow-y-auto pr-1"></ul>
+                <ul id="expenseHistory" class="space-y-2 text-xs min-h-[100px] max-h-[300px] overflow-y-auto pr-1"></ul>
             </section>
         </div>
     </div>
 
-    <!-- Welcome / Landing Modal -->
-    <div id="welcomeModal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 pointer-events-auto">
-        <div class="theme-card p-6 sm:p-8 max-w-lg w-full space-y-6 shadow-2xl bg-white text-slate-900 pointer-events-auto">
-            <div class="border-b border-slate-200 pb-5 text-center space-y-4">
-                <div class="w-full max-w-[320px] mx-auto py-1">
-                    <img src="logo.png" alt="SPENSE Logo" class="w-full h-auto object-contain drop-shadow-md" onerror="this.src='https://placehold.co/300x120?text=SPENSE'">
+    <!-- Welcome Modal -->
+    <div id="welcomeModal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div class="theme-card p-6 sm:p-8 max-w-lg w-full space-y-6 shadow-2xl bg-white text-slate-900">
+            <div class="border-b border-slate-200 pb-5 text-center space-y-3">
+                
+                <!-- Logo -->
+                <div class="w-full max-w-[400px] mx-auto py-2">
+                    <img src="logo.png" alt="Brand Logo" class="w-full h-auto object-contain drop-shadow-md" onerror="this.src='https://placehold.co/300x120?text=SPENSE'">
                 </div>
 
-                <!-- Dynamic Sliding Tagline Container -->
-                <div class="py-2 min-h-[110px] flex items-center justify-center overflow-hidden">
-                    <div id="taglineSpot" class="w-full text-center leading-snug"></div>
+                <!-- Text-Only Rotating Tagline Spot -->
+                <div class="py-2 min-h-[50px] flex items-center justify-center">
+                    <div id="taglineSpot" class="w-full text-slate-900 text-xs sm:text-sm font-medium transition-opacity duration-300 text-center"></div>
                 </div>
 
-                <!-- Welcome Modal Language Selector -->
-                <div class="text-sm sm:text-base font-black tracking-widest text-slate-800 flex justify-center items-center gap-4 sm:gap-6 pt-2 uppercase">
-                    <button id="btnLangTR" type="button" onclick="window.switchLanguage('tr')" class="hover:text-amber-600 cursor-pointer transition px-1">TÜRKÇE</button>
+                <!-- Language Selector -->
+                <div class="text-xs font-black tracking-widest text-slate-800 flex justify-center items-center gap-2 pt-2 uppercase">
+                    <button id="lang-tr" type="button" onclick="switchLanguage('tr')" class="hover:text-amber-600 cursor-pointer transition">TÜRKÇE</button>
                     <span class="text-slate-300 font-normal">|</span>
-                    <button id="btnLangEN" type="button" onclick="window.switchLanguage('en')" class="hover:text-amber-600 cursor-pointer transition px-1">ENGLISH</button>
+                    <button id="lang-en" type="button" onclick="switchLanguage('en')" class="hover:text-amber-600 cursor-pointer transition">ENGLISH</button>
                     <span class="text-slate-300 font-normal">|</span>
-                    <button id="btnLangDE" type="button" onclick="window.switchLanguage('de')" class="hover:text-amber-600 cursor-pointer transition px-1">DEUTSCH</button>
+                    <button id="lang-de" type="button" onclick="switchLanguage('de')" class="hover:text-amber-600 cursor-pointer transition">DEUTSCH</button>
                 </div>
+                <p data-i18n="modalSub" class="text-xs font-bold text-slate-600 pt-1">Create or open a confidential group ledger.</p>
             </div>
 
-            <!-- Modal Tab Controls -->
-            <div id="modalTabsHeader" class="flex gap-2 p-1 bg-slate-100 rounded-2xl">
-                <button id="tabCreateBtn" type="button" onclick="window.switchModalTab('create')" data-i18n="tabCreate" class="flex-1 theme-btn py-2 text-xs font-black uppercase tracking-wider bg-amber-300 text-slate-900 rounded-xl cursor-pointer">Create New</button>
-                <button id="tabRecallBtn" type="button" onclick="window.switchModalTab('recall')" data-i18n="tabRecall" class="flex-1 theme-btn py-2 text-xs font-black uppercase tracking-wider bg-transparent text-slate-500 rounded-xl cursor-pointer">Recall Existing</button>
+            <div id="modalTabsHeader" class="flex gap-2">
+                <button id="tabCreateBtn" type="button" onclick="switchModalTab('create')" data-i18n="tabCreate" class="flex-1 theme-btn py-2 text-xs font-black uppercase tracking-wider bg-amber-300 text-slate-900 rounded-xl cursor-pointer">Create New</button>
+                <button id="tabRecallBtn" type="button" onclick="switchModalTab('recall')" data-i18n="tabRecall" class="flex-1 theme-btn py-2 text-xs font-black uppercase tracking-wider bg-slate-100 text-slate-500 rounded-xl cursor-pointer">Recall Existing</button>
             </div>
 
-            <!-- Create Section -->
+            <!-- Create Form -->
             <div id="createSection" class="space-y-4">
                 <div class="space-y-1">
                     <label data-i18n="ledgerNameLabel" class="text-xs font-extrabold text-slate-800">Ledger Name</label>
-                    <input type="text" id="newLedgerName" data-i18n-ph="ledgerNamePh" placeholder="e.g. dinner-club" class="w-full theme-input px-3 py-2 text-sm" onkeypress="if(event.key==='Enter') window.createNewLedger()">
+                    <input type="text" id="newLedgerName" data-i18n-ph="ledgerNamePh" placeholder="e.g. dinner-club" class="w-full theme-input px-3 py-2 text-sm" onkeypress="if(event.key==='Enter') createNewLedger()">
                 </div>
                 <div class="space-y-1">
                     <label data-i18n="setPinLabel" class="text-xs font-extrabold text-slate-800">Set 4-Digit PIN</label>
-                    <input type="text" id="newLedgerPin" maxlength="4" placeholder="1234" class="w-full theme-input px-3 py-2 text-sm font-mono tracking-widest" onkeypress="if(event.key==='Enter') window.createNewLedger()">
+                    <input type="text" id="newLedgerPin" maxlength="4" placeholder="1234" class="w-full theme-input px-3 py-2 text-sm font-mono tracking-widest" onkeypress="if(event.key==='Enter') createNewLedger()">
                 </div>
-                <button id="btnInitializeLedger" type="button" onclick="window.createNewLedger()" data-i18n="initializeBtn" class="w-full theme-btn bg-lime-400 hover:bg-lime-500 text-slate-900 py-3 text-xs font-black uppercase tracking-wider rounded-xl cursor-pointer">Initialize Ledger</button>
+                <button type="button" onclick="createNewLedger()" data-i18n="initializeBtn" class="w-full theme-btn bg-lime-400 hover:bg-lime-500 text-slate-900 py-3 text-xs font-black uppercase tracking-wider rounded-xl cursor-pointer">Initialize Ledger</button>
             </div>
 
-            <!-- Recall Section -->
+            <!-- Recall Form -->
             <div id="recallSection" class="space-y-4 hidden">
-                <div class="space-y-1">
+                <div id="archiveDropdownContainer" class="space-y-1">
                     <label data-i18n="selectArchiveLabel" class="text-xs font-extrabold text-slate-800">Select Archive</label>
-                    <select id="archiveSelect" class="w-full theme-input px-3 py-2 text-sm cursor-pointer">
-                        <option value="">-- Loading Archives... --</option>
-                    </select>
+                    <select id="archiveSelect" class="w-full theme-input px-3 py-2 text-sm cursor-pointer"></select>
                 </div>
                 <div class="space-y-1">
                     <label data-i18n="enterPinLabel" class="text-xs font-extrabold text-slate-800">Enter 4-Digit PIN</label>
-                    <input type="text" id="recallLedgerPin" maxlength="4" placeholder="1234" class="w-full theme-input px-3 py-2 text-sm font-mono tracking-widest" onkeypress="if(event.key==='Enter') window.recallLedger()">
+                    <input type="text" id="recallLedgerPin" maxlength="4" placeholder="1234" class="w-full theme-input px-3 py-2 text-sm font-mono tracking-widest" onkeypress="if(event.key==='Enter') recallLedger()">
                 </div>
-                <button id="btnAccessLedger" type="button" onclick="window.recallLedger()" data-i18n="accessLedgerBtn" class="w-full theme-btn bg-cyan-400 hover:bg-cyan-500 text-slate-900 py-3 text-xs font-black uppercase tracking-wider rounded-xl cursor-pointer">Access Ledger</button>
+                <button type="button" onclick="recallLedger()" data-i18n="accessLedgerBtn" class="w-full theme-btn bg-cyan-400 hover:bg-cyan-500 text-slate-900 py-3 text-xs font-black uppercase tracking-wider rounded-xl cursor-pointer">Access Ledger</button>
             </div>
         </div>
     </div>
 
     <!-- Settings Modal -->
-    <div id="settingsModal" class="hidden fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 pointer-events-auto">
-        <div class="theme-card bg-white p-6 max-w-md w-full space-y-6 shadow-2xl text-slate-900">
+    <div id="settingsModal" class="hidden fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div class="theme-card bg-white p-6 max-w-md w-full space-y-5 shadow-2xl text-slate-900">
             <div class="flex justify-between items-center border-b border-slate-200 pb-3">
                 <h3 class="text-sm font-black uppercase tracking-wider">Ledger Settings</h3>
-                <button id="btnCloseSettings" type="button" onclick="window.closeSettingsModal()" class="text-slate-500 hover:text-slate-900 text-xl font-bold cursor-pointer">×</button>
+                <button type="button" onclick="closeSettingsModal()" class="text-slate-500 hover:text-slate-900 text-xl font-bold cursor-pointer">×</button>
             </div>
 
-            <!-- Language Buttons with Flags -->
-            <div class="space-y-2">
-                <label class="text-xs font-extrabold text-slate-800 block uppercase tracking-wider">Language</label>
+            <!-- Language Option -->
+            <div class="space-y-1">
+                <label class="text-xs font-extrabold text-slate-800 block">Language</label>
+                <select id="settingsLangSelect" class="w-full theme-input px-3 py-2 text-sm cursor-pointer text-slate-900">
+                    <option value="en">English</option>
+                    <option value="tr">Türkçe</option>
+                    <option value="de">Deutsch</option>
+                </select>
+            </div>
+
+            <div class="space-y-1">
+                <label class="text-xs font-extrabold text-slate-800 block">Currency</label>
+                <select id="settingsCurrencySelect" class="w-full theme-input px-3 py-2 text-sm cursor-pointer text-slate-900">
+                    <option value="USD">USD ($)</option>
+                    <option value="EUR">EUR (€)</option>
+                    <option value="TRY">TRY (₺)</option>
+                </select>
+            </div>
+
+            <div class="space-y-1.5">
+                <label class="text-xs font-extrabold text-slate-800 block">Visual Template</label>
                 <div class="grid grid-cols-3 gap-2">
-                    <button type="button" onclick="window.selectSettingsLang('tr')" id="setLangTR" class="theme-btn py-2.5 px-3 flex items-center justify-center gap-2 text-xs font-extrabold border-2 border-slate-200 rounded-xl hover:border-slate-400 bg-slate-50 transition cursor-pointer">
-                        <svg class="w-5 h-3.5 rounded-xs shadow-xs" viewBox="0 0 1200 800" fill="none"><rect width="1200" height="800" fill="#E30A17"/><circle cx="425" cy="400" r="200" fill="#FFFFFF"/><circle cx="475" cy="400" r="160" fill="#E30A17"/><path d="M583.333 400L700 437.938L627.915 338.73L627.915 461.27L700 362.062L583.333 400Z" fill="#FFFFFF"/></svg>
-                        TÜRKÇE
-                    </button>
-                    <button type="button" onclick="window.selectSettingsLang('en')" id="setLangEN" class="theme-btn py-2.5 px-3 flex items-center justify-center gap-2 text-xs font-extrabold border-2 border-slate-200 rounded-xl hover:border-slate-400 bg-slate-50 transition cursor-pointer">
-                        <svg class="w-5 h-3.5 rounded-xs shadow-xs" viewBox="0 0 60 30" fill="none"><clipPath id="a"><path d="M0 0h60v30H0z"/></clipPath><g clip-path="url(#a)"><path d="M0 0h60v30H0z" fill="#012169"/><path d="M0 0l60 30m0-30L0 30" stroke="#fff" stroke-width="6"/><path d="M0 0l60 30m0-30L0 30" stroke="#C8102E" stroke-width="4"/><path d="M30 0v30M0 15h60" stroke="#fff" stroke-width="10"/><path d="M30 0v30M0 15h60" stroke="#C8102E" stroke-width="6"/></g></svg>
-                        ENGLISH
-                    </button>
-                    <button type="button" onclick="window.selectSettingsLang('de')" id="setLangDE" class="theme-btn py-2.5 px-3 flex items-center justify-center gap-2 text-xs font-extrabold border-2 border-slate-200 rounded-xl hover:border-slate-400 bg-slate-50 transition cursor-pointer">
-                        <svg class="w-5 h-3.5 rounded-xs shadow-xs" viewBox="0 0 5 3" fill="none"><rect width="5" height="1" fill="#000"/><rect y="1" width="5" height="1" fill="#D00"/><rect y="2" width="5" height="1" fill="#FFCE00"/></svg>
-                        DEUTSCH
-                    </button>
+                    <label class="cursor-pointer border border-slate-300 bg-slate-50 p-2 rounded-xl text-center shadow-xs has-[:checked]:ring-2 has-[:checked]:ring-blue-500">
+                        <input type="radio" name="modalThemeSelect" value="Silk" onchange="applyTheme('Silk')" class="sr-only">
+                        <span class="block text-xs font-black font-sans">Silk</span>
+                        <span class="text-[9px] block text-slate-500 font-sans">Minimal</span>
+                    </label>
+                    <label class="cursor-pointer border-2 border-slate-900 bg-amber-100 p-2 rounded-xl text-center shadow-[2px_2px_0px_#0f172a] has-[:checked]:ring-2 has-[:checked]:ring-amber-500">
+                        <input type="radio" name="modalThemeSelect" value="Toon" onchange="applyTheme('Toon')" class="sr-only">
+                        <span class="block text-xs font-black font-serif">Toon</span>
+                        <span class="text-[9px] block text-slate-600 font-sans">Cartoon</span>
+                    </label>
+                    <label class="cursor-pointer border border-cyan-500 bg-slate-950 p-2 rounded-xl text-center text-cyan-400 shadow-xs has-[:checked]:ring-2 has-[:checked]:ring-cyan-400">
+                        <input type="radio" name="modalThemeSelect" value="Neon" onchange="applyTheme('Neon')" class="sr-only">
+                        <span class="block text-xs font-black font-mono">Neon</span>
+                        <span class="text-[9px] block text-cyan-300 font-mono">Cyber</span>
+                    </label>
                 </div>
             </div>
 
-            <!-- Currency Buttons with Icons -->
-            <div class="space-y-2">
-                <label class="text-xs font-extrabold text-slate-800 block uppercase tracking-wider">Currency</label>
-                <div class="grid grid-cols-3 gap-2">
-                    <button type="button" onclick="window.selectSettingsCurrency('USD')" id="setCurrUSD" class="theme-btn py-2.5 px-3 flex items-center justify-center gap-1.5 text-xs font-extrabold border-2 border-slate-200 rounded-xl hover:border-slate-400 bg-slate-50 transition cursor-pointer">
-                        <span class="text-base font-black">$</span> USD
-                    </button>
-                    <button type="button" onclick="window.selectSettingsCurrency('EUR')" id="setCurrEUR" class="theme-btn py-2.5 px-3 flex items-center justify-center gap-1.5 text-xs font-extrabold border-2 border-slate-200 rounded-xl hover:border-slate-400 bg-slate-50 transition cursor-pointer">
-                        <span class="text-base font-black">€</span> EUR
-                    </button>
-                    <button type="button" onclick="window.selectSettingsCurrency('TRY')" id="setCurrTRY" class="theme-btn py-2.5 px-3 flex items-center justify-center gap-1.5 text-xs font-extrabold border-2 border-slate-200 rounded-xl hover:border-slate-400 bg-slate-50 transition cursor-pointer">
-                        <span class="text-base font-black">₺</span> TRY
-                    </button>
-                </div>
-            </div>
-
-            <!-- Visual Theme Selection Buttons -->
-            <div class="space-y-2">
-                <label class="text-xs font-extrabold text-slate-800 block uppercase tracking-wider">Visual Template</label>
-                <div class="grid grid-cols-3 gap-2">
-                    <button type="button" onclick="window.selectSettingsTheme('Silk')" id="setThemeSilk" class="theme-btn py-3 px-2 border-2 border-slate-200 bg-slate-50 rounded-xl text-center transition cursor-pointer">
-                        <span class="block text-xs font-black font-sans text-slate-900">Silk</span>
-                    </button>
-                    <button type="button" onclick="window.selectSettingsTheme('Toon')" id="setThemeToon" class="theme-btn py-3 px-2 border-2 border-slate-200 bg-amber-100 rounded-xl text-center transition cursor-pointer">
-                        <span class="block text-xs font-black font-serif text-slate-900">Toon</span>
-                    </button>
-                    <button type="button" onclick="window.selectSettingsTheme('Neon')" id="setThemeNeon" class="theme-btn py-3 px-2 border-2 border-slate-200 bg-slate-950 rounded-xl text-center transition cursor-pointer">
-                        <span class="block text-xs font-black font-mono text-cyan-400">Neon</span>
-                    </button>
-                </div>
-            </div>
-
-            <button id="btnSaveSettings" type="button" onclick="window.saveSettings()" class="w-full theme-btn bg-lime-400 hover:bg-lime-500 text-slate-900 py-3 text-xs font-black uppercase tracking-wider rounded-xl cursor-pointer">Save Settings</button>
+            <button type="button" onclick="saveSettings()" class="w-full theme-btn bg-lime-400 hover:bg-lime-500 text-slate-900 py-3 text-xs font-black uppercase tracking-wider rounded-xl cursor-pointer">Save Settings</button>
         </div>
     </div>
 
     <!-- Share Link Modal -->
-    <div id="shareModal" class="hidden fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 pointer-events-auto">
+    <div id="shareModal" class="hidden fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
         <div class="theme-card bg-white p-6 max-w-md w-full space-y-4 shadow-2xl text-slate-900">
             <div class="flex justify-between items-center border-b border-slate-200 pb-2">
                 <h3 data-i18n="shareLinkHeader" class="text-xs font-black uppercase tracking-wider">Share Ledger Link</h3>
-                <button id="btnCloseShare" type="button" onclick="window.closeShareModal()" class="text-slate-500 hover:text-slate-900 text-xl font-bold cursor-pointer">×</button>
+                <button type="button" onclick="closeShareModal()" class="text-slate-500 hover:text-slate-900 text-xl font-bold cursor-pointer">×</button>
             </div>
             <p data-i18n="shareLinkSub" class="text-xs font-medium text-slate-600">Anyone with this link will only need to enter the 4-digit PIN to access this ledger.</p>
             <div class="flex gap-2">
                 <input type="text" id="shareLinkInput" readonly class="flex-1 theme-input px-3 py-2 text-xs font-mono">
-                <button id="btnCopyShareLink" type="button" onclick="window.copyShareLink()" data-i18n="copyBtn" class="theme-btn px-4 py-2 text-xs font-black uppercase rounded-xl cursor-pointer">Copy</button>
+                <button type="button" onclick="copyShareLink()" data-i18n="copyBtn" class="theme-btn action-btn px-4 py-2 text-xs font-black uppercase rounded-xl cursor-pointer">Copy</button>
             </div>
         </div>
     </div>
 
-    <!-- Multi-Path Script Loader -->
-    <script src="js/app.js" onerror="this.onerror=null; this.src='app.js';"></script>
+    <!-- Scripts -->
+    <script src="js/i18n.js"></script>
+    <script src="js/app.js"></script>
 </body>
 </html>

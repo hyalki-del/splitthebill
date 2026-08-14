@@ -1,6 +1,6 @@
 /* ==========================================
    SPENSE - Main Application Logic & Controller
-   Architecture: Modular State, UI Management, Carousel, Resizing, Card Ordering & Google Sheets Config Integration
+   Architecture: Defensive Modular State, UI Management, Carousel, Resizing & Google Sheets Config Integration
    ========================================== */
 
 let currentTab = null;
@@ -47,17 +47,17 @@ function initTaglineCarousel() {
             spot.classList.remove('slide-out-left');
             spot.classList.add('slide-in-right');
 
-            void spot.offsetWidth; // Force layout reflow tick
+            void spot.offsetWidth;
 
             setTimeout(() => {
                 spot.classList.remove('slide-in-right');
                 spot.classList.add('slide-reset');
             }, 50);
 
-        }, 400); // Matches CSS slide duration
+        }, 400);
     }
 
-    taglineInterval = setInterval(rotateTagline, 3000); // 3 seconds loop
+    taglineInterval = setInterval(rotateTagline, 3000);
 }
 
 // --- 2. Programmatic Corner-Drag Resizing & Card Swapping Engine ---
@@ -173,7 +173,6 @@ function initCardDragging() {
                 parent.replaceChild(dragged, card);
                 parent.replaceChild(card, tempNode);
 
-                // Show explicit save layout notification banner
                 document.getElementById('layoutActionBar')?.classList.remove('hidden');
             }
         });
@@ -214,32 +213,36 @@ async function saveCardLayout() {
     }
 }
 
-// --- 3. Robust Google Sheets Archive Fetcher (via config.json) ---
+// --- 3. Robust Google Sheets Archive Fetcher ---
+async function getConfig() {
+    try {
+        const configRes = await fetch('config.json');
+        if (!configRes.ok) throw new Error("config.json not found");
+        const config = await configRes.json();
+        return config.sheetUrl || config.googleSheetApiUrl || config.apiUrl;
+    } catch (err) {
+        console.warn("Using fallback or missing config.json:", err);
+        return null;
+    }
+}
+
 async function loadGoogleSheetsArchive() {
     const select = document.getElementById('archiveSelect');
     if (!select) return;
 
-    select.innerHTML = `<option value="">-- Reading config.json & fetching Sheets... --</option>`;
+    select.innerHTML = `<option value="">-- Fetching Sheets Archives... --</option>`;
 
     try {
-        const configRes = await fetch('config.json');
-        if (!configRes.ok) {
-            throw new Error(`HTTP error loading config.json: ${configRes.status}`);
-        }
-        const config = await configRes.json();
-        
-        const sheetUrl = config.sheetUrl || config.googleSheetApiUrl || config.apiUrl;
+        const sheetUrl = await getConfig();
         if (!sheetUrl) {
-            throw new Error("Missing 'sheetUrl' key inside config.json");
+            select.innerHTML = `<option value="">-- Error: Missing sheetUrl in config.json --</option>`;
+            return;
         }
 
         const res = await fetch(sheetUrl);
-        if (!res.ok) {
-            throw new Error(`HTTP error from Google Sheet endpoint: ${res.status}`);
-        }
+        if (!res.ok) throw new Error(`HTTP error: ${res.status}`);
         
         const rawData = await res.json();
-
         let ledgers = [];
         if (Array.isArray(rawData)) {
             ledgers = rawData.map(item => typeof item === 'object' ? (item.name || item.ledger || item.title || Object.values(item)[0]) : item);
@@ -258,17 +261,18 @@ async function loadGoogleSheetsArchive() {
             ledgers.map(name => `<option value="${name}">${name}</option>`).join('');
 
     } catch (error) {
-        console.error("Critical error loading Google Sheets archive:", error);
-        select.innerHTML = `<option value="">-- Error: Check Console / CORS / config.json --</option>`;
+        console.error("Archive fetch error:", error);
+        select.innerHTML = `<option value="">-- Error loading archives (Check CORS / config.json) --</option>`;
     }
 }
 
 async function callBackend(action, payload = {}) {
     try {
-        const configRes = await fetch('config.json');
-        const config = await configRes.json();
-        const sheetUrl = config.sheetUrl || config.googleSheetApiUrl || config.apiUrl;
-        if (!sheetUrl) return null;
+        const sheetUrl = await getConfig();
+        if (!sheetUrl) {
+            alert("Configuration error: Google Sheets API URL is not defined in config.json.");
+            return null;
+        }
 
         const response = await fetch(sheetUrl, {
             method: 'POST',
@@ -390,7 +394,7 @@ async function createNewLedger() {
         if (modal) modal.classList.add('hidden');
         render();
     } else {
-        alert("Failed to create ledger: " + (res?.message || "Unknown error"));
+        alert("Failed to create ledger: " + (res?.message || "Unknown error or missing config.json"));
     }
 }
 
@@ -407,9 +411,11 @@ async function recallLedger() {
     }
 
     try {
-        const configRes = await fetch('config.json');
-        const config = await configRes.json();
-        const sheetUrl = config.sheetUrl || config.googleSheetApiUrl || config.apiUrl;
+        const sheetUrl = await getConfig();
+        if (!sheetUrl) {
+            alert("Configuration error: Google Sheets API URL is not defined in config.json.");
+            return;
+        }
 
         const res = await fetch(`${sheetUrl}?tab=${encodeURIComponent(targetLedger)}&pin=${encodeURIComponent(pinVal)}`);
         const data = await res.json();

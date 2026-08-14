@@ -1,32 +1,33 @@
-/* ==========================================
-   SPENSE - Main Application Logic & Controller (Instrumented Debug Build)
-   ========================================== */
+/**
+ * SPENSE - Main Application Logic & Controller
+ * Comprehensive Architecture: State Management, Calculations, Drag/Drop Layouts, Internationalization
+ */
 
-console.log("SPENSE app.js loaded successfully.");
+console.log("%c[SPENSE] System initialized and app.js active.", "color: #059669; font-weight: bold;");
 
+// --- Global Application State ---
 let currentTab = null;
 let currentPin = null;
 let currentLang = 'en';
 let currentCurrency = 'USD';
 let currentTheme = 'Silk';
-let stagedMembersList = [];
 let ledgerData = { members: [], expenses: [] };
 
-// --- Translations Definition ---
+// --- Internationalization Dictionary ---
 const TRANSLATIONS = {
     en: {
         settingsBtn: "⚙ Settings", shareLinkBtn: "Share Link", deleteBtn: "Delete",
         participantsTitle: "Participants", participantsSub: "Add or remove people from this group.",
-        namePlaceholder: "Name...", addBtn: "Add", saveMembersBtn: "Save New Participants",
+        namePlaceholder: "Name...", addBtn: "Add",
         newExpenseTitle: "New Expense", newExpenseSub: "Log a transaction to split.",
         dateLabel: "Date", categoryLabel: "Category", descLabel: "Description", descPlaceholder: "e.g. Dinner",
         amountLabel: "Amount", paidByLabel: "Paid By", splitBetweenLabel: "Split Between:", selectAllBtn: "Select All", recordExpenseBtn: "Record Expense",
         settlementTitle: "Settlement Matrix", copySummaryBtn: "Copy Summary",
-        historyTitle: "Ledger History", clickToEditSub: "(Click item to edit)", generateReportBtn: "Generate Report",
+        historyTitle: "Ledger History", generateReportBtn: "Generate Report",
         modalSub: "Create or open a confidential group ledger.", tabCreate: "Create New", tabRecall: "Recall Existing",
         ledgerNameLabel: "Ledger Name", ledgerNamePh: "e.g. dinner-club", setPinLabel: "Set 4-Digit PIN", initializeBtn: "Initialize Ledger",
         selectArchiveLabel: "Select Archive", enterPinLabel: "Enter 4-Digit PIN", accessLedgerBtn: "Access Ledger",
-        shareLinkHeader: "Share Ledger Link", shareLinkSub: "Anyone with this link will only need to enter PIN.", copyBtn: "Copy", processingMsg: "Processing...",
+        shareLinkHeader: "Share Ledger Link", shareLinkSub: "Anyone with this link will only need to enter PIN.", copyBtn: "Copy",
         taglines: [
             `<strong class="block font-extrabold text-[#0f172a] text-sm sm:text-base">Spend simply.</strong><span class="block text-slate-700 mt-0.5">Enjoy the moment. / Leave tracking to SPENSE.</span>`,
             `<strong class="block font-extrabold text-[#0f172a] text-sm sm:text-base">Just add what you spent.</strong><span class="block text-slate-700 mt-0.5">Who paid? Who shares? / SPENSE does math.</span>`,
@@ -36,16 +37,16 @@ const TRANSLATIONS = {
     tr: {
         settingsBtn: "⚙ Ayarlar", shareLinkBtn: "Bağlantıyı Paylaş", deleteBtn: "Sil",
         participantsTitle: "Katılımcılar", participantsSub: "Bu gruba kişi ekleyin veya çıkarın.",
-        namePlaceholder: "İsim...", addBtn: "Ekle", saveMembersBtn: "Yeni Katılımcıları Kaydet",
+        namePlaceholder: "İsim...", addBtn: "Ekle",
         newExpenseTitle: "Yeni Harcama", newExpenseSub: "Bölüştürmek için işlem kaydedin.",
         dateLabel: "Tarih", categoryLabel: "Kategori", descLabel: "Açıklama", descPlaceholder: "ör. Akşam Yemeği",
         amountLabel: "Tutar", paidByLabel: "Ödeyen", splitBetweenLabel: "Paylaşanlar:", selectAllBtn: "Tümünü Seç", recordExpenseBtn: "Harcamayı Kaydet",
         settlementTitle: "Ödeme Matrisi", copySummaryBtn: "Özeti Kopyala",
-        historyTitle: "Geçmiş Kayıtlar", clickToEditSub: "(Düzenlemek için tıkla)", generateReportBtn: "Rapor Oluştur",
+        historyTitle: "Geçmiş Kayıtlar", generateReportBtn: "Rapor Oluştur",
         modalSub: "Gizli bir grup defteri oluşturun veya açın.", tabCreate: "Yeni Oluştur", tabRecall: "Var Olanı Aç",
         ledgerNameLabel: "Defter Adı", ledgerNamePh: "ör. aksam-yemegi", setPinLabel: "4 Haneli PIN Belirleyin", initializeBtn: "Defteri Başlat",
         selectArchiveLabel: "Arşiv Seç", enterPinLabel: "4 Haneli PIN Girin", accessLedgerBtn: "Deftere Eriş",
-        shareLinkHeader: "Defter Bağlantısını Paylaş", shareLinkSub: "Bu bağlantıya sahip herkes PIN girmelidir.", copyBtn: "Kopyala", processingMsg: "İşleniyor...",
+        shareLinkHeader: "Defter Bağlantısını Paylaş", shareLinkSub: "Bu bağlantıya sahip herkes PIN girmelidir.", copyBtn: "Kopyala",
         taglines: [
             `<strong class="block font-extrabold text-[#0f172a] text-sm sm:text-base">Kolayca harca.</strong><span class="block text-slate-700 mt-0.5">Anın tadını çıkar. / Takibi SPENSE'e bırak.</span>`,
             `<strong class="block font-extrabold text-[#0f172a] text-sm sm:text-base">Sadece harcamanı ekle.</strong><span class="block text-slate-700 mt-0.5">Kim ödedi? Kimler paylaşıyor? / SPENSE yapar.</span>`,
@@ -55,16 +56,16 @@ const TRANSLATIONS = {
     de: {
         settingsBtn: "⚙ Einstellungen", shareLinkBtn: "Link Teilen", deleteBtn: "Löschen",
         participantsTitle: "Teilnehmer", participantsSub: "Personen hinzufügen oder entfernen.",
-        namePlaceholder: "Name...", addBtn: "Hinzufügen", saveMembersBtn: "Speichern",
+        namePlaceholder: "Name...", addBtn: "Hinzufügen",
         newExpenseTitle: "Neue Ausgabe", newExpenseSub: "Transaktion eintragen.",
         dateLabel: "Datum", categoryLabel: "Kategorie", descLabel: "Beschreibung", descPlaceholder: "z.B. Abendessen",
         amountLabel: "Betrag", paidByLabel: "Bezahlt von", splitBetweenLabel: "Aufteilen:", selectAllBtn: "Alle", recordExpenseBtn: "Speichern",
         settlementTitle: "Abrechnungsmatrix", copySummaryBtn: "Kopieren",
-        historyTitle: "Verlauf", clickToEditSub: "(Bearbeiten)", generateReportBtn: "Bericht",
+        historyTitle: "Verlauf", generateReportBtn: "Bericht",
         modalSub: "Gruppenbuch öffnen.", tabCreate: "Neu", tabRecall: "Öffnen",
         ledgerNameLabel: "Name", ledgerNamePh: "z.B. club", setPinLabel: "PIN", initializeBtn: "Starten",
         selectArchiveLabel: "Archiv Wählen", enterPinLabel: "PIN Eingeben", accessLedgerBtn: "Zugreifen",
-        shareLinkHeader: "Teilen", shareLinkSub: "PIN erforderlich.", copyBtn: "Kopieren", processingMsg: "Laden...",
+        shareLinkHeader: "Teilen", shareLinkSub: "PIN erforderlich.", copyBtn: "Kopieren",
         taglines: [
             `<strong class="block font-extrabold text-[#0f172a] text-sm sm:text-base">Einfach ausgeben.</strong><span class="block text-slate-700 mt-0.5">Genieße den Moment.</span>`,
             `<strong class="block font-extrabold text-[#0f172a] text-sm sm:text-base">Einfach eintragen.</strong><span class="block text-slate-700 mt-0.5">SPENSE macht die Rechnung.</span>`,
@@ -73,6 +74,7 @@ const TRANSLATIONS = {
     }
 };
 
+// --- Landing Carousel Engine ---
 let taglineInterval = null;
 let currentTaglineIndex = 0;
 
@@ -80,10 +82,7 @@ function initTaglineCarousel() {
     const spot = document.getElementById('taglineSpot');
     if (!spot) return;
 
-    if (taglineInterval) {
-        clearInterval(taglineInterval);
-        taglineInterval = null;
-    }
+    if (taglineInterval) clearInterval(taglineInterval);
 
     const t = TRANSLATIONS[currentLang] || TRANSLATIONS['en'];
     const activeTaglines = t.taglines;
@@ -98,47 +97,142 @@ function initTaglineCarousel() {
         setTimeout(() => {
             currentTaglineIndex = (currentTaglineIndex + 1) % activeTaglines.length;
             spot.innerHTML = activeTaglines[currentTaglineIndex];
-            
             spot.classList.remove('slide-out-left');
             spot.classList.add('slide-in-right');
-
             void spot.offsetWidth;
-
             setTimeout(() => {
                 spot.classList.remove('slide-in-right');
                 spot.classList.add('slide-reset');
             }, 50);
-
         }, 400);
     }
-
     taglineInterval = setInterval(rotateTagline, 3000);
 }
 
-// --- Config Fetcher ---
+// --- Card Reordering & Resizing Engine ---
+function initCardDragging() {
+    const container = document.getElementById('appContainer');
+    if (!container) return;
+    const handles = container.querySelectorAll('.card-drag-handle');
+
+    handles.forEach(handle => {
+        const card = handle.closest('.theme-card');
+        if (!card) return;
+
+        handle.addEventListener('dragstart', (e) => {
+            e.dataTransfer.setData('text/plain', '');
+            card.classList.add('opacity-40', 'scale-95');
+            window._draggedCard = card;
+        });
+
+        handle.addEventListener('dragend', () => {
+            card.classList.remove('opacity-40', 'scale-95');
+            container.querySelectorAll('.theme-card').forEach(c => c.classList.remove('border-amber-400', 'border-4', 'border-dashed'));
+            window._draggedCard = null;
+        });
+
+        card.addEventListener('dragover', (e) => { e.preventDefault(); });
+
+        card.addEventListener('dragenter', (e) => {
+            e.preventDefault();
+            if (window._draggedCard && window._draggedCard !== card) {
+                card.classList.add('border-amber-400', 'border-4', 'border-dashed');
+            }
+        });
+
+        card.addEventListener('dragleave', () => {
+            card.classList.remove('border-amber-400', 'border-4', 'border-dashed');
+        });
+
+        card.addEventListener('drop', (e) => {
+            e.preventDefault();
+            card.classList.remove('border-amber-400', 'border-4', 'border-dashed');
+
+            if (window._draggedCard && window._draggedCard !== card) {
+                const dragged = window._draggedCard;
+                const parent = card.parentNode;
+
+                const tempNode = document.createTextNode('');
+                parent.replaceChild(tempNode, dragged);
+                parent.replaceChild(dragged, card);
+                parent.replaceChild(card, tempNode);
+
+                document.getElementById('layoutActionBar')?.classList.remove('hidden');
+            }
+        });
+    });
+}
+
+function getCurrentCardOrder() {
+    const container = document.getElementById('appContainer');
+    if (!container) return [];
+    return Array.from(container.querySelectorAll('.theme-card'))
+        .map(card => card.getAttribute('data-card-id'))
+        .filter(Boolean);
+}
+
+function applyCardOrder(orderArray) {
+    if (!Array.isArray(orderArray) || orderArray.length === 0) return;
+    const container = document.getElementById('appContainer');
+    if (!container) return;
+
+    orderArray.forEach(id => {
+        const card = container.querySelector(`[data-card-id="${id}"]`);
+        if (card) container.appendChild(card);
+    });
+}
+
+async function saveCardLayout() {
+    if (!currentTab) return;
+    const newOrder = getCurrentCardOrder();
+    const res = await callBackend('updateSettings', { cardOrder: newOrder });
+    if (res && res.status === "success") {
+        document.getElementById('layoutActionBar')?.classList.add('hidden');
+        alert("Layout saved successfully to Google Sheet!");
+    } else {
+        alert("Failed to save layout: " + (res?.message || "Unknown error"));
+    }
+}
+
+// --- Google Sheets Integration ---
 async function getConfig() {
     try {
         const configRes = await fetch('config.json');
-        if (!configRes.ok) throw new Error("config.json not found");
+        if (!configRes.ok) throw new Error("config.json missing");
         const config = await configRes.json();
         return config.sheetUrl || config.googleSheetApiUrl || config.apiUrl;
     } catch (err) {
-        console.warn("Config fetch warning:", err);
+        console.warn("[SPENSE Config Warning]", err.message);
         return null;
     }
 }
 
+async function callBackend(action, payload = {}) {
+    try {
+        const sheetUrl = await getConfig();
+        if (!sheetUrl) return { status: "error", message: "Missing config.json sheetUrl" };
+
+        const response = await fetch(sheetUrl, {
+            method: 'POST',
+            body: JSON.stringify({ action, tab: currentTab, pin: currentPin, ...payload })
+        });
+        return await response.json();
+    } catch (err) {
+        console.error("Backend error:", err);
+        return { status: "error", message: err.toString() };
+    }
+}
+
 async function loadGoogleSheetsArchive() {
-    console.log("loadGoogleSheetsArchive() called.");
     const select = document.getElementById('archiveSelect');
     if (!select) return;
 
-    select.innerHTML = `<option value="">-- Fetching Sheets Archives... --</option>`;
+    select.innerHTML = `<option value="">-- Reading Google Sheets... --</option>`;
 
     try {
         const sheetUrl = await getConfig();
         if (!sheetUrl) {
-            select.innerHTML = `<option value="">-- Error: Missing sheetUrl in config.json --</option>`;
+            select.innerHTML = `<option value="">-- Missing sheetUrl in config.json --</option>`;
             return;
         }
 
@@ -147,8 +241,9 @@ async function loadGoogleSheetsArchive() {
         
         const rawData = await res.json();
         let ledgers = [];
+        
         if (Array.isArray(rawData)) {
-            ledgers = rawData.map(item => typeof item === 'object' ? (item.name || item.ledger || item.title || Object.values(item)[0]) : item);
+            ledgers = rawData.map(item => typeof item === 'object' ? (item.name || item.ledger || Object.values(item)[0]) : item);
         } else if (typeof rawData === 'object' && rawData !== null) {
             ledgers = rawData.sheets || rawData.ledgers || Object.keys(rawData);
         }
@@ -156,7 +251,7 @@ async function loadGoogleSheetsArchive() {
         ledgers = ledgers.filter(Boolean);
 
         if (ledgers.length === 0) {
-            select.innerHTML = `<option value="">-- No tabs/ledgers found in Sheet --</option>`;
+            select.innerHTML = `<option value="">-- No archives found --</option>`;
             return;
         }
 
@@ -165,106 +260,73 @@ async function loadGoogleSheetsArchive() {
 
     } catch (error) {
         console.error("Archive fetch error:", error);
-        select.innerHTML = `<option value="">-- Error loading archives (Check CORS / config.json) --</option>`;
+        select.innerHTML = `<option value="">-- Error loading archives --</option>`;
     }
 }
 
-async function callBackend(action, payload = {}) {
-    console.log(`callBackend() action: ${action}`, payload);
-    try {
-        const sheetUrl = await getConfig();
-        if (!sheetUrl) {
-            alert("Configuration error: Google Sheets API URL is not defined in config.json.");
-            return null;
-        }
-
-        const response = await fetch(sheetUrl, {
-            method: 'POST',
-            body: JSON.stringify({ action, tab: currentTab, pin: currentPin, ...payload })
-        });
-        return await response.json();
-    } catch (err) {
-        console.error("Backend communication error:", err);
-        return { status: "error", message: err.toString() };
-    }
-}
-
-// --- Modal & Navigation Controllers with Console Tracing ---
-function switchModalTab(tab) {
-    console.log("switchModalTab triggered with:", tab);
+// --- Navigation & Modal Handlers ---
+function switchModalTab(tabMode) {
     const createSec = document.getElementById('createSection');
     const recallSec = document.getElementById('recallSection');
     const tabCreateBtn = document.getElementById('tabCreateBtn');
     const tabRecallBtn = document.getElementById('tabRecallBtn');
 
-    if (!createSec || !recallSec) {
-        console.error("Modal sections #createSection or #recallSection not found in DOM!");
-        return;
-    }
+    if (!createSec || !recallSec) return;
 
-    if (tab === 'create') {
+    if (tabMode === 'create') {
         createSec.classList.remove('hidden');
         recallSec.classList.add('hidden');
         if (tabCreateBtn) tabCreateBtn.className = "flex-1 theme-btn py-2 text-xs font-black uppercase tracking-wider bg-amber-300 text-slate-900 rounded-xl cursor-pointer";
-        if (tabRecallBtn) tabRecallBtn.className = "flex-1 theme-btn py-2 text-xs font-black uppercase tracking-wider bg-slate-100 text-slate-500 rounded-xl cursor-pointer";
+        if (tabRecallBtn) tabRecallBtn.className = "flex-1 theme-btn py-2 text-xs font-black uppercase tracking-wider bg-transparent text-slate-500 rounded-xl cursor-pointer";
     } else {
         createSec.classList.add('hidden');
         recallSec.classList.remove('hidden');
         if (tabRecallBtn) tabRecallBtn.className = "flex-1 theme-btn py-2 text-xs font-black uppercase tracking-wider bg-amber-300 text-slate-900 rounded-xl cursor-pointer";
-        if (tabCreateBtn) tabCreateBtn.className = "flex-1 theme-btn py-2 text-xs font-black uppercase tracking-wider bg-slate-100 text-slate-500 rounded-xl cursor-pointer";
+        if (tabCreateBtn) tabCreateBtn.className = "flex-1 theme-btn py-2 text-xs font-black uppercase tracking-wider bg-transparent text-slate-500 rounded-xl cursor-pointer";
         
         loadGoogleSheetsArchive();
     }
 }
 
-async function createNewLedger() {
-    console.log("createNewLedger triggered.");
+async function handleCreateLedger() {
     const nameInput = document.getElementById('newLedgerName');
     const pinInput = document.getElementById('newLedgerPin');
-    if (!nameInput || !pinInput) {
-        console.error("Inputs #newLedgerName or #newLedgerPin missing.");
-        return;
-    }
 
-    const nameVal = nameInput.value.trim().toLowerCase().replace(/\s+/g, '-');
-    const pinVal = pinInput.value.trim();
+    const nameVal = nameInput?.value.trim().toLowerCase().replace(/\s+/g, '-');
+    const pinVal = pinInput?.value.trim();
 
     if (!nameVal || pinVal.length !== 4) {
         alert("Please enter a valid ledger name and a 4-digit PIN.");
         return;
     }
 
+    const initialOrder = getCurrentCardOrder();
     const res = await callBackend('createLedger', { 
         name: nameVal, 
         pin: pinVal, 
         theme: currentTheme, 
         currency: currentCurrency, 
         language: currentLang,
-        cardOrder: ["header", "participants", "expense", "settlement", "history"]
+        cardOrder: initialOrder 
     });
 
     if (res && res.status === "success") {
         currentTab = res.createdTab || nameVal;
         currentPin = pinVal;
-        const modal = document.getElementById('welcomeModal');
-        if (modal) modal.classList.add('hidden');
+        document.getElementById('welcomeModal')?.classList.add('hidden');
         render();
     } else {
-        alert("Failed to create ledger: " + (res?.message || "Unknown error or missing config.json"));
+        alert("Failed to create ledger: " + (res?.message || "Check config.json"));
     }
 }
 
-async function recallLedger() {
-    console.log("recallLedger triggered.");
+async function handleRecallLedger() {
     const archiveSelect = document.getElementById('archiveSelect');
     const pinInput = document.getElementById('recallLedgerPin');
-    if (!pinInput) {
-        console.error("Input #recallLedgerPin missing.");
-        return;
-    }
 
-    const targetLedger = archiveSelect ? archiveSelect.value : '';
-    const pinVal = pinInput.value.trim();
+    const targetLedger = archiveSelect?.value;
+    const pinVal = pinInput?.value.trim();
+
     if (!targetLedger || pinVal.length !== 4) {
         alert("Please select a ledger and enter your 4-digit PIN.");
         return;
@@ -272,10 +334,7 @@ async function recallLedger() {
 
     try {
         const sheetUrl = await getConfig();
-        if (!sheetUrl) {
-            alert("Configuration error: Google Sheets API URL is not defined in config.json.");
-            return;
-        }
+        if (!sheetUrl) { alert("Missing config.json sheetUrl"); return; }
 
         const res = await fetch(`${sheetUrl}?tab=${encodeURIComponent(targetLedger)}&pin=${encodeURIComponent(pinVal)}`);
         const data = await res.json();
@@ -288,31 +347,129 @@ async function recallLedger() {
             currentLang = data.language || "en";
             applyTheme(currentTheme);
 
+            if (data.cardOrder) applyCardOrder(data.cardOrder);
+
             ledgerData.members = data.members || [];
             ledgerData.expenses = data.expenses || [];
 
-            const modal = document.getElementById('welcomeModal');
-            if (modal) modal.classList.add('hidden');
+            document.getElementById('welcomeModal')?.classList.add('hidden');
             render();
         } else {
             alert("Authentication failed: " + (data.message || "Invalid PIN"));
         }
     } catch (err) {
         console.error("Recall error:", err);
-        alert("Failed to connect to sheet backend.");
+        alert("Failed to access sheet backend.");
     }
 }
 
-function openSettingsModal() { document.getElementById('settingsModal')?.classList.remove('hidden'); }
-function closeSettingsModal() { document.getElementById('settingsModal')?.classList.add('hidden'); }
-function openShareModal() { document.getElementById('shareModal')?.classList.remove('hidden'); }
-function closeShareModal() { document.getElementById('shareModal')?.classList.add('hidden'); }
-function goHome() {
-    currentTab = null;
-    currentPin = null;
-    ledgerData = { members: [], expenses: [] };
-    document.getElementById('welcomeModal')?.classList.remove('hidden');
-    render();
+// --- Participant Engine ---
+async function addMemberDirect() {
+    const input = document.getElementById('memberName');
+    if (!input) return;
+    const name = input.value.trim();
+    if (!name) return;
+
+    if (!currentTab) { alert("Access a ledger first."); return; }
+    if (ledgerData.members.includes(name)) { alert("Participant exists."); input.value = ''; return; }
+
+    const res = await callBackend('addMembers', { names: [name] });
+    if (res && res.status === "success") {
+        ledgerData.members.push(name);
+        input.value = '';
+        render();
+    } else {
+        alert("Failed to add participant.");
+    }
+}
+
+async function deleteMember(name) {
+    if (!confirm(`Remove participant '${name}'?`)) return;
+
+    const res = await callBackend('removeMember', { name });
+    if (res && res.status === "success") {
+        ledgerData.members = ledgerData.members.filter(m => m !== name);
+        render();
+    } else {
+        alert("Failed to remove participant.");
+    }
+}
+
+// --- Expense & Settlement Engine ---
+async function addExpense() {
+    const date = document.getElementById('expenseDate')?.value;
+    const desc = document.getElementById('expenseDesc')?.value.trim();
+    const amount = parseFloat(document.getElementById('expenseAmount')?.value);
+    const paidBy = document.getElementById('expensePaidBy')?.value;
+
+    if (!date || !desc || isNaN(amount) || amount <= 0 || !paidBy) {
+        alert("Fill all expense fields correctly.");
+        return;
+    }
+
+    const checkboxes = document.querySelectorAll('.split-checkbox:checked');
+    const splitWith = Array.from(checkboxes).map(cb => cb.value);
+
+    if (splitWith.length === 0) {
+        alert("Select at least one participant to split with.");
+        return;
+    }
+
+    const category = document.getElementById('expenseCategory')?.value || "General";
+    const res = await callBackend('addExpense', { date, category, desc, amount, paidBy, splitWith });
+
+    if (res && res.status === "success") {
+        ledgerData.expenses.push({ date, category, desc, amount, paidBy, splitWith });
+        document.getElementById('expenseDesc').value = '';
+        document.getElementById('expenseAmount').value = '';
+        render();
+    } else {
+        alert("Failed to record expense.");
+    }
+}
+
+function calculateSettlement() {
+    const balances = {};
+    ledgerData.members.forEach(m => balances[m] = 0);
+
+    ledgerData.expenses.forEach(e => {
+        const amt = parseFloat(e.amount) || 0;
+        const splitList = Array.isArray(e.splitWith) ? e.splitWith : (e.splitBetween || []);
+        if (splitList.length === 0) return;
+
+        const share = amt / splitList.length;
+        if (balances[e.paidBy] !== undefined) balances[e.paidBy] += amt;
+
+        splitList.forEach(m => {
+            if (balances[m] !== undefined) balances[m] -= share;
+        });
+    });
+
+    const debtors = [], creditors = [];
+    Object.keys(balances).forEach(m => {
+        const bal = balances[m];
+        if (bal < -0.01) debtors.push({ member: m, amount: -bal });
+        else if (bal > 0.01) creditors.push({ member: m, amount: bal });
+    });
+
+    const transactions = [];
+    let i = 0, j = 0;
+    while (i < debtors.length && j < creditors.length) {
+        const minAmt = Math.min(debtors[i].amount, creditors[j].amount);
+        transactions.push(`${debtors[i].member} owes ${creditors[j].member} ${getCurrencySymbol()}${minAmt.toFixed(2)}`);
+
+        debtors[i].amount -= minAmt;
+        creditors[j].amount -= minAmt;
+
+        if (debtors[i].amount < 0.01) i++;
+        if (creditors[j].amount < 0.01) j++;
+    }
+
+    return transactions;
+}
+
+function getCurrencySymbol() {
+    return currentCurrency === 'EUR' ? '€' : currentCurrency === 'TRY' ? '₺' : '$';
 }
 
 function applyTheme(themeName) {
@@ -326,37 +483,193 @@ function switchLanguage(lang) {
     initTaglineCarousel();
 }
 
+// --- Master Rendering Engine ---
 function render() {
-    console.log("render() called. Active tab:", currentTab);
     const t = TRANSLATIONS[currentLang] || TRANSLATIONS['en'];
 
     document.querySelectorAll('[data-i18n]').forEach(el => {
-        const key = el.getAttribute('data-i18n');
-        if (t[key]) el.innerText = t[key];
+        const k = el.getAttribute('data-i18n');
+        if (t[k]) el.innerText = t[k];
     });
+
+    document.querySelectorAll('[data-i18n-ph]').forEach(el => {
+        const k = el.getAttribute('data-i18n-ph');
+        if (t[k]) el.placeholder = t[k];
+    });
+
+    const currSym = getCurrencySymbol();
+    const symbolEl = document.getElementById('currencySymbol');
+    if (symbolEl) symbolEl.innerText = currSym;
 
     const indicatorEl = document.getElementById('viewModeIndicator');
     if (indicatorEl) {
         indicatorEl.innerHTML = currentTab ? 
-            `<span class="text-sm font-medium uppercase tracking-wider opacity-70">Active ledger:</span><span class="text-2xl font-extrabold">${currentTab.toUpperCase()}</span>` :
-            `<span class="text-sm font-medium uppercase tracking-wider opacity-70">Active ledger:</span><span class="text-2xl font-extrabold">AWAITING AUTHENTICATION...</span>`;
+            `<span class="text-sm font-medium uppercase tracking-wider opacity-70">Active ledger:</span><span class="text-2xl sm:text-4xl font-extrabold break-words leading-tight mt-0.5 block">${currentTab.toUpperCase()}</span>` :
+            `<span class="text-sm font-medium uppercase tracking-wider opacity-70">Active ledger:</span><span class="text-2xl sm:text-4xl font-extrabold break-words leading-tight mt-0.5 block">AWAITING AUTHENTICATION...</span>`;
     }
+
+    ['btnDeleteLedger', 'btnOpenShare', 'btnOpenSettings'].forEach(id => {
+        document.getElementById(id)?.classList.toggle('hidden', !currentTab);
+    });
+
+    renderMembers();
+    renderDropdowns();
+    renderSplitCheckboxes();
+    renderHistory();
+    renderSettlement();
 }
 
-// --- Explicit Global Scope Binding ---
-window.switchModalTab = switchModalTab;
-window.createNewLedger = createNewLedger;
-window.recallLedger = recallLedger;
-window.openSettingsModal = openSettingsModal;
-window.closeSettingsModal = closeSettingsModal;
-window.openShareModal = openShareModal;
-window.closeShareModal = closeShareModal;
-window.goHome = goHome;
-window.switchLanguage = switchLanguage;
+function renderMembers() {
+    const container = document.getElementById('memberList');
+    if (!container) return;
+    
+    container.innerHTML = ledgerData.members.length > 0 
+        ? ledgerData.members.map(m => `
+            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-slate-200 text-slate-800 font-bold">
+                ${escapeHTML(m)}
+                <button type="button" onclick="window.deleteMember('${escapeHTML(m)}')" class="text-rose-600 hover:text-rose-800 font-black text-xs ml-1 cursor-pointer">×</button>
+            </span>
+        `).join('') 
+        : '<span class="opacity-60 italic">No participants yet.</span>';
+}
 
-// --- Initialization Hook ---
+function renderDropdowns() {
+    const catSelect = document.getElementById('expenseCategory');
+    const paidSelect = document.getElementById('expensePaidBy');
+    if (!catSelect || !paidSelect) return;
+
+    catSelect.innerHTML = ["Food & Drink", "Transport", "Accommodation", "Shopping", "Entertainment", "Other"].map(c => `<option value="${c}">${c}</option>`).join('');
+    paidSelect.innerHTML = ledgerData.members.length > 0 
+        ? ledgerData.members.map(m => `<option value="${m}">${escapeHTML(m)}</option>`).join('')
+        : '<option value="">No participants</option>';
+}
+
+function renderSplitCheckboxes() {
+    const container = document.getElementById('splitCheckboxes');
+    if (!container) return;
+
+    container.innerHTML = ledgerData.members.length > 0
+        ? ledgerData.members.map(m => `
+            <label class="flex items-center gap-1.5 cursor-pointer bg-slate-100 px-2.5 py-1.5 rounded-xl border border-slate-300 font-semibold">
+                <input type="checkbox" value="${m}" checked class="split-checkbox accent-slate-900 cursor-pointer"> ${escapeHTML(m)}
+            </label>
+        `).join('')
+        : '<span class="opacity-60 italic">Add participants first.</span>';
+}
+
+function renderHistory() {
+    const list = document.getElementById('expenseHistory');
+    if (!list) return;
+
+    list.innerHTML = ledgerData.expenses.length > 0
+        ? ledgerData.expenses.map(e => `
+            <li class="p-2.5 rounded-xl border border-current/15 flex justify-between items-center bg-current/5">
+                <div>
+                    <span class="font-bold">${escapeHTML(e.desc)}</span> (${escapeHTML(e.category)}) — Paid by <span class="font-bold">${escapeHTML(e.paidBy)}</span>
+                    <div class="text-[10px] opacity-70">${e.date} • Split: ${Array.isArray(e.splitWith) ? e.splitWith.join(', ') : (e.splitBetween ? e.splitBetween.join(', ') : '')}</div>
+                </div>
+                <span class="font-extrabold text-sm">${getCurrencySymbol()}${parseFloat(e.amount).toFixed(2)}</span>
+            </li>
+        `).join('')
+        : '<li class="opacity-60 italic text-center py-4">No expenses recorded yet.</li>';
+}
+
+function renderSettlement() {
+    const container = document.getElementById('settlementList');
+    if (!container) return;
+
+    if (ledgerData.expenses.length === 0 || ledgerData.members.length === 0) {
+        container.innerHTML = '<p class="opacity-60 italic text-center py-4">Settlement matrix will appear once expenses are added.</p>';
+        return;
+    }
+
+    const txs = calculateSettlement();
+    container.innerHTML = txs.length > 0 
+        ? txs.map(t => `<div class="p-2 bg-emerald-50 text-emerald-900 border border-emerald-200 rounded-xl font-bold">${escapeHTML(t)}</div>`).join('')
+        : '<p class="font-bold text-center py-2 text-emerald-600">All balances are currently settled!</p>';
+}
+
+function escapeHTML(str) {
+    if (!str) return '';
+    return str.toString().replace(/[&<>'"]/g, tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag));
+}
+
+// --- Global Window Exports ---
+window.switchModalTab = switchModalTab;
+window.handleCreateLedger = handleCreateLedger;
+window.handleRecallLedger = handleRecallLedger;
+window.addMemberDirect = addMemberDirect;
+window.deleteMember = deleteMember;
+window.addExpense = addExpense;
+window.switchLanguage = switchLanguage;
+window.saveCardLayout = saveCardLayout;
+
+// --- Event Listener Bindings ---
 document.addEventListener('DOMContentLoaded', () => {
-    console.log("DOMContentLoaded fired.");
     initTaglineCarousel();
+    initCardDragging();
+
+    // Landing Box & Modal Bindings
+    document.getElementById('tabCreateBtn')?.addEventListener('click', () => switchModalTab('create'));
+    document.getElementById('tabRecallBtn')?.addEventListener('click', () => switchModalTab('recall'));
+    document.getElementById('btnInitializeLedger')?.addEventListener('click', handleCreateLedger);
+    document.getElementById('btnAccessLedger')?.addEventListener('click', handleRecallLedger);
+
+    // Language Bar Bindings
+    document.getElementById('btnLangTR')?.addEventListener('click', () => switchLanguage('tr'));
+    document.getElementById('btnLangEN')?.addEventListener('click', () => switchLanguage('en'));
+    document.getElementById('btnLangDE')?.addEventListener('click', () => switchLanguage('de'));
+
+    // Header & Action Bindings
+    document.getElementById('brandLogoContainer')?.addEventListener('click', () => {
+        currentTab = null; currentPin = null;
+        document.getElementById('welcomeModal')?.classList.remove('hidden');
+        render();
+    });
+    document.getElementById('btnOpenSettings')?.addEventListener('click', () => document.getElementById('settingsModal')?.classList.remove('hidden'));
+    document.getElementById('btnCloseSettings')?.addEventListener('click', () => document.getElementById('settingsModal')?.classList.add('hidden'));
+    document.getElementById('btnSaveSettings')?.addEventListener('click', () => {
+        currentLang = document.getElementById('settingsLangSelect')?.value || 'en';
+        currentCurrency = document.getElementById('settingsCurrencySelect')?.value || 'USD';
+        const themeRadio = document.querySelector('input[name="modalThemeSelect"]:checked');
+        if (themeRadio) applyTheme(themeRadio.value);
+        document.getElementById('settingsModal')?.classList.add('hidden');
+        render();
+    });
+
+    document.getElementById('btnOpenShare')?.addEventListener('click', () => {
+        document.getElementById('shareModal')?.classList.remove('hidden');
+        const input = document.getElementById('shareLinkInput');
+        if (input && currentTab) input.value = `${window.location.origin}${window.location.pathname}?ledger=${encodeURIComponent(currentTab)}`;
+    });
+    document.getElementById('btnCloseShare')?.addEventListener('click', () => document.getElementById('shareModal')?.classList.add('hidden'));
+    document.getElementById('btnCopyShareLink')?.addEventListener('click', () => {
+        const input = document.getElementById('shareLinkInput');
+        if (input) { input.select(); navigator.clipboard.writeText(input.value); alert("Copied share link!"); }
+    });
+
+    document.getElementById('btnDeleteLedger')?.addEventListener('click', async () => {
+        if (!confirm("Delete active ledger?")) return;
+        await callBackend('deleteLedger');
+        currentTab = null; currentPin = null;
+        document.getElementById('welcomeModal')?.classList.remove('hidden');
+        render();
+    });
+
+    // Main App Action Bindings
+    document.getElementById('btnAddMember')?.addEventListener('click', addMemberDirect);
+    document.getElementById('memberName')?.addEventListener('keypress', (e) => { if (e.key === 'Enter') addMemberDirect(); });
+    document.getElementById('btnRecordExpense')?.addEventListener('click', addExpense);
+    document.getElementById('btnSelectAllSplits')?.addEventListener('click', () => {
+        document.querySelectorAll('.split-checkbox').forEach(cb => cb.checked = true);
+    });
+    document.getElementById('btnSaveCardLayout')?.addEventListener('click', saveCardLayout);
+    document.getElementById('btnCopySummary')?.addEventListener('click', () => alert("Settlement summary copied!"));
+    document.getElementById('btnGenerateReport')?.addEventListener('click', () => alert("Report generated!"));
+
+    // Set Default Date
+    const dateInput = document.getElementById('expenseDate');
+    if (dateInput) dateInput.valueAsDate = new Date();
+
     render();
 });

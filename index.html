@@ -210,7 +210,7 @@
                 <div id="archiveDropdownContainer" class="space-y-1">
                     <label data-i18n="selectArchiveLabel" class="text-xs font-extrabold text-slate-800">Select Archive</label>
                     <select id="archiveSelect" class="w-full theme-input px-3 py-2 text-sm cursor-pointer">
-                        <option value="">-- Loading Archives... --</option>
+                        <option value="">-- Loading Archives from Google Sheets... --</option>
                     </select>
                 </div>
                 <div class="space-y-1">
@@ -285,7 +285,7 @@
         </div>
     </div>
 
-    <!-- Embedded Scripts with Synchronized Contracts -->
+    <!-- Embedded Scripts with Synchronized Direct-Sync Participant Engine -->
     <script>
         const TRANSLATIONS = {
             en: {
@@ -348,7 +348,7 @@
         };
 
         let currentLang = 'en', currentTab = null, currentPin = null, currentCurrency = 'USD', currentTheme = 'Silk';
-        let stagedMembersList = [], ledgerData = { members: [], expenses: [] };
+        let ledgerData = { members: [], expenses: [] };
         let taglineInterval = null, currentTaglineIndex = 0;
 
         function initTaglineCarousel() {
@@ -418,7 +418,6 @@
             });
         }
 
-        // --- Synchronized Google Sheets API Bridge ---
         async function loadGoogleSheetsArchive() {
             const select = document.getElementById('archiveSelect');
             if (!select) return;
@@ -429,18 +428,18 @@
                 const configRes = await fetch('config.json');
                 if (!configRes.ok) throw new Error("Could not load config.json");
                 const config = await configRes.json();
-                const sheetUrl = config.sheetUrl || config.googleSheetApiUrl || config.apiUrl;
-                if (!sheetUrl) throw new Error("Missing sheetUrl in config.json");
+                
+                const sheetUrl = config.sheetUrl;
+                if (!sheetUrl) throw new Error("Missing 'sheetUrl' in config.json");
 
                 const res = await fetch(sheetUrl);
-                if (!res.ok) throw new Error("Failed to reach Sheets endpoint");
+                if (!res.ok) throw new Error("Failed to reach Google Sheets endpoint");
                 
                 const data = await res.json();
-                // Aligned with Code.gs: expecting { archives: [...] }
-                const archives = data.archives || (Array.isArray(data) ? data : []);
+                const archives = data.archives || [];
 
                 if (archives.length === 0) {
-                    select.innerHTML = `<option value="">-- No archives found --</option>`;
+                    select.innerHTML = `<option value="">-- No archives found in Sheet --</option>`;
                     return;
                 }
 
@@ -449,9 +448,7 @@
 
             } catch (error) {
                 console.error("Archive fetch error:", error);
-                const fallback = JSON.parse(localStorage.getItem('spense_local_archives') || '["dinner-club"]');
-                select.innerHTML = `<option value="">-- Select Archive (Offline Cache) --</option>` + 
-                    fallback.map(name => `<option value="${name}">${name}</option>`).join('');
+                select.innerHTML = `<option value="">-- Error: Check Console / config.json --</option>`;
             }
         }
 
@@ -459,7 +456,7 @@
             try {
                 const configRes = await fetch('config.json');
                 const config = await configRes.json();
-                const sheetUrl = config.sheetUrl || config.googleSheetApiUrl;
+                const sheetUrl = config.sheetUrl;
                 if (!sheetUrl) return null;
 
                 const response = await fetch(sheetUrl, {
@@ -563,27 +560,47 @@
             goHome();
         }
 
+        // --- Synchronized Direct-Sync Participant Engine ---
         async function stageMember() {
             const input = document.getElementById('memberName');
             if (!input) return;
             const name = input.value.trim();
             if (!name) return;
 
-            const res = await callBackend('addMembers', { name });
+            if (!currentTab) {
+                alert("Please initialize or access a ledger first.");
+                return;
+            }
+
+            if (ledgerData.members.includes(name)) {
+                alert("Participant already exists in this ledger.");
+                input.value = '';
+                return;
+            }
+
+            const res = await callBackend('addMembers', { names: [name] });
+            
             if (res && res.status === "success") {
                 ledgerData.members.push(name);
                 input.value = '';
                 render();
             } else {
-                alert("Failed to add participant: " + (res?.message || ""));
+                alert("Failed to save participant to Google Sheet: " + (res?.message || "Unknown error"));
             }
         }
 
         function saveStagedMembers() { render(); }
+
         function renderMembers() {
             const container = document.getElementById('memberList');
             if (!container) return;
-            container.innerHTML = ledgerData.members.map(m => `<span class="px-2.5 py-1 rounded-xl bg-slate-200 text-slate-800 font-bold">${m}</span>`).join('') || '<span class="opacity-60 italic">No participants yet.</span>';
+            
+            container.innerHTML = ledgerData.members.length > 0 
+                ? ledgerData.members.map(m => `<span class="px-2.5 py-1 rounded-xl bg-slate-200 text-slate-800 font-bold">${escapeHTML(m)}</span>`).join('') 
+                : '<span class="opacity-60 italic">No participants yet. Add someone above.</span>';
+
+            const saveBtn = document.getElementById('saveMembersBtn');
+            if (saveBtn) saveBtn.classList.add('hidden');
         }
 
         async function addExpense() {
@@ -593,7 +610,6 @@
             const paidBy = document.getElementById('expensePaidBy')?.value;
             if (!date || !desc || isNaN(amount) || amount <= 0 || !paidBy) { alert("Fill all fields correctly."); return; }
             
-            // Aligned with Code.gs: sending splitWith instead of splitBetween
             const splitWith = Array.from(document.querySelectorAll('.split-checkbox:checked')).map(cb => cb.value);
             if (splitWith.length === 0) { alert("Select at least one participant."); return; }
 
@@ -625,7 +641,6 @@
             const themeRadio = document.querySelector('input[name="modalThemeSelect"]:checked');
             if (themeRadio) applyTheme(themeRadio.value);
 
-            // Persist directly to Google Sheets cells B2, B3, B4 via Code.gs updateSettings
             await callBackend('updateSettings', { theme: currentTheme, currency: currentCurrency, language: currentLang });
 
             closeSettingsModal(); 
@@ -670,12 +685,19 @@
 
         function renderHistory() {
             const list = document.getElementById('expenseHistory');
-            if (list) list.innerHTML = ledgerData.expenses.length > 0 ? ledgerData.expenses.map(e => `<li class="p-2.5 rounded-xl border border-current/15 flex justify-between items-center bg-current/5"><div><span class="font-bold">${e.desc}</span> (${e.category}) — Paid by <span class="font-bold">${e.paidBy}</span><div class="text-[10px] opacity-70">${e.date} • Split: ${Array.isArray(e.splitWith) ? e.splitWith.join(', ') : ''}</div></div><span class="font-extrabold text-sm">${currentCurrency === 'EUR' ? '€' : currentCurrency === 'TRY' ? '₺' : '$'}${parseFloat(e.amount).toFixed(2)}</span></li>`).join('') : '<li class="opacity-60 italic text-center py-4">No expenses recorded yet.</li>';
+            if (list) list.innerHTML = ledgerData.expenses.length > 0 ? ledgerData.expenses.map(e => `<li class="p-2.5 rounded-xl border border-current/15 flex justify-between items-center bg-current/5"><div><span class="font-bold">${escapeHTML(e.desc)}</span> (${escapeHTML(e.category)}) — Paid by <span class="font-bold">${escapeHTML(e.paidBy)}</span><div class="text-[10px] opacity-70">${e.date} • Split: ${Array.isArray(e.splitWith) ? e.splitWith.join(', ') : ''}</div></div><span class="font-extrabold text-sm">${currentCurrency === 'EUR' ? '€' : currentCurrency === 'TRY' ? '₺' : '$'}${parseFloat(e.amount).toFixed(2)}</span></li>`).join('') : '<li class="opacity-60 italic text-center py-4">No expenses recorded yet.</li>';
         }
 
         function renderSettlement() {
             const container = document.getElementById('settlementList');
             if (container) container.innerHTML = ledgerData.expenses.length === 0 ? '<p class="opacity-60 italic text-center py-4">Settlement matrix will appear once expenses are added.</p>' : '<p class="font-bold text-center py-2 text-emerald-600">All balances are currently calculated and balanced.</p>';
+        }
+
+        function escapeHTML(str) {
+            if (!str) return '';
+            return str.toString().replace(/[&<>'"]/g, 
+                tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
+            );
         }
 
         window.switchModalTab = switchModalTab; window.openSettingsModal = openSettingsModal;

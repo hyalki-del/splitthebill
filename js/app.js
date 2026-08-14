@@ -432,21 +432,29 @@ async function recallLedger() {
         return;
     }
 
-    currentTab = targetLedger;
-    currentPin = pinVal;
-
     try {
-        const res = await callBackend('recallLedger', { tab: targetLedger, pin: pinVal });
+        const sheetUrl = await getConfig();
+        if (!sheetUrl) {
+            alert("Missing configuration URL.");
+            return;
+        }
 
-        if (res && res.status === "success") {
-            currentTheme = res.theme || "Silk";
-            currentCurrency = res.currency || "USD";
-            currentLang = res.language || "en";
+        // Use your original working GET query string contract that Code.gs's doGet handler expects
+        const res = await fetch(`${sheetUrl}?tab=${encodeURIComponent(targetLedger)}&pin=${encodeURIComponent(pinVal)}`);
+        const data = await res.json();
+
+        if (data.status === "success") {
+            currentTab = targetLedger;
+            currentPin = pinVal;
+            currentTheme = data.theme || "Silk";
+            currentCurrency = data.currency || "USD";
+            currentLang = data.language || "en";
             applyTheme(currentTheme);
 
-            if (res.cardOrder) applyCardOrder(res.cardOrder);
+            if (data.cardOrder) applyCardOrder(data.cardOrder);
 
-            const rawMembers = Array.isArray(res.members) ? res.members : [];
+            // Sanitize incoming members to prevent sparse gaps and duplicates
+            const rawMembers = Array.isArray(data.members) ? data.members : [];
             const cleanServerMembers = rawMembers
                 .map(m => (m || '').toString().trim())
                 .filter(m => m.length > 0 && m.toLowerCase() !== 'members');
@@ -460,23 +468,18 @@ async function recallLedger() {
             });
 
             ledgerData.members = Array.from(memberMap.values());
-            ledgerData.expenses = res.expenses || [];
+            ledgerData.expenses = data.expenses || [];
 
             document.getElementById('welcomeModal')?.classList.add('hidden');
             render();
         } else {
-            currentTab = null;
-            currentPin = null;
-            alert("Authentication failed: " + (res?.message || "Invalid PIN"));
+            alert("Authentication failed: " + (data.message || "Invalid PIN"));
         }
     } catch (err) {
         console.error("Recall error:", err);
-        currentTab = null;
-        currentPin = null;
         alert("Failed to connect to backend ledger archive.");
     }
 }
-
 function openShareModal() {
     document.getElementById('shareModal')?.classList.remove('hidden');
     const input = document.getElementById('shareLinkInput');

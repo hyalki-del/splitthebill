@@ -177,6 +177,12 @@ body.is-resizing {
     box-shadow: 1px 1px 0px #0f172a;
 }
 
+/* --- Uniform Accent Button Class (Share Link, Copy Summary, Generate Report) --- */
+.theme-accent-btn {
+    background-color: var(--accent-btn);
+    color: #0f172a;
+}
+
 /* ==========================================
    Settlement Matrix Frame Highlighting (.theme-frame-4)
    ========================================== */

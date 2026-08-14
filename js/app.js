@@ -1,50 +1,66 @@
 /* ==========================================
    SPENSE - Main Application Logic
-   Architecture: Modular State & UI Management
+   Architecture: Modular State, Slide Carousel & Resizable Frames
    ========================================== */
 
-const taglineSets = [
-    `<strong class="block font-extrabold text-[#0f172a] text-sm sm:text-base">Spend simply.</strong><span class="block text-slate-700 mt-0.5">Enjoy the moment. / Leave the expense tracking to SPENSE.</span>`,
-    `<strong class="block font-extrabold text-[#0f172a] text-sm sm:text-base">Just add what you spent.</strong><span class="block text-slate-700 mt-0.5">Who paid? Who shares it? / SPENSE does the math.</span>`,
-    `<strong class="block font-extrabold text-[#0f172a] text-sm sm:text-base">Settle easily.</strong><span class="block text-slate-700 mt-0.5">See exactly who owes whom — / and how much.</span>`
-];
-
 let taglineInterval = null;
-
-function shuffleArray(array) {
-    let currentIndex = array.length, randomIndex;
-    while (currentIndex !== 0) {
-        randomIndex = Math.floor(Math.random() * currentIndex);
-        currentIndex--;
-        [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
-    }
-    return array;
-}
+let currentTaglineIndex = 0;
 
 function initTaglineCarousel() {
     const spot = document.getElementById('taglineSpot');
     if (!spot) return;
-
-    const randomizedSets = shuffleArray([...taglineSets]);
-    let currentIndex = 0;
 
     if (taglineInterval) {
         clearInterval(taglineInterval);
         taglineInterval = null;
     }
 
-    function renderTagline() {
-        spot.style.opacity = '0';
+    const t = (typeof TRANSLATIONS !== 'undefined' && TRANSLATIONS[currentLang]) ? TRANSLATIONS[currentLang] : {
+        taglines: [
+            `<strong class="block font-extrabold text-[#0f172a] text-sm sm:text-base">Spend simply.</strong><span class="block text-slate-700 mt-0.5">Enjoy the moment. / Leave the expense tracking to SPENSE.</span>`,
+            `<strong class="block font-extrabold text-[#0f172a] text-sm sm:text-base">Just add what you spent.</strong><span class="block text-slate-700 mt-0.5">Who paid? Who shares it? / SPENSE does the math.</span>`,
+            `<strong class="block font-extrabold text-[#0f172a] text-sm sm:text-base">Settle easily.</strong><span class="block text-slate-700 mt-0.5">See exactly who owes whom — / and how much.</span>`
+        ]
+    };
+    const activeTaglines = t.taglines;
+
+    spot.innerHTML = activeTaglines[currentTaglineIndex % activeTaglines.length];
+    spot.classList.add('slide-reset');
+
+    function rotateTagline() {
+        spot.classList.remove('slide-reset');
+        spot.classList.add('slide-out-left');
+
         setTimeout(() => {
-            spot.innerHTML = randomizedSets[currentIndex];
-            spot.style.opacity = '1';
-            currentIndex = (currentIndex + 1) % randomizedSets.length;
-        }, 150);
+            currentTaglineIndex = (currentTaglineIndex + 1) % activeTaglines.length;
+            spot.innerHTML = activeTaglines[currentTaglineIndex];
+            
+            spot.classList.remove('slide-out-left');
+            spot.classList.add('slide-in-right');
+
+            void spot.offsetWidth; // Force layout reflow tick
+
+            setTimeout(() => {
+                spot.classList.remove('slide-in-right');
+                spot.classList.add('slide-reset');
+            }, 50);
+
+        }, 400); // Matches CSS slide duration
     }
 
-    renderTagline();
-    taglineInterval = setInterval(renderTagline, 2000); // 2 seconds per cycle
+    // Exactly 3 seconds interval loop
+    taglineInterval = setInterval(rotateTagline, 3000);
 }
+
+// React instantly when switching languages
+const originalSwitchLanguage = window.switchLanguage || function(lang) { currentLang = lang; render(); };
+window.switchLanguage = function(lang) {
+    currentLang = lang;
+    if (typeof originalSwitchLanguage === 'function') {
+        originalSwitchLanguage(lang);
+    }
+    initTaglineCarousel();
+};
 
 /* ==========================================
    Programmatic Corner-Drag Resizing Engine

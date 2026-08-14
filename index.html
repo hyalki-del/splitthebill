@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SPENSE - Group Expense Tracker</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css" onerror="this.onerror=null; this.href='css/styles.css';">
 </head>
 <body class="min-h-screen p-3 sm:p-8 antialiased">
     <div class="max-w-5xl mx-auto space-y-6">
@@ -35,7 +35,7 @@
 
                     <div class="flex flex-col gap-2 flex-shrink-0">
                         <button id="btnOpenSettings" type="button" onclick="window.openSettingsModal()" data-i18n="settingsBtn" class="hidden theme-btn text-xs px-3 py-1.5 font-bold cursor-pointer text-center">⚙ Settings</button>
-                        <button id="btnOpenShare" type="button" onclick="window.openShareModal()" data-i18n="shareLinkBtn" class="hidden theme-btn theme-action-btn text-xs px-3 py-1.5 font-extrabold cursor-pointer text-center">Share Link</button>
+                        <button id="btnOpenShare" type="button" onclick="window.openShareModal()" data-i18n="shareLinkBtn" class="hidden theme-btn text-xs px-3 py-1.5 font-extrabold cursor-pointer text-center">Share Link</button>
                         <button id="btnDeleteLedger" type="button" onclick="window.deleteActiveLedger()" data-i18n="deleteBtn" class="hidden theme-btn text-xs bg-rose-500 hover:bg-rose-600 text-white px-3 py-1.5 font-bold cursor-pointer text-center">Delete</button>
                     </div>
                 </div>
@@ -112,7 +112,7 @@
                 <div class="card-drag-handle" draggable="true" title="Drag to reorder card">⠿</div>
                 <div class="flex justify-between items-center border-b border-current/10 pb-3 pr-8">
                     <h2 data-i18n="settlementTitle" class="text-xs font-black uppercase tracking-wider opacity-70">Settlement Matrix</h2>
-                    <button id="btnCopySummary" type="button" onclick="window.copySettlementSummary()" data-i18n="copySummaryBtn" class="theme-btn theme-action-btn text-xs px-3 py-1.5 font-extrabold cursor-pointer">Copy Summary</button>
+                    <button id="btnCopySummary" type="button" onclick="window.copySettlementSummary()" data-i18n="copySummaryBtn" class="theme-btn text-xs px-3 py-1.5 font-extrabold cursor-pointer">Copy Summary</button>
                 </div>
                 <div id="settlementList" class="space-y-2 text-xs min-h-[80px]"></div>
             </section>
@@ -124,7 +124,7 @@
                     <div class="flex items-center gap-2">
                         <h2 data-i18n="historyTitle" class="text-xs font-black uppercase tracking-wider opacity-70">Ledger History</h2>
                     </div>
-                    <button id="btnGenerateReport" type="button" onclick="window.generateLedgerReport()" data-i18n="generateReportBtn" class="theme-btn theme-action-btn text-xs px-3 py-1.5 font-extrabold cursor-pointer">Generate Report</button>
+                    <button id="btnGenerateReport" type="button" onclick="window.generateLedgerReport()" data-i18n="generateReportBtn" class="theme-btn text-xs px-3 py-1.5 font-extrabold cursor-pointer">Generate Report</button>
                 </div>
                 <ul id="expenseHistory" class="space-y-2 text-xs min-h-[80px] max-h-[300px] overflow-y-auto pr-1"></ul>
             </section>
@@ -244,8 +244,8 @@
         </div>
     </div>
 
-    <!-- Script Loaders -->
-    <script src="i18n.js"></script>
-    <script src="app.js"></script>
+    <!-- Resilient Multi-Path Script Loader (Fixes 404/Missing Button Binding) -->
+    <script src="i18n.js" onerror="this.onerror=null; this.src='js/i18n.js';"></script>
+    <script src="app.js" onerror="this.onerror=null; this.src='js/app.js';"></script>
 </body>
 </html>

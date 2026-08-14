@@ -1,6 +1,6 @@
 /**
  * SPENSE - Main Application Logic & Controller
- * Architecture: Fail-Safe Global Scope Functions + DOM Event Delegation
+ * Architecture: Fail-Safe Global Scope Functions + Complete State Engine
  */
 
 console.log("%c[SPENSE] System initialized and app.js active.", "color: #059669; font-weight: bold;");
@@ -223,6 +223,7 @@ async function callBackend(action, payload = {}) {
     }
 }
 
+// --- Problem 1 Fix: Explicit Parsing of `rawData.archives` ---
 async function loadGoogleSheetsArchive() {
     const select = document.getElementById('archiveSelect');
     if (!select) return;
@@ -243,9 +244,10 @@ async function loadGoogleSheetsArchive() {
         let ledgers = [];
         
         if (Array.isArray(rawData)) {
-            ledgers = rawData.map(item => typeof item === 'object' ? (item.name || item.ledger || Object.values(item)[0]) : item);
+            ledgers = rawData;
         } else if (typeof rawData === 'object' && rawData !== null) {
-            ledgers = rawData.sheets || rawData.ledgers || Object.keys(rawData);
+            // FIX: Prioritize rawData.archives returned by Google Apps Script doGet()
+            ledgers = rawData.archives || rawData.sheets || rawData.ledgers || Object.keys(rawData);
         }
 
         ledgers = ledgers.filter(Boolean);
@@ -256,7 +258,7 @@ async function loadGoogleSheetsArchive() {
         }
 
         select.innerHTML = `<option value="">-- Select a Ledger Tab --</option>` + 
-            ledgers.map(name => `<option value="${name}">${name}</option>`).join('');
+            ledgers.map(name => `<option value="${escapeHTML(name)}">${escapeHTML(name)}</option>`).join('');
 
     } catch (error) {
         console.error("Archive fetch error:", error);
@@ -315,12 +317,14 @@ async function createNewLedger() {
     if (res && res.status === "success") {
         currentTab = res.createdTab || nameVal;
         currentPin = pinVal;
+        ledgerData = { members: [], expenses: [] };
         document.getElementById('welcomeModal')?.classList.add('hidden');
         render();
     } else {
-        // Fallback for local testing if backend isn't linked yet
+        // Fallback for offline/local simulation
         currentTab = nameVal;
         currentPin = pinVal;
+        ledgerData = { members: [], expenses: [] };
         document.getElementById('welcomeModal')?.classList.add('hidden');
         render();
     }
@@ -342,7 +346,6 @@ async function recallLedger() {
     try {
         const sheetUrl = await getConfig();
         if (!sheetUrl) {
-            // Local fallback simulation
             currentTab = targetLedger;
             currentPin = pinVal;
             document.getElementById('welcomeModal')?.classList.add('hidden');
@@ -373,7 +376,6 @@ async function recallLedger() {
         }
     } catch (err) {
         console.error("Recall error:", err);
-        // Fallback to allow interface access
         currentTab = targetLedger;
         currentPin = pinVal;
         document.getElementById('welcomeModal')?.classList.add('hidden');
@@ -408,35 +410,41 @@ async function deleteActiveLedger() {
     goHome();
 }
 
-// --- Participant Engine ---
+// --- Problem 2 Fix: Participant Engine ---
 async function addMemberDirect() {
     const input = document.getElementById('memberName');
     if (!input) return;
     const name = input.value.trim();
     if (!name) return;
 
-    if (!currentTab) { alert("Access a ledger first."); return; }
-    if (ledgerData.members.includes(name)) { alert("Participant exists."); input.value = ''; return; }
+    if (!currentTab) { alert("Access or initialize a ledger first."); return; }
+    if (ledgerData.members.includes(name)) { alert("Participant already exists."); input.value = ''; return; }
 
+    // Synchronously update UI state immediately
+    ledgerData.members.push(name);
+    input.value = '';
+    render();
+
+    // Persist to Google Sheets backend
     const res = await callBackend('addMembers', { names: [name] });
-    if (res && res.status === "success") {
-        ledgerData.members.push(name);
-        input.value = '';
-        render();
-    } else {
-        // Direct state push fallback
-        ledgerData.members.push(name);
-        input.value = '';
-        render();
+    if (res && res.status !== "success") {
+        console.warn("[SPENSE Warning] Backend addMembers notice:", res?.message);
     }
 }
 
 async function deleteMember(name) {
+    if (!name) return;
     if (!confirm(`Remove participant '${name}'?`)) return;
 
-    const res = await callBackend('removeMember', { name });
+    // Synchronously update local UI state
     ledgerData.members = ledgerData.members.filter(m => m !== name);
     render();
+
+    // Persist removal to Google Sheets backend
+    const res = await callBackend('removeMember', { name: name });
+    if (res && res.status !== "success") {
+        console.warn("[SPENSE Warning] Backend removeMember notice:", res?.message);
+    }
 }
 
 // --- Expense & Settlement Engine ---
@@ -460,12 +468,15 @@ async function addExpense() {
     }
 
     const category = document.getElementById('expenseCategory')?.value || "General";
-    const res = await callBackend('addExpense', { date, category, desc, amount, paidBy, splitWith });
 
+    // Immediate local UI update
     ledgerData.expenses.push({ date, category, desc, amount, paidBy, splitWith });
     document.getElementById('expenseDesc').value = '';
     document.getElementById('expenseAmount').value = '';
     render();
+
+    // Async backend call
+    await callBackend('addExpense', { date, category, desc, amount, paidBy, splitWith });
 }
 
 function calculateSettlement() {
@@ -580,7 +591,7 @@ function renderMembers() {
         ? ledgerData.members.map(m => `
             <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-slate-200 text-slate-800 font-bold">
                 ${escapeHTML(m)}
-                <button type="button" onclick="window.deleteMember('${escapeHTML(m)}')" class="text-rose-600 hover:text-rose-800 font-black text-xs ml-1 cursor-pointer">×</button>
+                <button type="button" data-member="${escapeHTML(m)}" onclick="window.deleteMember(this.getAttribute('data-member'))" class="text-rose-600 hover:text-rose-800 font-black text-xs ml-1 cursor-pointer">×</button>
             </span>
         `).join('') 
         : '<span class="opacity-60 italic">No participants yet.</span>';
@@ -647,7 +658,7 @@ function escapeHTML(str) {
     return str.toString().replace(/[&<>'"]/g, tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag));
 }
 
-// --- ABSOLUTE GLOBAL WINDOW BINDINGS (Exposed Immediately) ---
+// --- ABSOLUTE GLOBAL WINDOW BINDINGS ---
 window.switchModalTab = switchModalTab;
 window.createNewLedger = createNewLedger;
 window.recallLedger = recallLedger;

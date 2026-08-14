@@ -1,349 +1,1059 @@
-<!DOCTYPE html>
-<html lang="en" data-theme="silk">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SPENSE - Group Expense Tracker</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700;800&family=Inter:wght@400;600;800&family=Fredoka:wght@500;600;700&display=swap');
+/**
+ * ==========================================================================
+ * SPENSE - Group Expense Tracker Main Controller
+ * CS Senior Architecture: Modular State Machine + Case-Insensitive Balance Resolution 
+ *                        + Auto-Persistence + Decoupled i18n Integration
+ * ==========================================================================
+ */
 
-        :root, [data-theme="silk"] {
-            --bg-main: #f8fafc; --card-bg: #ffffff; --text-main: #0f172a; --border-color: #cbd5e1; --accent-btn: #38bdf8;
-            --font-head: 'Inter', sans-serif; --font-body: 'Inter', sans-serif; --card-radius: 1.5rem;
-            --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); --btn-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+console.log("%c[SPENSE] Engine & Controller Loaded Successfully.", "color: #059669; font-weight: bold;");
+
+// --- Global Application State ---
+let currentTab = null;
+let currentPin = null;
+let currentCurrency = 'USD';
+let currentTheme = 'Silk';
+let ledgerData = { members: [], expenses: [] };
+
+// Settings Modal Staging State
+let selectedModalLang = 'en';
+let selectedModalCurrency = 'USD';
+let selectedModalTheme = 'Silk';
+
+// Staging & Edit State Variables
+let unsavedMembers = [];
+let editingExpenseId = null;
+
+// --- DETERMINISTIC DATE NORMALIZATION HELPER ---
+function formatToISODate(rawDate) {
+    if (!rawDate) {
+        const today = new Date();
+        return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+    }
+
+    if (rawDate instanceof Date) {
+        if (isNaN(rawDate.getTime())) rawDate = new Date();
+        return `${rawDate.getFullYear()}-${String(rawDate.getMonth() + 1).padStart(2, '0')}-${String(rawDate.getDate()).padStart(2, '0')}`;
+    }
+
+    const str = rawDate.toString().trim();
+
+    // 1. Strict YYYY-MM-DD
+    if (/^\d{4}-\d{2}-\d{2}$/.test(str)) return str;
+
+    // 2. European / Turkish DD.MM.YYYY or DD/MM/YYYY
+    const dmyMatch = str.match(/^(\d{1,2})[\.\/-](\d{1,2})[\.\/-](\d{4})$/);
+    if (dmyMatch) {
+        const day = dmyMatch[1].padStart(2, '0');
+        const month = dmyMatch[2].padStart(2, '0');
+        const year = dmyMatch[3];
+        return `${year}-${month}-${day}`;
+    }
+
+    // 3. YYYY/MM/DD or YYYY.MM.DD
+    const ymdMatch = str.match(/^(\d{4})[\.\/-](\d{1,2})[\.\/-](\d{1,2})$/);
+    if (ymdMatch) {
+        const year = ymdMatch[1];
+        const month = ymdMatch[2].padStart(2, '0');
+        const day = ymdMatch[3].padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
+
+    // 4. ISO Timestamps or standard date string parsing
+    const parsed = new Date(str);
+    if (!isNaN(parsed.getTime())) {
+        const year = parsed.getFullYear();
+        const month = String(parsed.getMonth() + 1).padStart(2, '0');
+        const day = String(parsed.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
+
+    // Fallback to today
+    const fallback = new Date();
+    return `${fallback.getFullYear()}-${String(fallback.getMonth() + 1).padStart(2, '0')}-${String(fallback.getDate()).padStart(2, '0')}`;
+}
+
+// Case-Insensitive Canonical Name Matcher
+function findMemberCanonical(targetName) {
+    if (!targetName) return targetName;
+    const match = ledgerData.members.find(m => m.toLowerCase() === targetName.toLowerCase());
+    return match || targetName;
+}
+
+// --- SETTINGS SELECTION ENGINE ---
+function selectSettingsLang(lang) {
+    selectedModalLang = lang;
+    ['tr', 'en', 'de'].forEach(l => {
+        const btn = document.getElementById(`setLang${l.toUpperCase()}`);
+        if (btn) {
+            if (l === lang) {
+                btn.className = "theme-btn py-2.5 px-3 flex items-center justify-center gap-2 text-xs font-extrabold rounded-xl transition cursor-pointer option-btn-selected";
+            } else {
+                btn.className = "theme-btn py-2.5 px-3 flex items-center justify-center gap-2 text-xs font-extrabold border-2 border-slate-200 rounded-xl hover:border-slate-400 bg-slate-50 transition cursor-pointer opacity-50";
+            }
         }
-        [data-theme="toon"] {
-            --bg-main: #f3f4f6; --card-bg: #ffffff; --text-main: #0f172a; --border-color: #0f172a; --accent-btn: #facc15;
-            --font-head: 'Fredoka', sans-serif; --font-body: 'Inter', sans-serif; --card-radius: 1.25rem;
-            --card-shadow: 4px 4px 0px #0f172a; --btn-shadow: 3px 3px 0px #0f172a;
+    });
+}
+
+function selectSettingsCurrency(curr) {
+    selectedModalCurrency = curr;
+    ['USD', 'EUR', 'TRY'].forEach(c => {
+        const btn = document.getElementById(`setCurr${c}`);
+        if (btn) {
+            if (c === curr) {
+                btn.className = "theme-btn py-2.5 px-3 flex items-center justify-center gap-1.5 text-xs font-extrabold rounded-xl transition cursor-pointer option-btn-selected";
+            } else {
+                btn.className = "theme-btn py-2.5 px-3 flex items-center justify-center gap-1.5 text-xs font-extrabold border-2 border-slate-200 rounded-xl hover:border-slate-400 bg-slate-50 transition cursor-pointer opacity-50";
+            }
         }
-        [data-theme="neon"] {
-            --bg-main: #030712; --card-bg: #0b0f19; --text-main: #f8fafc; --border-color: #1e293b; --accent-btn: #06b6d4;
-            --font-head: 'JetBrains Mono', monospace; --font-body: 'JetBrains Mono', monospace; --card-radius: 1rem;
-            --card-shadow: 0 0 15px rgba(6, 182, 212, 0.15); --btn-shadow: 0 0 10px rgba(6, 182, 212, 0.2);
+    });
+}
+
+function selectSettingsTheme(theme) {
+    selectedModalTheme = theme;
+    
+    const themeStyles = {
+        Silk: 'bg-slate-50 text-slate-900',
+        Toon: 'bg-amber-100 text-slate-900',
+        Neon: 'bg-slate-950 text-cyan-400'
+    };
+
+    ['Silk', 'Toon', 'Neon'].forEach(t => {
+        const btn = document.getElementById(`setTheme${t}`);
+        if (btn) {
+            const baseBg = themeStyles[t] || 'bg-slate-50';
+            if (t === theme) {
+                btn.className = `theme-btn py-3 px-2 ${baseBg} rounded-xl text-center transition cursor-pointer option-btn-selected`;
+            } else {
+                btn.className = `theme-btn py-3 px-2 border-2 border-slate-200 ${baseBg} rounded-xl text-center transition cursor-pointer opacity-50`;
+            }
+        }
+    });
+}
+
+function openSettingsModal() { 
+    selectedModalLang = currentLang;
+    selectedModalCurrency = currentCurrency;
+    selectedModalTheme = currentTheme;
+
+    selectSettingsLang(selectedModalLang);
+    selectSettingsCurrency(selectedModalCurrency);
+    selectSettingsTheme(selectedModalTheme);
+
+    document.getElementById('settingsModal')?.classList.remove('hidden'); 
+}
+
+function closeSettingsModal() { 
+    document.getElementById('settingsModal')?.classList.add('hidden'); 
+}
+
+async function saveSettings() {
+    currentLang = selectedModalLang;
+    currentCurrency = selectedModalCurrency;
+    applyTheme(selectedModalTheme);
+
+    document.getElementById('settingsModal')?.classList.add('hidden');
+    render();
+    initTaglineCarousel();
+
+    if (currentTab) {
+        const res = await callBackend('updateSettings', {
+            language: currentLang,
+            currency: currentCurrency,
+            theme: currentTheme
+        });
+
+        if (res && res.status !== "success") {
+            console.warn("[SPENSE Warning] Backend settings save notice:", res?.message);
+        }
+    }
+}
+
+// --- GUARANTEED 4-DIRECTIONAL KEYFRAME TAGLINE ENGINE ---
+let taglineTimer = null;
+let currentTaglineIndex = 0;
+
+function initTaglineCarousel() {
+    const spot = document.getElementById('taglineSpot');
+    if (!spot) return;
+
+    if (taglineTimer) clearInterval(taglineTimer);
+
+    const motionClasses = ['motion-left', 'motion-right', 'motion-top', 'motion-bottom'];
+
+    function cycleTagline() {
+        const t = TRANSLATIONS[currentLang] || TRANSLATIONS['en'];
+        const activeTaglines = t.taglines;
+
+        spot.className = "w-full text-center leading-snug";
+        void spot.offsetWidth; // Synchronous DOM reflow force
+
+        spot.innerHTML = activeTaglines[currentTaglineIndex % activeTaglines.length];
+
+        const randomMotion = motionClasses[Math.floor(Math.random() * motionClasses.length)];
+        spot.className = "w-full text-center leading-snug " + randomMotion;
+
+        currentTaglineIndex++;
+    }
+
+    cycleTagline();
+    taglineTimer = setInterval(cycleTagline, 3200);
+}
+
+// --- CARD REORDERING DRAG ENGINE ---
+function initCardDragging() {
+    const container = document.getElementById('appContainer');
+    if (!container) return;
+    const handles = container.querySelectorAll('.card-drag-handle');
+
+    handles.forEach(handle => {
+        const card = handle.closest('.theme-card');
+        if (!card) return;
+
+        handle.addEventListener('dragstart', (e) => {
+            e.dataTransfer.setData('text/plain', '');
+            card.classList.add('opacity-40', 'scale-95');
+            window._draggedCard = card;
+        });
+
+        handle.addEventListener('dragend', () => {
+            card.classList.remove('opacity-40', 'scale-95');
+            container.querySelectorAll('.theme-card').forEach(c => c.classList.remove('border-amber-400', 'border-4', 'border-dashed'));
+            window._draggedCard = null;
+        });
+
+        card.addEventListener('dragover', (e) => { e.preventDefault(); });
+
+        card.addEventListener('dragenter', (e) => {
+            e.preventDefault();
+            if (window._draggedCard && window._draggedCard !== card) {
+                card.classList.add('border-amber-400', 'border-4', 'border-dashed');
+            }
+        });
+
+        card.addEventListener('dragleave', () => {
+            card.classList.remove('border-amber-400', 'border-4', 'border-dashed');
+        });
+
+        card.addEventListener('drop', (e) => {
+            e.preventDefault();
+            card.classList.remove('border-amber-400', 'border-4', 'border-dashed');
+
+            if (window._draggedCard && window._draggedCard !== card) {
+                const dragged = window._draggedCard;
+                const parent = card.parentNode;
+
+                const tempNode = document.createTextNode('');
+                parent.replaceChild(tempNode, dragged);
+                parent.replaceChild(dragged, card);
+                parent.replaceChild(card, tempNode);
+
+                document.getElementById('layoutActionBar')?.classList.remove('hidden');
+            }
+        });
+    });
+}
+
+function getCurrentCardOrder() {
+    const container = document.getElementById('appContainer');
+    if (!container) return [];
+    return Array.from(container.querySelectorAll('.theme-card'))
+        .map(card => card.getAttribute('data-card-id'))
+        .filter(Boolean);
+}
+
+function applyCardOrder(orderArray) {
+    if (!Array.isArray(orderArray) || orderArray.length === 0) return;
+    const container = document.getElementById('appContainer');
+    if (!container) return;
+
+    orderArray.forEach(id => {
+        const card = container.querySelector(`[data-card-id="${id}"]`);
+        if (card) container.appendChild(card);
+    });
+}
+
+async function saveCardLayout() {
+    if (!currentTab) return;
+    const newOrder = getCurrentCardOrder();
+    const res = await callBackend('updateSettings', { cardOrder: newOrder });
+    if (res && res.status === "success") {
+        document.getElementById('layoutActionBar')?.classList.add('hidden');
+        alert("Layout saved successfully to Google Sheet!");
+    } else {
+        alert("Failed to save layout: " + (res?.message || "Unknown error"));
+    }
+}
+
+// --- GOOGLE SHEETS CONNECTOR ---
+async function getConfig() {
+    try {
+        const configRes = await fetch('config.json');
+        if (!configRes.ok) throw new Error("config.json missing");
+        const config = await configRes.json();
+        return config.sheetUrl || config.googleSheetApiUrl || config.apiUrl;
+    } catch (err) {
+        console.warn("[SPENSE Config Notice]", err.message);
+        return null;
+    }
+}
+
+async function callBackend(action, payload = {}) {
+    try {
+        const sheetUrl = await getConfig();
+        if (!sheetUrl) return { status: "error", message: "Missing config.json sheetUrl" };
+
+        const response = await fetch(sheetUrl, {
+            method: 'POST',
+            body: JSON.stringify({ action, tab: currentTab, pin: currentPin, ...payload })
+        });
+        return await response.json();
+    } catch (err) {
+        console.error("Backend error:", err);
+        return { status: "error", message: err.toString() };
+    }
+}
+
+// --- ARCHIVE LOADER WITH CONTROL-PLANE METADATA EXCLUSION ---
+async function loadGoogleSheetsArchive() {
+    const select = document.getElementById('archiveSelect');
+    if (!select) return;
+
+    if (select.options.length <= 1) {
+        select.innerHTML = `<option value="">-- Reading Google Sheets... --</option>`;
+    }
+
+    try {
+        const sheetUrl = await getConfig();
+        if (!sheetUrl) {
+            select.innerHTML = `<option value="">-- Missing sheetUrl in config.json --</option>`;
+            return;
         }
 
-        body { background-color: var(--bg-main); color: var(--text-main); font-family: var(--font-body); transition: background-color 0.3s ease, color 0.3s ease; }
-        .theme-font-head { font-family: var(--font-head); }
-        .theme-card { background-color: var(--card-bg); border: 2px solid var(--border-color); border-radius: var(--card-radius); box-shadow: var(--card-shadow); position: relative; min-width: 280px; min-height: 140px; overflow: hidden; transition: transform 0.2s ease, opacity 0.2s ease; }
-        [data-theme="toon"] .theme-card { border: 3px solid var(--border-color); }
-        .theme-header { border-bottom-width: 3px; }
-
-        /* --- HARDWARE-ACCELERATED 4-DIRECTIONAL KEYFRAME ENGINE --- */
-        @keyframes animLeft {
-            0% { transform: translateX(-120%); opacity: 0; }
-            15%, 85% { transform: translateX(0); opacity: 1; }
-            100% { transform: translateX(120%); opacity: 0; }
-        }
-        @keyframes animRight {
-            0% { transform: translateX(120%); opacity: 0; }
-            15%, 85% { transform: translateX(0); opacity: 1; }
-            100% { transform: translateX(-120%); opacity: 0; }
-        }
-        @keyframes animTop {
-            0% { transform: translateY(-120%); opacity: 0; }
-            15%, 85% { transform: translateY(0); opacity: 1; }
-            100% { transform: translateY(120%); opacity: 0; }
-        }
-        @keyframes animBottom {
-            0% { transform: translateY(120%); opacity: 0; }
-            15%, 85% { transform: translateY(0); opacity: 1; }
-            100% { transform: translateY(-120%); opacity: 0; }
-        }
-
-        .motion-left   { animation: animLeft 3.2s cubic-bezier(0.4, 0, 0.2, 1) infinite; }
-        .motion-right  { animation: animRight 3.2s cubic-bezier(0.4, 0, 0.2, 1) infinite; }
-        .motion-top    { animation: animTop 3.2s cubic-bezier(0.4, 0, 0.2, 1) infinite; }
-        .motion-bottom { animation: animBottom 3.2s cubic-bezier(0.4, 0, 0.2, 1) infinite; }
-
-        .theme-input { background-color: var(--card-bg); border: 2px solid var(--border-color); border-radius: 0.85rem; color: var(--text-main); outline: none; }
-        .theme-input:focus { border-color: var(--text-main); box-shadow: 0 0 0 2px rgba(15, 23, 42, 0.1); }
-        [data-theme="toon"] .theme-input { border: 3px solid var(--border-color); box-shadow: 2px 2px 0px #0f172a; }
-
-        .theme-btn { border: 2px solid var(--border-color); border-radius: 0.85rem; font-weight: 800; box-shadow: var(--btn-shadow); transition: transform 0.1s ease, filter 0.2s ease; }
-        .theme-btn:hover { filter: brightness(1.05); }
-        .theme-btn:active { transform: translateY(2px); box-shadow: none; }
-        [data-theme="toon"] .theme-btn { border: 3px solid var(--border-color); box-shadow: 3px 3px 0px #0f172a; }
-
-        .card-drag-handle {
-            position: absolute; top: 12px; right: 12px; width: 28px; height: 28px; cursor: grab; z-index: 30;
-            background: rgba(0,0,0,0.06); border-radius: 50%; display: flex; align-items: center; justify-content: center;
-            font-size: 14px; opacity: 0.6; transition: opacity 0.2s, background 0.2s; user-select: none;
-        }
-        .card-drag-handle:hover { opacity: 1; background: rgba(0,0,0,0.12); }
-
-        /* Settings Active Selection framing */
-        .option-btn-selected {
-            border-color: #0f172a !important;
-            background-color: #fef3c7 !important;
-            box-shadow: 0 0 0 2px #0f172a !important;
-            transform: scale(1.02);
-        }
-    </style>
-</head>
-<body class="min-h-screen p-3 sm:p-8 antialiased">
-    <div class="max-w-5xl mx-auto space-y-6">
+        const res = await fetch(sheetUrl);
+        if (!res.ok) throw new Error(`HTTP error: ${res.status}`);
         
-        <!-- Save Layout Notification Bar -->
-        <div id="layoutActionBar" class="hidden bg-amber-400 border-2 border-slate-900 text-slate-900 px-4 py-2.5 rounded-2xl font-black text-xs flex justify-between items-center shadow-[3px_3px_0px_#0f172a] animate-bounce">
-            <span>Layout modified! Save your new card arrangement to Google Sheets.</span>
-            <button id="btnSaveCardLayout" type="button" onclick="window.saveCardLayout()" class="bg-slate-900 text-amber-300 px-3 py-1 rounded-xl uppercase tracking-wider text-[10px] cursor-pointer hover:bg-slate-800">Save Layout</button>
-        </div>
+        const rawData = await res.json();
+        let ledgers = [];
+        
+        if (Array.isArray(rawData)) {
+            ledgers = rawData;
+        } else if (typeof rawData === 'object' && rawData !== null) {
+            ledgers = rawData.archives || rawData.sheets || rawData.ledgers || Object.keys(rawData);
+        }
 
-        <div id="appContainer" class="space-y-6">
+        // Exclude system administrative sheets (e.g. metadata)
+        ledgers = ledgers
+            .filter(Boolean)
+            .filter(name => name.toString().trim().toLowerCase() !== 'metadata');
+
+        if (ledgers.length === 0) {
+            select.innerHTML = `<option value="">-- No archives found --</option>`;
+            return;
+        }
+
+        select.innerHTML = `<option value="">-- Select a Ledger Tab --</option>` + 
+            ledgers.map(name => `<option value="${escapeHTML(name)}">${escapeHTML(name)}</option>`).join('');
+
+    } catch (error) {
+        console.error("Archive fetch error:", error);
+        select.innerHTML = `<option value="">-- Error loading archives --</option>`;
+    }
+}
+
+// --- WELCOME MODAL CORE NAVIGATION ---
+function switchModalTab(tabMode) {
+    const createSec = document.getElementById('createSection');
+    const recallSec = document.getElementById('recallSection');
+    const tabCreateBtn = document.getElementById('tabCreateBtn');
+    const tabRecallBtn = document.getElementById('tabRecallBtn');
+
+    if (!createSec || !recallSec) return;
+
+    if (tabMode === 'create') {
+        createSec.classList.remove('hidden');
+        recallSec.classList.add('hidden');
+        if (tabCreateBtn) tabCreateBtn.className = "flex-1 theme-btn py-2 text-xs font-black uppercase tracking-wider bg-amber-300 text-slate-900 rounded-xl cursor-pointer";
+        if (tabRecallBtn) tabRecallBtn.className = "flex-1 theme-btn py-2 text-xs font-black uppercase tracking-wider bg-transparent text-slate-500 rounded-xl cursor-pointer";
+    } else {
+        createSec.classList.add('hidden');
+        recallSec.classList.remove('hidden');
+        if (tabRecallBtn) tabRecallBtn.className = "flex-1 theme-btn py-2 text-xs font-black uppercase tracking-wider bg-amber-300 text-slate-900 rounded-xl cursor-pointer";
+        if (tabCreateBtn) tabCreateBtn.className = "flex-1 theme-btn py-2 text-xs font-black uppercase tracking-wider bg-transparent text-slate-500 rounded-xl cursor-pointer";
+        
+        const select = document.getElementById('archiveSelect');
+        if (select && (select.options.length <= 1 || select.value === "")) {
+            loadGoogleSheetsArchive();
+        }
+    }
+}
+
+async function createNewLedger() {
+    const nameInput = document.getElementById('newLedgerName');
+    const pinInput = document.getElementById('newLedgerPin');
+
+    const nameVal = nameInput?.value.trim().toLowerCase().replace(/\s+/g, '-');
+    const pinVal = pinInput?.value.trim();
+
+    if (!nameVal || pinVal.length !== 4) {
+        alert("Please enter a valid ledger name and a 4-digit PIN.");
+        return;
+    }
+
+    const initialOrder = getCurrentCardOrder();
+    const res = await callBackend('createLedger', { 
+        name: nameVal, 
+        pin: pinVal, 
+        theme: currentTheme, 
+        currency: currentCurrency, 
+        language: currentLang,
+        cardOrder: initialOrder 
+    });
+
+    if (res && res.status === "success") {
+        currentTab = res.createdTab || nameVal;
+        currentPin = pinVal;
+        ledgerData = { members: [], expenses: [] };
+        unsavedMembers = [];
+        document.getElementById('welcomeModal')?.classList.add('hidden');
+        render();
+    } else {
+        currentTab = nameVal;
+        currentPin = pinVal;
+        ledgerData = { members: [], expenses: [] };
+        unsavedMembers = [];
+        document.getElementById('welcomeModal')?.classList.add('hidden');
+        render();
+    }
+}
+
+async function recallLedger() {
+    const archiveSelect = document.getElementById('archiveSelect');
+    const pinInput = document.getElementById('recallLedgerPin');
+
+    const targetLedger = archiveSelect?.value;
+    const pinVal = pinInput?.value.trim();
+
+    if (!targetLedger || pinVal.length !== 4) {
+        alert("Please select a ledger and enter your 4-digit PIN.");
+        return;
+    }
+
+    try {
+        const sheetUrl = await getConfig();
+        if (!sheetUrl) {
+            currentTab = targetLedger;
+            currentPin = pinVal;
+            document.getElementById('welcomeModal')?.classList.add('hidden');
+            render();
+            return;
+        }
+
+        const res = await fetch(`${sheetUrl}?tab=${encodeURIComponent(targetLedger)}&pin=${encodeURIComponent(pinVal)}`);
+        const data = await res.json();
+
+        if (data.status === "success") {
+            currentTab = targetLedger;
+            currentPin = pinVal;
+            currentTheme = data.theme || "Silk";
+            currentCurrency = data.currency || "USD";
+            currentLang = data.language || "en";
+            applyTheme(currentTheme);
+
+            if (data.cardOrder) applyCardOrder(data.cardOrder);
+
+            // DEFENSIVE MERGE: Combine server state with any unsaved local state
+            const serverMembers = Array.isArray(data.members) ? data.members : [];
+            ledgerData.members = Array.from(new Set([...serverMembers, ...unsavedMembers]));
             
-            <!-- Header Card -->
-            <header class="theme-card theme-header p-4 sm:p-6" data-card-id="header">
-                <div class="card-drag-handle" draggable="true" title="Drag to reorder card">⠿</div>
-                <div class="flex items-center justify-between gap-4 flex-wrap sm:flex-nowrap pointer-events-auto pr-8">
-                    <div id="brandLogoContainer" class="flex items-center cursor-pointer group flex-shrink-0" onclick="window.goHome()" title="Home">
-                        <div class="relative w-56 h-24 sm:w-72 sm:h-28 flex items-center justify-center group-hover:scale-105 transition-transform">
-                            <img src="logo.png" alt="SPENSE Logo" class="w-full h-full object-contain drop-shadow-md" onerror="this.src='https://placehold.co/300x120?text=SPENSE'">
-                        </div>
-                    </div>
+            ledgerData.expenses = data.expenses || [];
 
-                    <div id="viewModeIndicator" class="flex flex-col text-left sm:text-center flex-grow min-w-[200px]">
-                        <span class="text-sm sm:text-base font-medium uppercase tracking-wider opacity-70">Active ledger:</span>
-                        <span class="text-2xl sm:text-4xl font-extrabold break-words leading-tight mt-0.5 block">AWAITING AUTHENTICATION...</span>
-                    </div>
+            document.getElementById('welcomeModal')?.classList.add('hidden');
+            render();
+        } else {
+            alert("Authentication failed: " + (data.message || "Invalid PIN"));
+        }
+    } catch (err) {
+        console.error("Recall error:", err);
+        currentTab = targetLedger;
+        currentPin = pinVal;
+        document.getElementById('welcomeModal')?.classList.add('hidden');
+        render();
+    }
+}
 
-                    <div class="flex flex-col gap-2 flex-shrink-0">
-                        <button id="btnOpenSettings" type="button" onclick="window.openSettingsModal()" data-i18n="settingsBtn" class="hidden theme-btn text-xs px-3 py-1.5 font-bold cursor-pointer text-center">⚙ Settings</button>
-                        <button id="btnOpenShare" type="button" onclick="window.openShareModal()" data-i18n="shareLinkBtn" class="hidden theme-btn text-xs px-3 py-1.5 font-extrabold cursor-pointer text-center">Share Link</button>
-                        <button id="btnDeleteLedger" type="button" onclick="window.deleteActiveLedger()" data-i18n="deleteBtn" class="hidden theme-btn text-xs bg-rose-500 hover:bg-rose-600 text-white px-3 py-1.5 font-bold cursor-pointer text-center">Delete</button>
-                    </div>
-                </div>
-            </header>
+function openShareModal() {
+    document.getElementById('shareModal')?.classList.remove('hidden');
+    const input = document.getElementById('shareLinkInput');
+    if (input && currentTab) input.value = `${window.location.origin}${window.location.pathname}?ledger=${encodeURIComponent(currentTab)}`;
+}
+function closeShareModal() { document.getElementById('shareModal')?.classList.add('hidden'); }
+function copyShareLink() {
+    const input = document.getElementById('shareLinkInput');
+    if (input) { input.select(); navigator.clipboard.writeText(input.value); alert("Copied share link!"); }
+}
 
-            <!-- Participants Card -->
-            <section class="theme-card p-6 flex flex-col justify-between space-y-4" data-card-id="participants">
-                <div class="card-drag-handle" draggable="true" title="Drag to reorder card">⠿</div>
-                <div class="pr-8">
-                    <h2 data-i18n="participantsTitle" class="text-xs font-black uppercase tracking-wider opacity-70">Participants</h2>
-                    <p data-i18n="participantsSub" class="text-xs font-medium opacity-70 mt-0.5">Add or remove people from this group.</p>
-                </div>
-                
-                <div class="space-y-3">
-                    <div class="flex gap-2">
-                        <input type="text" id="memberName" data-i18n-ph="namePlaceholder" placeholder="Name..." class="flex-1 theme-input px-3 py-2 text-sm" onkeypress="if(event.key==='Enter') window.addMemberDirect()">
-                        <button id="btnAddMember" type="button" onclick="window.addMemberDirect()" data-i18n="addBtn" class="theme-btn px-4 py-2 text-xs font-extrabold cursor-pointer">Add</button>
-                    </div>
-                    
-                    <div class="flex justify-end">
-                        <button id="btnSaveMembers" type="button" onclick="window.saveMembers()" data-i18n="saveMembersBtn" class="hidden theme-btn bg-amber-300 hover:bg-amber-400 text-slate-900 px-3 py-1.5 text-xs font-black uppercase tracking-wider cursor-pointer animate-pulse">Save Participants</button>
-                    </div>
+function goHome() {
+    currentTab = null;
+    currentPin = null;
+    ledgerData = { members: [], expenses: [] };
+    unsavedMembers = [];
+    editingExpenseId = null;
+    document.getElementById('welcomeModal')?.classList.remove('hidden');
+    render();
+}
 
-                    <div id="memberList" class="text-sm flex flex-wrap gap-2 pt-1"></div>
-                </div>
-            </section>
+async function deleteActiveLedger() {
+    if (!confirm("Delete active ledger?")) return;
+    await callBackend('deleteLedger');
+    goHome();
+}
 
-            <!-- Expense Form Card -->
-            <section id="expenseFormSection" class="theme-card p-6 space-y-5" data-card-id="expense">
-                <div class="card-drag-handle" draggable="true" title="Drag to reorder card">⠿</div>
-                <div class="pr-8">
-                    <h2 id="expenseFormTitle" data-i18n="newExpenseTitle" class="text-xs font-black uppercase tracking-wider opacity-70">New Expense</h2>
-                    <p id="expenseFormSub" data-i18n="newExpenseSub" class="text-xs font-medium opacity-70 mt-0.5">Log a transaction to split.</p>
-                </div>
-                
-                <div class="grid grid-cols-1 sm:grid-cols-5 gap-3">
-                    <div>
-                        <label data-i18n="dateLabel" class="text-[10px] font-black uppercase tracking-wider opacity-70 block mb-1">Date</label>
-                        <input type="date" id="expenseDate" class="w-full theme-input px-2.5 py-2 text-xs">
-                    </div>
-                    <div>
-                        <label data-i18n="categoryLabel" class="text-[10px] font-black uppercase tracking-wider opacity-70 block mb-1">Category</label>
-                        <select id="expenseCategory" class="w-full theme-input px-2.5 py-2 text-xs cursor-pointer text-slate-900"></select>
-                    </div>
-                    <div>
-                        <label data-i18n="descLabel" class="text-[10px] font-black uppercase tracking-wider opacity-70 block mb-1">Description</label>
-                        <input type="text" id="expenseDesc" data-i18n-ph="descPlaceholder" placeholder="e.g. Dinner" class="w-full theme-input px-3 py-2 text-xs">
-                    </div>
-                    <div>
-                        <label class="text-[10px] font-black uppercase tracking-wider opacity-70 block mb-1"><span data-i18n="amountLabel">Amount</span> (<span id="currencySymbol">$</span>)</label>
-                        <input type="number" step="0.01" id="expenseAmount" placeholder="0.00" class="w-full theme-input px-2.5 py-2 text-xs font-bold">
-                    </div>
-                    <div>
-                        <label data-i18n="paidByLabel" class="text-[10px] font-black uppercase tracking-wider opacity-70 block mb-1">Paid By</label>
-                        <select id="expensePaidBy" class="w-full theme-input px-2.5 py-2 text-xs cursor-pointer text-slate-900"></select>
-                    </div>
-                </div>
+// --- PARTICIPANTS AUTO-PERSISTENCE ENGINE ---
+async function addMemberDirect() {
+    const input = document.getElementById('memberName');
+    if (!input) return;
+    const name = input.value.trim();
+    if (!name) return;
 
-                <div class="space-y-2 pt-2 border-t border-current/10">
-                    <div class="flex justify-between items-center">
-                        <label data-i18n="splitBetweenLabel" class="text-[10px] font-black uppercase tracking-wider opacity-70">Split Between:</label>
-                        <button id="btnSelectAllSplits" type="button" onclick="window.selectAllSplits()" data-i18n="selectAllBtn" class="text-xs font-bold opacity-80 hover:opacity-100 underline cursor-pointer">Select All</button>
-                    </div>
-                    <div id="splitCheckboxes" class="flex flex-wrap gap-2 pt-1 text-xs"></div>
-                </div>
+    if (!currentTab) { 
+        alert("Access or initialize a ledger first."); 
+        return; 
+    }
+    
+    if (ledgerData.members.some(m => m.toLowerCase() === name.toLowerCase())) { 
+        alert("Participant already exists."); 
+        input.value = ''; 
+        return; 
+    }
 
-                <div id="expenseFormActions">
-                    <button id="btnRecordExpense" type="button" onclick="window.addExpense()" data-i18n="recordExpenseBtn" class="w-full theme-btn py-3 text-sm font-extrabold cursor-pointer">Record Expense</button>
-                </div>
-            </section>
+    // Optimistic UI state mutation
+    ledgerData.members.push(name);
+    if (!unsavedMembers.includes(name)) unsavedMembers.push(name);
+    input.value = '';
+    render();
 
-            <!-- Settlement Card -->
-            <section class="theme-card p-6 space-y-4" data-card-id="settlement">
-                <div class="card-drag-handle" draggable="true" title="Drag to reorder card">⠿</div>
-                <div class="flex justify-between items-center border-b border-current/10 pb-3 pr-8">
-                    <h2 data-i18n="settlementTitle" class="text-xs font-black uppercase tracking-wider opacity-70">Settlement Matrix</h2>
-                    <button id="btnCopySummary" type="button" onclick="window.copySettlementSummary()" data-i18n="copySummaryBtn" class="theme-btn text-xs px-3 py-1.5 font-extrabold cursor-pointer">Copy Summary</button>
-                </div>
-                <div id="settlementList" class="space-y-2 text-xs min-h-[80px]"></div>
-            </section>
+    // Immediate background persistence sync
+    const res = await callBackend('addMembers', { names: [name] });
+    if (res && res.status === "success") {
+        unsavedMembers = unsavedMembers.filter(m => m !== name);
+        render();
+    } else {
+        console.warn("[SPENSE Warning] Background sync pending for participant:", name);
+    }
+}
 
-            <!-- History Card -->
-            <section class="theme-card p-6 space-y-4" data-card-id="history">
-                <div class="card-drag-handle" draggable="true" title="Drag to reorder card">⠿</div>
-                <div class="flex justify-between items-center border-b border-current/10 pb-3 pr-8">
-                    <div class="flex items-center gap-2">
-                        <h2 data-i18n="historyTitle" class="text-xs font-black uppercase tracking-wider opacity-70">Ledger History</h2>
-                    </div>
-                    <button id="btnGenerateReport" type="button" onclick="window.generateLedgerReport()" data-i18n="generateReportBtn" class="theme-btn text-xs px-3 py-1.5 font-extrabold cursor-pointer">Generate Report</button>
-                </div>
-                <ul id="expenseHistory" class="space-y-2 text-xs min-h-[80px] max-h-[300px] overflow-y-auto pr-1"></ul>
-            </section>
-        </div>
-    </div>
+async function saveMembers() {
+    if (unsavedMembers.length === 0) return;
 
-    <!-- Welcome / Landing Modal -->
-    <div id="welcomeModal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 pointer-events-auto">
-        <div class="theme-card p-6 sm:p-8 max-w-lg w-full space-y-6 shadow-2xl bg-white text-slate-900 pointer-events-auto">
-            <div class="border-b border-slate-200 pb-5 text-center space-y-4">
-                <div class="w-full max-w-[320px] mx-auto py-1">
-                    <img src="logo.png" alt="SPENSE Logo" class="w-full h-auto object-contain drop-shadow-md" onerror="this.src='https://placehold.co/300x120?text=SPENSE'">
-                </div>
+    const btn = document.getElementById('btnSaveMembers');
+    if (btn) btn.innerText = "Saving...";
 
-                <!-- Dynamic Sliding Tagline Container -->
-                <div class="py-2 min-h-[110px] flex items-center justify-center overflow-hidden">
-                    <div id="taglineSpot" class="w-full text-center leading-snug"></div>
-                </div>
+    const res = await callBackend('addMembers', { names: unsavedMembers });
+    if (res && res.status === "success") {
+        unsavedMembers = [];
+        render();
+        alert("Participants saved to sheet!");
+    } else {
+        alert("Failed to save participants: " + (res?.message || "Error"));
+        render();
+    }
+}
 
-                <!-- Welcome Modal Language Selector -->
-                <div class="text-sm sm:text-base font-black tracking-widest text-slate-800 flex justify-center items-center gap-4 sm:gap-6 pt-2 uppercase">
-                    <button id="btnLangTR" type="button" onclick="window.switchLanguage('tr')" class="hover:text-amber-600 cursor-pointer transition px-1">TÜRKÇE</button>
-                    <span class="text-slate-300 font-normal">|</span>
-                    <button id="btnLangEN" type="button" onclick="window.switchLanguage('en')" class="hover:text-amber-600 cursor-pointer transition px-1">ENGLISH</button>
-                    <span class="text-slate-300 font-normal">|</span>
-                    <button id="btnLangDE" type="button" onclick="window.switchLanguage('de')" class="hover:text-amber-600 cursor-pointer transition px-1">DEUTSCH</button>
-                </div>
+async function deleteMember(name) {
+    if (!name) return;
+    if (!confirm(`Are you sure you want to remove participant '${name}'?`)) return;
+
+    const canonicalName = findMemberCanonical(name);
+
+    ledgerData.members = ledgerData.members.filter(m => m.toLowerCase() !== canonicalName.toLowerCase());
+    unsavedMembers = unsavedMembers.filter(m => m.toLowerCase() !== canonicalName.toLowerCase());
+    render();
+
+    const res = await callBackend('removeMember', { name: canonicalName });
+    if (res && res.status !== "success") {
+        console.warn("[SPENSE Notice] Backend deletion notice:", res?.message);
+    }
+}
+
+// --- EXPENSE EDITING & FORM CONTROL ---
+function startEditExpense(id) {
+    const exp = ledgerData.expenses.find(e => e.id.toString() === id.toString());
+    if (!exp) return;
+
+    editingExpenseId = id.toString();
+
+    const dateInput = document.getElementById('expenseDate');
+    const descInput = document.getElementById('expenseDesc');
+    const amountInput = document.getElementById('expenseAmount');
+    const catInput = document.getElementById('expenseCategory');
+    const paidByInput = document.getElementById('expensePaidBy');
+
+    if (dateInput) {
+        dateInput.value = formatToISODate(exp.date);
+    }
+
+    if (descInput) descInput.value = exp.desc || '';
+    if (amountInput) amountInput.value = exp.amount || '';
+    if (catInput) catInput.value = exp.category || 'Food & Drink';
+    if (paidByInput) paidByInput.value = findMemberCanonical(exp.paidBy) || '';
+
+    const splitArr = (Array.isArray(exp.splitWith) ? exp.splitWith : (exp.splitBetween || [])).map(s => s.toLowerCase());
+    document.querySelectorAll('.split-checkbox').forEach(cb => {
+        cb.checked = splitArr.includes(cb.value.toLowerCase());
+    });
+
+    render();
+    document.getElementById('expenseFormSection')?.scrollIntoView({ behavior: 'smooth' });
+}
+
+function cancelEditExpense() {
+    editingExpenseId = null;
+    resetExpenseForm();
+    render();
+}
+
+function resetExpenseForm() {
+    const descInput = document.getElementById('expenseDesc');
+    const amountInput = document.getElementById('expenseAmount');
+    if (descInput) descInput.value = '';
+    if (amountInput) amountInput.value = '';
+    
+    const dateInput = document.getElementById('expenseDate');
+    if (dateInput) dateInput.value = formatToISODate(new Date());
+
+    document.querySelectorAll('.split-checkbox').forEach(cb => cb.checked = true);
+}
+
+async function updateExpense() {
+    if (!editingExpenseId) return;
+
+    const rawDate = document.getElementById('expenseDate')?.value;
+    const date = formatToISODate(rawDate);
+    const desc = document.getElementById('expenseDesc')?.value.trim();
+    const amount = parseFloat(document.getElementById('expenseAmount')?.value);
+    const rawPaidBy = document.getElementById('expensePaidBy')?.value;
+    const paidBy = findMemberCanonical(rawPaidBy);
+
+    if (!date || !desc || isNaN(amount) || amount <= 0 || !paidBy) {
+        alert("Please fill out all expense fields properly.");
+        return;
+    }
+
+    const checkboxes = document.querySelectorAll('.split-checkbox:checked');
+    const splitWith = Array.from(checkboxes).map(cb => findMemberCanonical(cb.value));
+
+    if (splitWith.length === 0) {
+        alert("Select at least one participant to split with.");
+        return;
+    }
+
+    const category = document.getElementById('expenseCategory')?.value || "General";
+
+    const idx = ledgerData.expenses.findIndex(e => e.id.toString() === editingExpenseId);
+    if (idx !== -1) {
+        ledgerData.expenses[idx] = { id: editingExpenseId, date, category, desc, amount, paidBy, splitWith };
+    }
+
+    const targetId = editingExpenseId;
+    editingExpenseId = null;
+    resetExpenseForm();
+    render();
+
+    await callBackend('updateExpense', { id: targetId, date, category, desc, amount, paidBy, splitWith });
+}
+
+async function deleteExpenseFromEdit() {
+    if (!editingExpenseId) return;
+    if (!confirm("Are you sure you want to delete this expense entry?")) return;
+
+    const targetId = editingExpenseId;
+    ledgerData.expenses = ledgerData.expenses.filter(e => e.id.toString() !== targetId);
+    
+    editingExpenseId = null;
+    resetExpenseForm();
+    render();
+
+    await callBackend('deleteExpense', { id: targetId });
+}
+
+async function addExpense() {
+    const rawDate = document.getElementById('expenseDate')?.value;
+    const date = formatToISODate(rawDate);
+    const desc = document.getElementById('expenseDesc')?.value.trim();
+    const amount = parseFloat(document.getElementById('expenseAmount')?.value);
+    const rawPaidBy = document.getElementById('expensePaidBy')?.value;
+    const paidBy = findMemberCanonical(rawPaidBy);
+
+    if (!date || !desc || isNaN(amount) || amount <= 0 || !paidBy) {
+        alert("Fill all expense fields correctly.");
+        return;
+    }
+
+    const checkboxes = document.querySelectorAll('.split-checkbox:checked');
+    const splitWith = Array.from(checkboxes).map(cb => findMemberCanonical(cb.value));
+
+    if (splitWith.length === 0) {
+        alert("Select at least one participant to split with.");
+        return;
+    }
+
+    const category = document.getElementById('expenseCategory')?.value || "General";
+    const id = Date.now().toString();
+
+    ledgerData.expenses.push({ id, date, category, desc, amount, paidBy, splitWith });
+    resetExpenseForm();
+    render();
+
+    await callBackend('addExpense', { id, date, category, desc, amount, paidBy, splitWith });
+}
+
+// --- CASE-INSENSITIVE SETTLEMENT RESOLUTION ---
+function calculateSettlement() {
+    const balances = {};
+    const lowerMap = {};
+
+    ledgerData.members.forEach(m => {
+        const lower = m.toLowerCase();
+        balances[lower] = 0;
+        lowerMap[lower] = m;
+    });
+
+    ledgerData.expenses.forEach(e => {
+        const amt = parseFloat(e.amount) || 0;
+        const rawSplitList = Array.isArray(e.splitWith) ? e.splitWith : (e.splitBetween || []);
+        const splitList = rawSplitList.map(s => s.toLowerCase());
+
+        if (splitList.length === 0) return;
+
+        const share = amt / splitList.length;
+        const payerKey = (e.paidBy || '').toLowerCase();
+
+        if (balances[payerKey] !== undefined) {
+            balances[payerKey] += amt;
+        }
+
+        splitList.forEach(mKey => {
+            if (balances[mKey] !== undefined) {
+                balances[mKey] -= share;
+            }
+        });
+    });
+
+    const debtors = [], creditors = [];
+    Object.keys(balances).forEach(lowerKey => {
+        const bal = balances[lowerKey];
+        const displayName = lowerMap[lowerKey] || lowerKey;
+        if (bal < -0.01) debtors.push({ member: displayName, amount: -bal });
+        else if (bal > 0.01) creditors.push({ member: displayName, amount: bal });
+    });
+
+    const transactions = [];
+    let i = 0, j = 0;
+    while (i < debtors.length && j < creditors.length) {
+        const minAmt = Math.min(debtors[i].amount, creditors[j].amount);
+        transactions.push(`${debtors[i].member} owes ${creditors[j].member} ${getCurrencySymbol()}${minAmt.toFixed(2)}`);
+
+        debtors[i].amount -= minAmt;
+        creditors[j].amount -= minAmt;
+
+        if (debtors[i].amount < 0.01) i++;
+        if (creditors[j].amount < 0.01) j++;
+    }
+
+    return transactions;
+}
+
+function copySettlementSummary() {
+    const txs = calculateSettlement();
+    if (txs.length === 0) {
+        alert("No settlement balances to copy.");
+        return;
+    }
+
+    const summaryText = `=== SPENSE SETTLEMENT MATRIX ===\nLedger: ${currentTab || 'General'}\nDate: ${new Date().toLocaleDateString()}\n--------------------------------\n` + 
+        txs.join('\n') + 
+        `\n================================`;
+
+    navigator.clipboard.writeText(summaryText).then(() => {
+        alert("Settlement summary copied to clipboard as plain text!");
+    }).catch(err => {
+        console.error("Copy failed:", err);
+        alert("Failed to copy automatically. Summary:\n\n" + summaryText);
+    });
+}
+
+// --- DYNAMICALLY LOCALIZED REPORT GENERATOR (BLOB TAB TARGET) ---
+function generateLedgerReport() {
+    if (!currentTab) {
+        alert("Please open an active ledger first.");
+        return;
+    }
+
+    const t = TRANSLATIONS[currentLang] || TRANSLATIONS['en'];
+    const sym = getCurrencySymbol();
+    
+    let totalSpent = 0;
+    ledgerData.expenses.forEach(e => totalSpent += (parseFloat(e.amount) || 0));
+
+    const settlement = calculateSettlement();
+
+    let report = `====================================================\n`;
+    report += `               ${t.reportTitle}                     \n`;
+    report += `====================================================\n`;
+    report += `${t.reportNameLabel.padEnd(13)} : ${currentTab}\n`;
+    report += `${t.reportGeneratedOn.padEnd(13)} : ${new Date().toLocaleString(currentLang)}\n`;
+    report += `${t.reportParticipants.padEnd(13)} : ${ledgerData.members.join(', ') || 'None'}\n`;
+    report += `${t.reportTotalSpend.padEnd(13)} : ${sym}${totalSpent.toFixed(2)}\n`;
+    report += `====================================================\n\n`;
+
+    report += `--- ${t.reportSettlementMatrix} ---\n`;
+    if (settlement.length > 0) {
+        settlement.forEach(s => report += `• ${s}\n`);
+    } else {
+        report += `${t.reportAllSettled}\n`;
+    }
+    report += `\n----------------------------------------------------\n\n`;
+
+    report += `--- ${t.reportHistoryTitle} ---\n`;
+    if (ledgerData.expenses.length > 0) {
+        ledgerData.expenses.forEach((e, idx) => {
+            const splitArr = Array.isArray(e.splitWith) ? e.splitWith : (e.splitBetween || []);
+            const splitStr = splitArr.map(s => findMemberCanonical(s)).join(', ');
+            report += `${idx + 1}. [${formatToISODate(e.date)}] ${e.desc} (${e.category})\n`;
+            report += `   ${t.amountLabel}: ${sym}${parseFloat(e.amount).toFixed(2)} | ${t.reportPaidBy}: ${findMemberCanonical(e.paidBy)}\n`;
+            report += `   ${t.reportSplitWith}: ${splitStr}\n\n`;
+        });
+    } else {
+        report += `${t.reportNoExpenses}\n`;
+    }
+    report += `====================================================\n`;
+
+    const blob = new Blob([report], { type: 'text/plain;charset=utf-8' });
+    const reportUrl = URL.createObjectURL(blob);
+    const reportWindow = window.open(reportUrl, '_blank');
+
+    if (!reportWindow) {
+        alert("Pop-up blocked! Please allow pop-ups for this site to view the report in a new tab.");
+    }
+}
+
+function getCurrencySymbol() {
+    return currentCurrency === 'EUR' ? '€' : currentCurrency === 'TRY' ? '₺' : '$';
+}
+
+function applyTheme(themeName) {
+    currentTheme = themeName;
+    document.documentElement.setAttribute('data-theme', themeName.toLowerCase());
+}
+
+function switchLanguage(lang) {
+    currentLang = lang;
+    render();
+    initTaglineCarousel();
+}
+
+function selectAllSplits() {
+    document.querySelectorAll('.split-checkbox').forEach(cb => cb.checked = true);
+}
+
+// --- MASTER UI RENDERING ENGINE ---
+function render() {
+    const t = TRANSLATIONS[currentLang] || TRANSLATIONS['en'];
+
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+        const k = el.getAttribute('data-i18n');
+        if (t[k]) el.innerText = t[k];
+    });
+
+    document.querySelectorAll('[data-i18n-ph]').forEach(el => {
+        const k = el.getAttribute('data-i18n-ph');
+        if (t[k]) el.placeholder = t[k];
+    });
+
+    const currSym = getCurrencySymbol();
+    const symbolEl = document.getElementById('currencySymbol');
+    if (symbolEl) symbolEl.innerText = currSym;
+
+    const indicatorEl = document.getElementById('viewModeIndicator');
+    if (indicatorEl) {
+        indicatorEl.innerHTML = currentTab ? 
+            `<span class="text-sm font-medium uppercase tracking-wider opacity-70">Active ledger:</span><span class="text-2xl sm:text-4xl font-extrabold break-words leading-tight mt-0.5 block">${currentTab.toUpperCase()}</span>` :
+            `<span class="text-sm font-medium uppercase tracking-wider opacity-70">Active ledger:</span><span class="text-2xl sm:text-4xl font-extrabold break-words leading-tight mt-0.5 block">AWAITING AUTHENTICATION...</span>`;
+    }
+
+    ['btnDeleteLedger', 'btnOpenShare', 'btnOpenSettings'].forEach(id => {
+        document.getElementById(id)?.classList.toggle('hidden', !currentTab);
+    });
+
+    renderMembers();
+    renderExpenseFormHeader();
+    renderDropdowns();
+    renderSplitCheckboxes();
+    renderHistory();
+    renderSettlement();
+}
+
+function renderMembers() {
+    const container = document.getElementById('memberList');
+    const saveBtn = document.getElementById('btnSaveMembers');
+    if (!container) return;
+    
+    container.innerHTML = ledgerData.members.length > 0 
+        ? ledgerData.members.map(m => `
+            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl ${unsavedMembers.includes(m) ? 'bg-amber-200 text-amber-900 border border-amber-400' : 'bg-slate-200 text-slate-800'} font-bold">
+                ${escapeHTML(m)}
+                <button type="button" data-member="${escapeHTML(m)}" onclick="window.deleteMember(this.getAttribute('data-member'))" class="text-rose-600 hover:text-rose-800 font-black text-xs ml-1 cursor-pointer" title="Remove participant">×</button>
+            </span>
+        `).join('') 
+        : '<span class="opacity-60 italic">No participants yet.</span>';
+
+    if (saveBtn) {
+        if (unsavedMembers.length > 0) {
+            saveBtn.classList.remove('hidden');
+        } else {
+            saveBtn.classList.add('hidden');
+        }
+    }
+}
+
+function renderExpenseFormHeader() {
+    const titleEl = document.getElementById('expenseFormTitle');
+    const subEl = document.getElementById('expenseFormSub');
+    const actionsContainer = document.getElementById('expenseFormActions');
+    if (!titleEl || !subEl || !actionsContainer) return;
+
+    const t = TRANSLATIONS[currentLang] || TRANSLATIONS['en'];
+
+    if (editingExpenseId) {
+        titleEl.innerText = t.editExpenseTitle;
+        subEl.innerText = t.editExpenseSub;
+        actionsContainer.innerHTML = `
+            <div class="flex flex-wrap gap-2">
+                <button type="button" onclick="window.updateExpense()" class="flex-1 theme-btn bg-emerald-400 hover:bg-emerald-500 text-slate-900 py-3 text-xs font-black uppercase tracking-wider cursor-pointer">${t.updateExpenseBtn}</button>
+                <button type="button" onclick="window.cancelEditExpense()" class="theme-btn bg-slate-200 hover:bg-slate-300 text-slate-800 px-4 py-3 text-xs font-black uppercase tracking-wider cursor-pointer">${t.cancelEditBtn}</button>
+                <button type="button" onclick="window.deleteExpenseFromEdit()" class="theme-btn bg-rose-500 hover:bg-rose-600 text-white px-4 py-3 text-xs font-black uppercase tracking-wider cursor-pointer">${t.deleteExpenseBtn}</button>
             </div>
+        `;
+    } else {
+        titleEl.innerText = t.newExpenseTitle;
+        subEl.innerText = t.newExpenseSub;
+        actionsContainer.innerHTML = `
+            <button id="btnRecordExpense" type="button" onclick="window.addExpense()" data-i18n="recordExpenseBtn" class="w-full theme-btn py-3 text-sm font-extrabold cursor-pointer">${t.recordExpenseBtn}</button>
+        `;
+    }
+}
 
-            <!-- Modal Tab Controls -->
-            <div id="modalTabsHeader" class="flex gap-2 p-1 bg-slate-100 rounded-2xl">
-                <button id="tabCreateBtn" type="button" onclick="window.switchModalTab('create')" data-i18n="tabCreate" class="flex-1 theme-btn py-2 text-xs font-black uppercase tracking-wider bg-amber-300 text-slate-900 rounded-xl cursor-pointer">Create New</button>
-                <button id="tabRecallBtn" type="button" onclick="window.switchModalTab('recall')" data-i18n="tabRecall" class="flex-1 theme-btn py-2 text-xs font-black uppercase tracking-wider bg-transparent text-slate-500 rounded-xl cursor-pointer">Recall Existing</button>
-            </div>
+function renderDropdowns() {
+    const catSelect = document.getElementById('expenseCategory');
+    const paidSelect = document.getElementById('expensePaidBy');
+    if (!catSelect || !paidSelect) return;
 
-            <!-- Create Section -->
-            <div id="createSection" class="space-y-4">
-                <div class="space-y-1">
-                    <label data-i18n="ledgerNameLabel" class="text-xs font-extrabold text-slate-800">Ledger Name</label>
-                    <input type="text" id="newLedgerName" data-i18n-ph="ledgerNamePh" placeholder="e.g. dinner-club" class="w-full theme-input px-3 py-2 text-sm" onkeypress="if(event.key==='Enter') window.createNewLedger()">
+    catSelect.innerHTML = ["Food & Drink", "Transport", "Accommodation", "Shopping", "Entertainment", "Other"].map(c => `<option value="${c}">${c}</option>`).join('');
+    paidSelect.innerHTML = ledgerData.members.length > 0 
+        ? ledgerData.members.map(m => `<option value="${escapeHTML(m)}">${escapeHTML(m)}</option>`).join('')
+        : '<option value="">No participants</option>';
+}
+
+function renderSplitCheckboxes() {
+    const container = document.getElementById('splitCheckboxes');
+    if (!container) return;
+
+    const selectedValues = Array.from(document.querySelectorAll('.split-checkbox:checked')).map(cb => cb.value.toLowerCase());
+
+    container.innerHTML = ledgerData.members.length > 0
+        ? ledgerData.members.map(m => `
+            <label class="flex items-center gap-1.5 cursor-pointer bg-slate-100 px-2.5 py-1.5 rounded-xl border border-slate-300 font-semibold">
+                <input type="checkbox" value="${escapeHTML(m)}" ${selectedValues.length === 0 || selectedValues.includes(m.toLowerCase()) ? 'checked' : ''} class="split-checkbox accent-slate-900 cursor-pointer"> ${escapeHTML(m)}
+            </label>
+        `).join('')
+        : '<span class="opacity-60 italic">Add participants first.</span>';
+}
+
+function renderHistory() {
+    const list = document.getElementById('expenseHistory');
+    if (!list) return;
+
+    list.innerHTML = ledgerData.expenses.length > 0
+        ? ledgerData.expenses.map(e => {
+            const displayDate = formatToISODate(e.date);
+            const canonicalPayer = findMemberCanonical(e.paidBy);
+            const rawSplits = Array.isArray(e.splitWith) ? e.splitWith : (e.splitBetween || []);
+            const displaySplits = rawSplits.map(s => findMemberCanonical(s)).join(', ');
+
+            return `
+            <li class="p-2.5 rounded-xl border border-current/15 flex justify-between items-center bg-current/5 gap-2">
+                <div class="flex-1 min-w-0">
+                    <span class="font-bold truncate block">${escapeHTML(e.desc)} (${escapeHTML(e.category)})</span>
+                    <div class="text-[10px] opacity-70">Paid by <span class="font-bold">${escapeHTML(canonicalPayer)}</span> • ${displayDate} • Split: ${escapeHTML(displaySplits)}</div>
                 </div>
-                <div class="space-y-1">
-                    <label data-i18n="setPinLabel" class="text-xs font-extrabold text-slate-800">Set 4-Digit PIN</label>
-                    <input type="text" id="newLedgerPin" maxlength="4" placeholder="1234" class="w-full theme-input px-3 py-2 text-sm font-mono tracking-widest" onkeypress="if(event.key==='Enter') window.createNewLedger()">
+                <div class="flex items-center gap-2 flex-shrink-0">
+                    <span class="font-extrabold text-sm">${getCurrencySymbol()}${parseFloat(e.amount).toFixed(2)}</span>
+                    <button type="button" data-id="${e.id}" onclick="window.startEditExpense(this.getAttribute('data-id'))" class="theme-btn px-2.5 py-1 text-[10px] font-black uppercase tracking-wider bg-amber-300 text-slate-900 cursor-pointer hover:bg-amber-400">Edit</button>
                 </div>
-                <button id="btnInitializeLedger" type="button" onclick="window.createNewLedger()" data-i18n="initializeBtn" class="w-full theme-btn bg-lime-400 hover:bg-lime-500 text-slate-900 py-3 text-xs font-black uppercase tracking-wider rounded-xl cursor-pointer">Initialize Ledger</button>
-            </div>
+            </li>
+        `;
+        }).join('')
+        : '<li class="opacity-60 italic text-center py-4">No expenses recorded yet.</li>';
+}
 
-            <!-- Recall Section -->
-            <div id="recallSection" class="space-y-4 hidden">
-                <div class="space-y-1">
-                    <label data-i18n="selectArchiveLabel" class="text-xs font-extrabold text-slate-800">Select Archive</label>
-                    <select id="archiveSelect" class="w-full theme-input px-3 py-2 text-sm cursor-pointer">
-                        <option value="">-- Loading Archives... --</option>
-                    </select>
-                </div>
-                <div class="space-y-1">
-                    <label data-i18n="enterPinLabel" class="text-xs font-extrabold text-slate-800">Enter 4-Digit PIN</label>
-                    <input type="text" id="recallLedgerPin" maxlength="4" placeholder="1234" class="w-full theme-input px-3 py-2 text-sm font-mono tracking-widest" onkeypress="if(event.key==='Enter') window.recallLedger()">
-                </div>
-                <button id="btnAccessLedger" type="button" onclick="window.recallLedger()" data-i18n="accessLedgerBtn" class="w-full theme-btn bg-cyan-400 hover:bg-cyan-500 text-slate-900 py-3 text-xs font-black uppercase tracking-wider rounded-xl cursor-pointer">Access Ledger</button>
-            </div>
-        </div>
-    </div>
+function renderSettlement() {
+    const container = document.getElementById('settlementList');
+    if (!container) return;
 
-    <!-- Settings Modal -->
-    <div id="settingsModal" class="hidden fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 pointer-events-auto">
-        <div class="theme-card bg-white p-6 max-w-md w-full space-y-6 shadow-2xl text-slate-900">
-            <div class="flex justify-between items-center border-b border-slate-200 pb-3">
-                <h3 class="text-sm font-black uppercase tracking-wider">Ledger Settings</h3>
-                <button id="btnCloseSettings" type="button" onclick="window.closeSettingsModal()" class="text-slate-500 hover:text-slate-900 text-xl font-bold cursor-pointer">×</button>
-            </div>
+    if (ledgerData.expenses.length === 0 || ledgerData.members.length === 0) {
+        container.innerHTML = '<p class="opacity-60 italic text-center py-4">Settlement matrix will appear once expenses are added.</p>';
+        return;
+    }
 
-            <!-- Language Buttons with Flags -->
-            <div class="space-y-2">
-                <label class="text-xs font-extrabold text-slate-800 block uppercase tracking-wider">Language</label>
-                <div class="grid grid-cols-3 gap-2">
-                    <button type="button" onclick="window.selectSettingsLang('tr')" id="setLangTR" class="theme-btn py-2.5 px-3 flex items-center justify-center gap-2 text-xs font-extrabold border-2 border-slate-200 rounded-xl hover:border-slate-400 bg-slate-50 transition cursor-pointer">
-                        <svg class="w-5 h-3.5 rounded-xs shadow-xs" viewBox="0 0 1200 800" fill="none"><rect width="1200" height="800" fill="#E30A17"/><circle cx="425" cy="400" r="200" fill="#FFFFFF"/><circle cx="475" cy="400" r="160" fill="#E30A17"/><path d="M583.333 400L700 437.938L627.915 338.73L627.915 461.27L700 362.062L583.333 400Z" fill="#FFFFFF"/></svg>
-                        TÜRKÇE
-                    </button>
-                    <button type="button" onclick="window.selectSettingsLang('en')" id="setLangEN" class="theme-btn py-2.5 px-3 flex items-center justify-center gap-2 text-xs font-extrabold border-2 border-slate-200 rounded-xl hover:border-slate-400 bg-slate-50 transition cursor-pointer">
-                        <svg class="w-5 h-3.5 rounded-xs shadow-xs" viewBox="0 0 60 30" fill="none"><clipPath id="a"><path d="M0 0h60v30H0z"/></clipPath><g clip-path="url(#a)"><path d="M0 0h60v30H0z" fill="#012169"/><path d="M0 0l60 30m0-30L0 30" stroke="#fff" stroke-width="6"/><path d="M0 0l60 30m0-30L0 30" stroke="#C8102E" stroke-width="4"/><path d="M30 0v30M0 15h60" stroke="#fff" stroke-width="10"/><path d="M30 0v30M0 15h60" stroke="#C8102E" stroke-width="6"/></g></svg>
-                        ENGLISH
-                    </button>
-                    <button type="button" onclick="window.selectSettingsLang('de')" id="setLangDE" class="theme-btn py-2.5 px-3 flex items-center justify-center gap-2 text-xs font-extrabold border-2 border-slate-200 rounded-xl hover:border-slate-400 bg-slate-50 transition cursor-pointer">
-                        <svg class="w-5 h-3.5 rounded-xs shadow-xs" viewBox="0 0 5 3" fill="none"><rect width="5" height="1" fill="#000"/><rect y="1" width="5" height="1" fill="#D00"/><rect y="2" width="5" height="1" fill="#FFCE00"/></svg>
-                        DEUTSCH
-                    </button>
-                </div>
-            </div>
+    const txs = calculateSettlement();
+    container.innerHTML = txs.length > 0 
+        ? txs.map(t => `<div class="p-2 bg-emerald-50 text-emerald-900 border border-emerald-200 rounded-xl font-bold">${escapeHTML(t)}</div>`).join('')
+        : '<p class="font-bold text-center py-2 text-emerald-600">All balances are currently settled!</p>';
+}
 
-            <!-- Currency Buttons with Icons -->
-            <div class="space-y-2">
-                <label class="text-xs font-extrabold text-slate-800 block uppercase tracking-wider">Currency</label>
-                <div class="grid grid-cols-3 gap-2">
-                    <button type="button" onclick="window.selectSettingsCurrency('USD')" id="setCurrUSD" class="theme-btn py-2.5 px-3 flex items-center justify-center gap-1.5 text-xs font-extrabold border-2 border-slate-200 rounded-xl hover:border-slate-400 bg-slate-50 transition cursor-pointer">
-                        <span class="text-base font-black">$</span> USD
-                    </button>
-                    <button type="button" onclick="window.selectSettingsCurrency('EUR')" id="setCurrEUR" class="theme-btn py-2.5 px-3 flex items-center justify-center gap-1.5 text-xs font-extrabold border-2 border-slate-200 rounded-xl hover:border-slate-400 bg-slate-50 transition cursor-pointer">
-                        <span class="text-base font-black">€</span> EUR
-                    </button>
-                    <button type="button" onclick="window.selectSettingsCurrency('TRY')" id="setCurrTRY" class="theme-btn py-2.5 px-3 flex items-center justify-center gap-1.5 text-xs font-extrabold border-2 border-slate-200 rounded-xl hover:border-slate-400 bg-slate-50 transition cursor-pointer">
-                        <span class="text-base font-black">₺</span> TRY
-                    </button>
-                </div>
-            </div>
+function escapeHTML(str) {
+    if (!str) return '';
+    return str.toString().replace(/[&<>'"]/g, tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag));
+}
 
-            <!-- Visual Theme Selection Buttons -->
-            <div class="space-y-2">
-                <label class="text-xs font-extrabold text-slate-800 block uppercase tracking-wider">Visual Template</label>
-                <div class="grid grid-cols-3 gap-2">
-                    <button type="button" onclick="window.selectSettingsTheme('Silk')" id="setThemeSilk" class="theme-btn py-3 px-2 border-2 border-slate-200 bg-slate-50 rounded-xl text-center transition cursor-pointer">
-                        <span class="block text-xs font-black font-sans text-slate-900">Silk</span>
-                    </button>
-                    <button type="button" onclick="window.selectSettingsTheme('Toon')" id="setThemeToon" class="theme-btn py-3 px-2 border-2 border-slate-200 bg-amber-100 rounded-xl text-center transition cursor-pointer">
-                        <span class="block text-xs font-black font-serif text-slate-900">Toon</span>
-                    </button>
-                    <button type="button" onclick="window.selectSettingsTheme('Neon')" id="setThemeNeon" class="theme-btn py-3 px-2 border-2 border-slate-200 bg-slate-950 rounded-xl text-center transition cursor-pointer">
-                        <span class="block text-xs font-black font-mono text-cyan-400">Neon</span>
-                    </button>
-                </div>
-            </div>
+// --- GLOBAL EXPORTS ---
+window.switchModalTab = switchModalTab;
+window.createNewLedger = createNewLedger;
+window.recallLedger = recallLedger;
+window.openSettingsModal = openSettingsModal;
+window.closeSettingsModal = closeSettingsModal;
+window.selectSettingsLang = selectSettingsLang;
+window.selectSettingsCurrency = selectSettingsCurrency;
+window.selectSettingsTheme = selectSettingsTheme;
+window.openShareModal = openShareModal;
+window.closeShareModal = closeShareModal;
+window.copyShareLink = copyShareLink;
+window.goHome = goHome;
+window.deleteActiveLedger = deleteActiveLedger;
+window.addMemberDirect = addMemberDirect;
+window.saveMembers = saveMembers;
+window.deleteMember = deleteMember;
+window.addExpense = addExpense;
+window.startEditExpense = startEditExpense;
+window.cancelEditExpense = cancelEditExpense;
+window.updateExpense = updateExpense;
+window.deleteExpenseFromEdit = deleteExpenseFromEdit;
+window.copySettlementSummary = copySettlementSummary;
+window.generateLedgerReport = generateLedgerReport;
+window.switchLanguage = switchLanguage;
+window.saveCardLayout = saveCardLayout;
+window.selectAllSplits = selectAllSplits;
+window.saveSettings = saveSettings;
 
-            <button id="btnSaveSettings" type="button" onclick="window.saveSettings()" class="w-full theme-btn bg-lime-400 hover:bg-lime-500 text-slate-900 py-3 text-xs font-black uppercase tracking-wider rounded-xl cursor-pointer">Save Settings</button>
-        </div>
-    </div>
+// --- INITIALIZE SYSTEM ENGINE ---
+document.addEventListener('DOMContentLoaded', () => {
+    initTaglineCarousel();
+    initCardDragging();
 
-    <!-- Share Link Modal -->
-    <div id="shareModal" class="hidden fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 pointer-events-auto">
-        <div class="theme-card bg-white p-6 max-w-md w-full space-y-4 shadow-2xl text-slate-900">
-            <div class="flex justify-between items-center border-b border-slate-200 pb-2">
-                <h3 data-i18n="shareLinkHeader" class="text-xs font-black uppercase tracking-wider">Share Ledger Link</h3>
-                <button id="btnCloseShare" type="button" onclick="window.closeShareModal()" class="text-slate-500 hover:text-slate-900 text-xl font-bold cursor-pointer">×</button>
-            </div>
-            <p data-i18n="shareLinkSub" class="text-xs font-medium text-slate-600">Anyone with this link will only need to enter the 4-digit PIN to access this ledger.</p>
-            <div class="flex gap-2">
-                <input type="text" id="shareLinkInput" readonly class="flex-1 theme-input px-3 py-2 text-xs font-mono">
-                <button id="btnCopyShareLink" type="button" onclick="window.copyShareLink()" data-i18n="copyBtn" class="theme-btn px-4 py-2 text-xs font-black uppercase rounded-xl cursor-pointer">Copy</button>
-            </div>
-        </div>
-    </div>
+    const dateInput = document.getElementById('expenseDate');
+    if (dateInput) dateInput.value = formatToISODate(new Date());
 
-    <!-- Multi-Path Script Loader -->
-    <script src="js/app.js" onerror="this.onerror=null; this.src='app.js';"></script>
-</body>
-</html>
+    render();
+    loadGoogleSheetsArchive();
+});

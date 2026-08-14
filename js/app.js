@@ -1,6 +1,6 @@
 /**
  * SPENSE - Main Application Logic & Controller
- * Architecture: State Engine + Staging Queues + Contextual Form Editing
+ * Architecture: State Engine + Staging Queues + Persistent Metadata Synchronization
  */
 
 console.log("%c[SPENSE] System initialized and app.js active.", "color: #059669; font-weight: bold;");
@@ -390,8 +390,21 @@ async function recallLedger() {
     }
 }
 
-function openSettingsModal() { document.getElementById('settingsModal')?.classList.remove('hidden'); }
+function openSettingsModal() { 
+    // Sync modal controls with active state variables
+    const langSelect = document.getElementById('settingsLangSelect');
+    const currSelect = document.getElementById('settingsCurrencySelect');
+    if (langSelect) langSelect.value = currentLang;
+    if (currSelect) currSelect.value = currentCurrency;
+
+    const themeRadio = document.querySelector(`input[name="modalThemeSelect"][value="${currentTheme}"]`);
+    if (themeRadio) themeRadio.checked = true;
+
+    document.getElementById('settingsModal')?.classList.remove('hidden'); 
+}
+
 function closeSettingsModal() { document.getElementById('settingsModal')?.classList.add('hidden'); }
+
 function openShareModal() {
     document.getElementById('shareModal')?.classList.remove('hidden');
     const input = document.getElementById('shareLinkInput');
@@ -419,7 +432,7 @@ async function deleteActiveLedger() {
     goHome();
 }
 
-// --- FEATURE 1 FIX: Staging Participant Management ---
+// --- Staging Participant Management ---
 function addMemberDirect() {
     const input = document.getElementById('memberName');
     if (!input) return;
@@ -429,7 +442,6 @@ function addMemberDirect() {
     if (!currentTab) { alert("Access or initialize a ledger first."); return; }
     if (ledgerData.members.includes(name)) { alert("Participant already exists."); input.value = ''; return; }
 
-    // Stage member locally WITHOUT saving to backend tab yet
     ledgerData.members.push(name);
     unsavedMembers.push(name);
     input.value = '';
@@ -455,30 +467,25 @@ async function saveMembers() {
 
 async function deleteMember(name) {
     if (!name) return;
-    
-    // Explicit Confirmation Requirement
     if (!confirm(`Are you sure you want to remove participant '${name}'?`)) return;
 
-    // Remove locally
     ledgerData.members = ledgerData.members.filter(m => m !== name);
     unsavedMembers = unsavedMembers.filter(m => m !== name);
     render();
 
-    // Save deletion immediately to Google Sheets tab
     const res = await callBackend('removeMember', { name: name });
     if (res && res.status !== "success") {
         console.warn("[SPENSE Notice] Backend deletion notice:", res?.message);
     }
 }
 
-// --- FEATURE 2 FIX: Expense Editing State Machine ---
+// --- Expense Editing State Machine ---
 function startEditExpense(id) {
     const exp = ledgerData.expenses.find(e => e.id.toString() === id.toString());
     if (!exp) return;
 
     editingExpenseId = id.toString();
 
-    // Populate Form Inputs
     const dateInput = document.getElementById('expenseDate');
     const descInput = document.getElementById('expenseDesc');
     const amountInput = document.getElementById('expenseAmount');
@@ -491,15 +498,12 @@ function startEditExpense(id) {
     if (catInput) catInput.value = exp.category || 'General';
     if (paidByInput) paidByInput.value = exp.paidBy || '';
 
-    // Check target split checkboxes
     const splitArr = Array.isArray(exp.splitWith) ? exp.splitWith : (exp.splitBetween || []);
     document.querySelectorAll('.split-checkbox').forEach(cb => {
         cb.checked = splitArr.includes(cb.value);
     });
 
     render();
-
-    // Smooth scroll to expense editing frame
     document.getElementById('expenseFormSection')?.scrollIntoView({ behavior: 'smooth' });
 }
 
@@ -544,7 +548,6 @@ async function updateExpense() {
 
     const category = document.getElementById('expenseCategory')?.value || "General";
 
-    // Synchronous state update
     const idx = ledgerData.expenses.findIndex(e => e.id.toString() === editingExpenseId);
     if (idx !== -1) {
         ledgerData.expenses[idx] = { id: editingExpenseId, date, category, desc, amount, paidBy, splitWith };
@@ -555,7 +558,6 @@ async function updateExpense() {
     resetExpenseForm();
     render();
 
-    // Async backend call
     await callBackend('updateExpense', { id: targetId, date, category, desc, amount, paidBy, splitWith });
 }
 
@@ -564,15 +566,12 @@ async function deleteExpenseFromEdit() {
     if (!confirm("Are you sure you want to delete this expense entry?")) return;
 
     const targetId = editingExpenseId;
-    
-    // Remove locally
     ledgerData.expenses = ledgerData.expenses.filter(e => e.id.toString() !== targetId);
     
     editingExpenseId = null;
     resetExpenseForm();
     render();
 
-    // Async backend call
     await callBackend('deleteExpense', { id: targetId });
 }
 
@@ -598,12 +597,10 @@ async function addExpense() {
     const category = document.getElementById('expenseCategory')?.value || "General";
     const id = Date.now().toString();
 
-    // Immediate local UI update
     ledgerData.expenses.push({ id, date, category, desc, amount, paidBy, splitWith });
     resetExpenseForm();
     render();
 
-    // Async backend call
     await callBackend('addExpense', { id, date, category, desc, amount, paidBy, splitWith });
 }
 
@@ -648,7 +645,6 @@ function calculateSettlement() {
     return transactions;
 }
 
-// --- FEATURE 3 FIX: Copy Settlement Summary ---
 function copySettlementSummary() {
     const txs = calculateSettlement();
     if (txs.length === 0) {
@@ -668,7 +664,6 @@ function copySettlementSummary() {
     });
 }
 
-// --- FEATURE 4 FIX: Generate Ledger Report ---
 function generateLedgerReport() {
     if (!currentTab) {
         alert("Please open an active ledger first.");
@@ -711,7 +706,6 @@ function generateLedgerReport() {
     }
     report += `====================================================\n`;
 
-    // Trigger text file download in browser
     const blob = new Blob([report], { type: 'text/plain;charset=utf-8' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
@@ -741,13 +735,31 @@ function selectAllSplits() {
     document.querySelectorAll('.split-checkbox').forEach(cb => cb.checked = true);
 }
 
-function saveSettings() {
+// --- SETTINGS PERSISTENCE ENGINE ---
+async function saveSettings() {
     currentLang = document.getElementById('settingsLangSelect')?.value || 'en';
     currentCurrency = document.getElementById('settingsCurrencySelect')?.value || 'USD';
+    
     const themeRadio = document.querySelector('input[name="modalThemeSelect"]:checked');
-    if (themeRadio) applyTheme(themeRadio.value);
+    if (themeRadio) {
+        applyTheme(themeRadio.value);
+    }
+
     document.getElementById('settingsModal')?.classList.add('hidden');
     render();
+
+    // Persist settings asynchronously to Google Sheets
+    if (currentTab) {
+        const res = await callBackend('updateSettings', {
+            language: currentLang,
+            currency: currentCurrency,
+            theme: currentTheme
+        });
+
+        if (res && res.status !== "success") {
+            console.warn("[SPENSE Warning] Persistent settings save notice:", res?.message);
+        }
+    }
 }
 
 // --- Master Rendering Engine ---
@@ -801,7 +813,6 @@ function renderMembers() {
         `).join('') 
         : '<span class="opacity-60 italic">No participants yet.</span>';
 
-    // Show/Hide Save Participants Button when unsaved members exist
     if (saveBtn) {
         if (unsavedMembers.length > 0) {
             saveBtn.classList.remove('hidden');
@@ -853,7 +864,6 @@ function renderSplitCheckboxes() {
     const container = document.getElementById('splitCheckboxes');
     if (!container) return;
 
-    // Preserve check states if in middle of render
     const selectedValues = Array.from(document.querySelectorAll('.split-checkbox:checked')).map(cb => cb.value);
 
     container.innerHTML = ledgerData.members.length > 0

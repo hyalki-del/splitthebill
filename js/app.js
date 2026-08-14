@@ -1,16 +1,14 @@
 /**
- * ==========================================================================
  * SPENSE - Group Expense Tracker Main Controller
- * CS Senior Architecture: Modular State Machine + Case-Insensitive Balance Resolution 
- *                        + Equal Grid Action Controls + Decoupled i18n Integration
- * ==========================================================================
+ * Computer Science Architecture: Modular State Machine + Control-Plane Metadata Filtering + Motion Engine
  */
 
-console.log("%c[SPENSE] Engine & Controller Loaded Successfully.", "color: #059669; font-weight: bold;");
+console.log("%c[SPENSE] Engine & Full Controller Loaded Successfully.", "color: #059669; font-weight: bold;");
 
 // --- Global Application State ---
 let currentTab = null;
 let currentPin = null;
+let currentLang = 'en';
 let currentCurrency = 'USD';
 let currentTheme = 'Silk';
 let ledgerData = { members: [], expenses: [] };
@@ -23,6 +21,73 @@ let selectedModalTheme = 'Silk';
 // Staging & Edit State Variables
 let unsavedMembers = [];
 let editingExpenseId = null;
+
+// --- Internationalization Dictionary ---
+const TRANSLATIONS = {
+    en: {
+        settingsBtn: "⚙ Settings", shareLinkBtn: "Share Link", deleteBtn: "Delete",
+        participantsTitle: "Participants", participantsSub: "Add or remove people from this group.",
+        namePlaceholder: "Name...", addBtn: "Add", saveMembersBtn: "Save Participants",
+        newExpenseTitle: "New Expense", editExpenseTitle: "Edit Expense",
+        newExpenseSub: "Log a transaction to split.", editExpenseSub: "Modify or delete this expense.",
+        dateLabel: "Date", categoryLabel: "Category", descLabel: "Description", descPlaceholder: "e.g. Dinner",
+        amountLabel: "Amount", paidByLabel: "Paid By", splitBetweenLabel: "Split Between:", selectAllBtn: "Select All", 
+        recordExpenseBtn: "Record Expense", updateExpenseBtn: "Update Expense", cancelEditBtn: "Cancel", deleteExpenseBtn: "Delete Expense",
+        settlementTitle: "Settlement Matrix", copySummaryBtn: "Copy Summary",
+        historyTitle: "Ledger History", generateReportBtn: "Generate Report",
+        modalSub: "Create or open a confidential group ledger.", tabCreate: "Create New", tabRecall: "Recall Existing",
+        ledgerNameLabel: "Ledger Name", ledgerNamePh: "e.g. dinner-club", setPinLabel: "Set 4-Digit PIN", initializeBtn: "Initialize Ledger",
+        selectArchiveLabel: "Select Archive", enterPinLabel: "Enter 4-Digit PIN", accessLedgerBtn: "Access Ledger",
+        shareLinkHeader: "Share Ledger Link", shareLinkSub: "Anyone with this link will only need to enter PIN.", copyBtn: "Copy",
+        taglines: [
+            `<strong class="block font-black text-slate-900 text-2xl sm:text-3xl leading-tight">Spend simply.</strong><span class="block text-slate-600 text-xs sm:text-sm font-medium mt-1">Enjoy the moment. Leave tracking to SPENSE.</span>`,
+            `<strong class="block font-black text-slate-900 text-2xl sm:text-3xl leading-tight">Just add what you spent.</strong><span class="block text-slate-600 text-xs sm:text-sm font-medium mt-1">Who paid? Who shares? SPENSE does the math.</span>`,
+            `<strong class="block font-black text-slate-900 text-2xl sm:text-3xl leading-tight">Settle easily.</strong><span class="block text-slate-600 text-xs sm:text-sm font-medium mt-1">See who owes whom — and how much.</span>`
+        ]
+    },
+    tr: {
+        settingsBtn: "⚙ Ayarlar", shareLinkBtn: "Bağlantıyı Paylaş", deleteBtn: "Sil",
+        participantsTitle: "Katılımcılar", participantsSub: "Bu gruba kişi ekleyin veya çıkarın.",
+        namePlaceholder: "İsim...", addBtn: "Ekle", saveMembersBtn: "Katılımcıları Kaydet",
+        newExpenseTitle: "Yeni Harcama", editExpenseTitle: "Harcamayı Düzenle",
+        newExpenseSub: "Bölüştürmek için işlem kaydedin.", editExpenseSub: "Bu harcamayı güncelleyin veya silin.",
+        dateLabel: "Tarih", categoryLabel: "Kategori", descLabel: "Açıklama", descPlaceholder: "ör. Akşam Yemeği",
+        amountLabel: "Tutar", paidByLabel: "Ödeyen", splitBetweenLabel: "Paylaşanlar:", selectAllBtn: "Tümünü Seç", 
+        recordExpenseBtn: "Harcamayı Kaydet", updateExpenseBtn: "Harcamayı Güncelle", cancelEditBtn: "İptal", deleteExpenseBtn: "Harcamayı Sil",
+        settlementTitle: "Ödeme Matrisi", copySummaryBtn: "Özeti Kopyala",
+        historyTitle: "Geçmiş Kayıtlar", generateReportBtn: "Rapor Oluştur",
+        modalSub: "Gizli bir grup defteri oluşturun veya açın.", tabCreate: "Yeni Oluştur", tabRecall: "Var Olanı Aç",
+        ledgerNameLabel: "Defter Adı", ledgerNamePh: "ör. aksam-yemegi", setPinLabel: "4 Haneli PIN Belirleyin", initializeBtn: "Defteri Başlat",
+        selectArchiveLabel: "Arşiv Seç", enterPinLabel: "4 Haneli PIN Girin", accessLedgerBtn: "Deftere Eriş",
+        shareLinkHeader: "Defter Bağlantısını Paylaş", shareLinkSub: "Bu bağlantıya sahip herkes PIN girmelidir.", copyBtn: "Kopyala",
+        taglines: [
+            `<strong class="block font-black text-slate-900 text-2xl sm:text-3xl leading-tight">Kolayca harca.</strong><span class="block text-slate-600 text-xs sm:text-sm font-medium mt-1">Anın tadını çıkar. Takibi SPENSE'e bırak.</span>`,
+            `<strong class="block font-black text-slate-900 text-2xl sm:text-3xl leading-tight">Sadece harcamanı ekle.</strong><span class="block text-slate-600 text-xs sm:text-sm font-medium mt-1">Kim ödedi? Kimler paylaşıyor? Matematik işini SPENSE yapar.</span>`,
+            `<strong class="block font-black text-slate-900 text-2xl sm:text-3xl leading-tight">Rahatça hesabı kapat.</strong><span class="block text-slate-600 text-xs sm:text-sm font-medium mt-1">Kimin kime borcu var — anında gör.</span>`
+        ]
+    },
+    de: {
+        settingsBtn: "⚙ Einstellungen", shareLinkBtn: "Link Teilen", deleteBtn: "Löschen",
+        participantsTitle: "Teilnehmer", participantsSub: "Personen hinzufügen oder entfernen.",
+        namePlaceholder: "Name...", addBtn: "Hinzufügen", saveMembersBtn: "Teilnehmer Speichern",
+        newExpenseTitle: "Neue Ausgabe", editExpenseTitle: "Ausgabe Bearbeiten",
+        newExpenseSub: "Transaktion eintragen.", editExpenseSub: "Ändern oder löschen Sie diese Ausgabe.",
+        dateLabel: "Datum", categoryLabel: "Kategorie", descLabel: "Beschreibung", descPlaceholder: "z.B. Abendessen",
+        amountLabel: "Betrag", paidByLabel: "Bezahlt von", splitBetweenLabel: "Aufteilen:", selectAllBtn: "Alle", 
+        recordExpenseBtn: "Speichern", updateExpenseBtn: "Aktualisieren", cancelEditBtn: "Abbrechen", deleteExpenseBtn: "Löschen",
+        settlementTitle: "Abrechnungsmatrix", copySummaryBtn: "Kopieren",
+        historyTitle: "Verlauf", generateReportBtn: "Bericht Erstellen",
+        modalSub: "Gruppenbuch öffnen.", tabCreate: "Neu", tabRecall: "Öffnen",
+        ledgerNameLabel: "Name", ledgerNamePh: "z.B. club", setPinLabel: "PIN", initializeBtn: "Starten",
+        selectArchiveLabel: "Archiv Wählen", enterPinLabel: "PIN Eingeben", accessLedgerBtn: "Zugreifen",
+        shareLinkHeader: "Teilen", shareLinkSub: "PIN erforderlich.", copyBtn: "Kopieren",
+        taglines: [
+            `<strong class="block font-black text-slate-900 text-2xl sm:text-3xl leading-tight">Einfach ausgeben.</strong><span class="block text-slate-600 text-xs sm:text-sm font-medium mt-1">Genieße den Moment. Überlasse die Nachverfolgung SPENSE.</span>`,
+            `<strong class="block font-black text-slate-900 text-2xl sm:text-3xl leading-tight">Einfach eintragen.</strong><span class="block text-slate-600 text-xs sm:text-sm font-medium mt-1">Wer hat bezahlt? Wer teilt es? SPENSE macht die Rechnung.</span>`,
+            `<strong class="block font-black text-slate-900 text-2xl sm:text-3xl leading-tight">Einfach abrechnen.</strong><span class="block text-slate-600 text-xs sm:text-sm font-medium mt-1">Sehen Sie wer wem schuldet — und wie viel.</span>`
+        ]
+    }
+};
 
 // --- DETERMINISTIC DATE NORMALIZATION HELPER ---
 function formatToISODate(rawDate) {
@@ -38,8 +103,10 @@ function formatToISODate(rawDate) {
 
     const str = rawDate.toString().trim();
 
+    // 1. Strict YYYY-MM-DD
     if (/^\d{4}-\d{2}-\d{2}$/.test(str)) return str;
 
+    // 2. European / Turkish DD.MM.YYYY or DD/MM/YYYY
     const dmyMatch = str.match(/^(\d{1,2})[\.\/-](\d{1,2})[\.\/-](\d{4})$/);
     if (dmyMatch) {
         const day = dmyMatch[1].padStart(2, '0');
@@ -48,6 +115,7 @@ function formatToISODate(rawDate) {
         return `${year}-${month}-${day}`;
     }
 
+    // 3. YYYY/MM/DD or YYYY.MM.DD
     const ymdMatch = str.match(/^(\d{4})[\.\/-](\d{1,2})[\.\/-](\d{1,2})$/);
     if (ymdMatch) {
         const year = ymdMatch[1];
@@ -56,6 +124,7 @@ function formatToISODate(rawDate) {
         return `${year}-${month}-${day}`;
     }
 
+    // 4. ISO Timestamps or standard date string parsing
     const parsed = new Date(str);
     if (!isNaN(parsed.getTime())) {
         const year = parsed.getFullYear();
@@ -64,15 +133,9 @@ function formatToISODate(rawDate) {
         return `${year}-${month}-${day}`;
     }
 
+    // Fallback to today
     const fallback = new Date();
     return `${fallback.getFullYear()}-${String(fallback.getMonth() + 1).padStart(2, '0')}-${String(fallback.getDate()).padStart(2, '0')}`;
-}
-
-// Case-Insensitive Canonical Name Matcher
-function findMemberCanonical(targetName) {
-    if (!targetName) return targetName;
-    const match = ledgerData.members.find(m => m.toLowerCase() === targetName.toLowerCase());
-    return match || targetName;
 }
 
 // --- SETTINGS SELECTION ENGINE ---
@@ -181,7 +244,7 @@ function initTaglineCarousel() {
         const activeTaglines = t.taglines;
 
         spot.className = "w-full text-center leading-snug";
-        void spot.offsetWidth; // Synchronous DOM reflow force
+        void spot.offsetWidth; // Force synchronous browser DOM layout reflow
 
         spot.innerHTML = activeTaglines[currentTaglineIndex % activeTaglines.length];
 
@@ -280,7 +343,7 @@ async function saveCardLayout() {
     }
 }
 
-// --- GOOGLE SHEETS CONNECTOR ---
+// --- GOOGLE SHEETS & BACKEND CONNECTOR ---
 async function getConfig() {
     try {
         const configRes = await fetch('config.json');
@@ -309,11 +372,12 @@ async function callBackend(action, payload = {}) {
     }
 }
 
-// --- ARCHIVE LOADER WITH CONTROL-PLANE METADATA EXCLUSION ---
+// --- ARCHIVE LOADER WITH METADATA EXCLUSION ---
 async function loadGoogleSheetsArchive() {
     const select = document.getElementById('archiveSelect');
     if (!select) return;
 
+    // Preserve loading indicator only if empty
     if (select.options.length <= 1) {
         select.innerHTML = `<option value="">-- Reading Google Sheets... --</option>`;
     }
@@ -337,6 +401,7 @@ async function loadGoogleSheetsArchive() {
             ledgers = rawData.archives || rawData.sheets || rawData.ledgers || Object.keys(rawData);
         }
 
+        // CONTROL-PLANE FILTER: Explicitly exclude 'metadata' tab (case-insensitive)
         ledgers = ledgers
             .filter(Boolean)
             .filter(name => name.toString().trim().toLowerCase() !== 'metadata');
@@ -375,6 +440,7 @@ function switchModalTab(tabMode) {
         if (tabRecallBtn) tabRecallBtn.className = "flex-1 theme-btn py-2 text-xs font-black uppercase tracking-wider bg-amber-300 text-slate-900 rounded-xl cursor-pointer";
         if (tabCreateBtn) tabCreateBtn.className = "flex-1 theme-btn py-2 text-xs font-black uppercase tracking-wider bg-transparent text-slate-500 rounded-xl cursor-pointer";
         
+        // Trigger backup load only if prefetch hasn't finished yet
         const select = document.getElementById('archiveSelect');
         if (select && (select.options.length <= 1 || select.value === "")) {
             loadGoogleSheetsArchive();
@@ -456,10 +522,9 @@ async function recallLedger() {
 
             if (data.cardOrder) applyCardOrder(data.cardOrder);
 
-            const serverMembers = Array.isArray(data.members) ? data.members : [];
-            ledgerData.members = Array.from(new Set([...serverMembers, ...unsavedMembers]));
-            
+            ledgerData.members = data.members || [];
             ledgerData.expenses = data.expenses || [];
+            unsavedMembers = [];
 
             document.getElementById('welcomeModal')?.classList.add('hidden');
             render();
@@ -502,36 +567,20 @@ async function deleteActiveLedger() {
     goHome();
 }
 
-// --- PARTICIPANTS AUTO-PERSISTENCE ENGINE ---
-async function addMemberDirect() {
+// --- PARTICIPANTS STAGING MODULE ---
+function addMemberDirect() {
     const input = document.getElementById('memberName');
     if (!input) return;
     const name = input.value.trim();
     if (!name) return;
 
-    if (!currentTab) { 
-        alert("Access or initialize a ledger first."); 
-        return; 
-    }
-    
-    if (ledgerData.members.some(m => m.toLowerCase() === name.toLowerCase())) { 
-        alert("Participant already exists."); 
-        input.value = ''; 
-        return; 
-    }
+    if (!currentTab) { alert("Access or initialize a ledger first."); return; }
+    if (ledgerData.members.includes(name)) { alert("Participant already exists."); input.value = ''; return; }
 
     ledgerData.members.push(name);
-    if (!unsavedMembers.includes(name)) unsavedMembers.push(name);
+    unsavedMembers.push(name);
     input.value = '';
     render();
-
-    const res = await callBackend('addMembers', { names: [name] });
-    if (res && res.status === "success") {
-        unsavedMembers = unsavedMembers.filter(m => m !== name);
-        render();
-    } else {
-        console.warn("[SPENSE Warning] Background sync pending for participant:", name);
-    }
 }
 
 async function saveMembers() {
@@ -555,19 +604,17 @@ async function deleteMember(name) {
     if (!name) return;
     if (!confirm(`Are you sure you want to remove participant '${name}'?`)) return;
 
-    const canonicalName = findMemberCanonical(name);
-
-    ledgerData.members = ledgerData.members.filter(m => m.toLowerCase() !== canonicalName.toLowerCase());
-    unsavedMembers = unsavedMembers.filter(m => m.toLowerCase() !== canonicalName.toLowerCase());
+    ledgerData.members = ledgerData.members.filter(m => m !== name);
+    unsavedMembers = unsavedMembers.filter(m => m !== name);
     render();
 
-    const res = await callBackend('removeMember', { name: canonicalName });
+    const res = await callBackend('removeMember', { name: name });
     if (res && res.status !== "success") {
         console.warn("[SPENSE Notice] Backend deletion notice:", res?.message);
     }
 }
 
-// --- EXPENSE EDITING & FORM CONTROL ---
+// --- EXPENSE EDITING & VALIDATION (HISTORICAL DATE SAFE) ---
 function startEditExpense(id) {
     const exp = ledgerData.expenses.find(e => e.id.toString() === id.toString());
     if (!exp) return;
@@ -580,6 +627,7 @@ function startEditExpense(id) {
     const catInput = document.getElementById('expenseCategory');
     const paidByInput = document.getElementById('expensePaidBy');
 
+    // Deterministically normalize stored date to YYYY-MM-DD for HTML5 date input
     if (dateInput) {
         dateInput.value = formatToISODate(exp.date);
     }
@@ -587,11 +635,11 @@ function startEditExpense(id) {
     if (descInput) descInput.value = exp.desc || '';
     if (amountInput) amountInput.value = exp.amount || '';
     if (catInput) catInput.value = exp.category || 'Food & Drink';
-    if (paidByInput) paidByInput.value = findMemberCanonical(exp.paidBy) || '';
+    if (paidByInput) paidByInput.value = exp.paidBy || '';
 
-    const splitArr = (Array.isArray(exp.splitWith) ? exp.splitWith : (exp.splitBetween || [])).map(s => s.toLowerCase());
+    const splitArr = Array.isArray(exp.splitWith) ? exp.splitWith : (exp.splitBetween || []);
     document.querySelectorAll('.split-checkbox').forEach(cb => {
-        cb.checked = splitArr.includes(cb.value.toLowerCase());
+        cb.checked = splitArr.includes(cb.value);
     });
 
     render();
@@ -623,16 +671,30 @@ async function updateExpense() {
     const date = formatToISODate(rawDate);
     const desc = document.getElementById('expenseDesc')?.value.trim();
     const amount = parseFloat(document.getElementById('expenseAmount')?.value);
-    const rawPaidBy = document.getElementById('expensePaidBy')?.value;
-    const paidBy = findMemberCanonical(rawPaidBy);
+    const paidBy = document.getElementById('expensePaidBy')?.value;
 
-    if (!date || !desc || isNaN(amount) || amount <= 0 || !paidBy) {
-        alert("Please fill out all expense fields properly.");
+    if (!date) {
+        alert("Please select a valid date.");
+        return;
+    }
+
+    if (!desc) {
+        alert("Please provide a description.");
+        return;
+    }
+
+    if (isNaN(amount) || amount <= 0) {
+        alert("Please enter a valid amount greater than 0.");
+        return;
+    }
+
+    if (!paidBy) {
+        alert("Please select who paid for this expense.");
         return;
     }
 
     const checkboxes = document.querySelectorAll('.split-checkbox:checked');
-    const splitWith = Array.from(checkboxes).map(cb => findMemberCanonical(cb.value));
+    const splitWith = Array.from(checkboxes).map(cb => cb.value);
 
     if (splitWith.length === 0) {
         alert("Select at least one participant to split with.");
@@ -673,8 +735,7 @@ async function addExpense() {
     const date = formatToISODate(rawDate);
     const desc = document.getElementById('expenseDesc')?.value.trim();
     const amount = parseFloat(document.getElementById('expenseAmount')?.value);
-    const rawPaidBy = document.getElementById('expensePaidBy')?.value;
-    const paidBy = findMemberCanonical(rawPaidBy);
+    const paidBy = document.getElementById('expensePaidBy')?.value;
 
     if (!date || !desc || isNaN(amount) || amount <= 0 || !paidBy) {
         alert("Fill all expense fields correctly.");
@@ -682,7 +743,7 @@ async function addExpense() {
     }
 
     const checkboxes = document.querySelectorAll('.split-checkbox:checked');
-    const splitWith = Array.from(checkboxes).map(cb => findMemberCanonical(cb.value));
+    const splitWith = Array.from(checkboxes).map(cb => cb.value);
 
     if (splitWith.length === 0) {
         alert("Select at least one participant to split with.");
@@ -699,44 +760,29 @@ async function addExpense() {
     await callBackend('addExpense', { id, date, category, desc, amount, paidBy, splitWith });
 }
 
-// --- CASE-INSENSITIVE SETTLEMENT RESOLUTION ---
+// --- SETTLEMENT COMPUTATION ALGORITHM ---
 function calculateSettlement() {
     const balances = {};
-    const lowerMap = {};
-
-    ledgerData.members.forEach(m => {
-        const lower = m.toLowerCase();
-        balances[lower] = 0;
-        lowerMap[lower] = m;
-    });
+    ledgerData.members.forEach(m => balances[m] = 0);
 
     ledgerData.expenses.forEach(e => {
         const amt = parseFloat(e.amount) || 0;
-        const rawSplitList = Array.isArray(e.splitWith) ? e.splitWith : (e.splitBetween || []);
-        const splitList = rawSplitList.map(s => s.toLowerCase());
-
+        const splitList = Array.isArray(e.splitWith) ? e.splitWith : (e.splitBetween || []);
         if (splitList.length === 0) return;
 
         const share = amt / splitList.length;
-        const payerKey = (e.paidBy || '').toLowerCase();
+        if (balances[e.paidBy] !== undefined) balances[e.paidBy] += amt;
 
-        if (balances[payerKey] !== undefined) {
-            balances[payerKey] += amt;
-        }
-
-        splitList.forEach(mKey => {
-            if (balances[mKey] !== undefined) {
-                balances[mKey] -= share;
-            }
+        splitList.forEach(m => {
+            if (balances[m] !== undefined) balances[m] -= share;
         });
     });
 
     const debtors = [], creditors = [];
-    Object.keys(balances).forEach(lowerKey => {
-        const bal = balances[lowerKey];
-        const displayName = lowerMap[lowerKey] || lowerKey;
-        if (bal < -0.01) debtors.push({ member: displayName, amount: -bal });
-        else if (bal > 0.01) creditors.push({ member: displayName, amount: bal });
+    Object.keys(balances).forEach(m => {
+        const bal = balances[m];
+        if (bal < -0.01) debtors.push({ member: m, amount: -bal });
+        else if (bal > 0.01) creditors.push({ member: m, amount: bal });
     });
 
     const transactions = [];
@@ -774,59 +820,56 @@ function copySettlementSummary() {
     });
 }
 
-// --- DYNAMICALLY LOCALIZED REPORT GENERATOR (BLOB TAB TARGET) ---
 function generateLedgerReport() {
     if (!currentTab) {
         alert("Please open an active ledger first.");
         return;
     }
 
-    const t = TRANSLATIONS[currentLang] || TRANSLATIONS['en'];
     const sym = getCurrencySymbol();
-    
     let totalSpent = 0;
     ledgerData.expenses.forEach(e => totalSpent += (parseFloat(e.amount) || 0));
 
     const settlement = calculateSettlement();
 
     let report = `====================================================\n`;
-    report += `               ${t.reportTitle}                     \n`;
+    report += `               SPENSE LEDGER REPORT                 \n`;
     report += `====================================================\n`;
-    report += `${t.reportNameLabel.padEnd(13)} : ${currentTab}\n`;
-    report += `${t.reportGeneratedOn.padEnd(13)} : ${new Date().toLocaleString(currentLang)}\n`;
-    report += `${t.reportParticipants.padEnd(13)} : ${ledgerData.members.join(', ') || 'None'}\n`;
-    report += `${t.reportTotalSpend.padEnd(13)} : ${sym}${totalSpent.toFixed(2)}\n`;
+    report += `Ledger Name  : ${currentTab}\n`;
+    report += `Generated On : ${new Date().toLocaleString()}\n`;
+    report += `Participants : ${ledgerData.members.join(', ') || 'None'}\n`;
+    report += `Total Spend  : ${sym}${totalSpent.toFixed(2)}\n`;
     report += `====================================================\n\n`;
 
-    report += `--- ${t.reportSettlementMatrix} ---\n`;
+    report += `--- SETTLEMENT MATRIX ---\n`;
     if (settlement.length > 0) {
         settlement.forEach(s => report += `• ${s}\n`);
     } else {
-        report += `${t.reportAllSettled}\n`;
+        report += `All balances are currently settled!\n`;
     }
     report += `\n----------------------------------------------------\n\n`;
 
-    report += `--- ${t.reportHistoryTitle} ---\n`;
+    report += `--- ITEMIZED TRANSACTION HISTORY ---\n`;
     if (ledgerData.expenses.length > 0) {
         ledgerData.expenses.forEach((e, idx) => {
-            const splitArr = Array.isArray(e.splitWith) ? e.splitWith : (e.splitBetween || []);
-            const splitStr = splitArr.map(s => findMemberCanonical(s)).join(', ');
-            report += `${idx + 1}. [${formatToISODate(e.date)}] ${e.desc} (${e.category})\n`;
-            report += `   ${t.amountLabel}: ${sym}${parseFloat(e.amount).toFixed(2)} | ${t.reportPaidBy}: ${findMemberCanonical(e.paidBy)}\n`;
-            report += `   ${t.reportSplitWith}: ${splitStr}\n\n`;
+            const splitStr = Array.isArray(e.splitWith) ? e.splitWith.join(', ') : (e.splitBetween ? e.splitBetween.join(', ') : 'All');
+            report += `${idx + 1}. [${e.date}] ${e.desc} (${e.category})\n`;
+            report += `   Amount: ${sym}${parseFloat(e.amount).toFixed(2)} | Paid By: ${e.paidBy}\n`;
+            report += `   Split With: ${splitStr}\n\n`;
         });
     } else {
-        report += `${t.reportNoExpenses}\n`;
+        report += `No expenses recorded.\n`;
     }
     report += `====================================================\n`;
 
     const blob = new Blob([report], { type: 'text/plain;charset=utf-8' });
-    const reportUrl = URL.createObjectURL(blob);
-    const reportWindow = window.open(reportUrl, '_blank');
-
-    if (!reportWindow) {
-        alert("Pop-up blocked! Please allow pop-ups for this site to view the report in a new tab.");
-    }
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `${currentTab}-report.txt`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(link.href);
 }
 
 function getCurrencySymbol() {
@@ -908,7 +951,6 @@ function renderMembers() {
     }
 }
 
-// EQUAL GRID EDIT ACTIONS FORM HEADER
 function renderExpenseFormHeader() {
     const titleEl = document.getElementById('expenseFormTitle');
     const subEl = document.getElementById('expenseFormSub');
@@ -921,17 +963,17 @@ function renderExpenseFormHeader() {
         titleEl.innerText = t.editExpenseTitle;
         subEl.innerText = t.editExpenseSub;
         actionsContainer.innerHTML = `
-            <div class="grid grid-cols-3 gap-2">
-                <button type="button" onclick="window.deleteExpenseFromEdit()" class="theme-btn bg-rose-500 hover:bg-rose-600 text-white py-3 text-xs font-black uppercase tracking-wider cursor-pointer rounded-xl">${t.deleteExpenseBtn}</button>
-                <button type="button" onclick="window.cancelEditExpense()" class="theme-btn bg-slate-200 hover:bg-slate-300 text-slate-800 py-3 text-xs font-black uppercase tracking-wider cursor-pointer rounded-xl">${t.cancelEditBtn}</button>
-                <button type="button" onclick="window.updateExpense()" class="theme-btn bg-emerald-400 hover:bg-emerald-500 text-slate-900 py-3 text-xs font-black uppercase tracking-wider cursor-pointer rounded-xl">${t.updateExpenseBtn}</button>
+            <div class="flex flex-wrap gap-2">
+                <button type="button" onclick="window.updateExpense()" class="flex-1 theme-btn bg-emerald-400 hover:bg-emerald-500 text-slate-900 py-3 text-xs font-black uppercase tracking-wider cursor-pointer">${t.updateExpenseBtn}</button>
+                <button type="button" onclick="window.cancelEditExpense()" class="theme-btn bg-slate-200 hover:bg-slate-300 text-slate-800 px-4 py-3 text-xs font-black uppercase tracking-wider cursor-pointer">${t.cancelEditBtn}</button>
+                <button type="button" onclick="window.deleteExpenseFromEdit()" class="theme-btn bg-rose-500 hover:bg-rose-600 text-white px-4 py-3 text-xs font-black uppercase tracking-wider cursor-pointer">${t.deleteExpenseBtn}</button>
             </div>
         `;
     } else {
         titleEl.innerText = t.newExpenseTitle;
         subEl.innerText = t.newExpenseSub;
         actionsContainer.innerHTML = `
-            <button id="btnRecordExpense" type="button" onclick="window.addExpense()" data-i18n="recordExpenseBtn" class="w-full theme-btn py-3 text-sm font-extrabold cursor-pointer rounded-xl">${t.recordExpenseBtn}</button>
+            <button id="btnRecordExpense" type="button" onclick="window.addExpense()" data-i18n="recordExpenseBtn" class="w-full theme-btn py-3 text-sm font-extrabold cursor-pointer">${t.recordExpenseBtn}</button>
         `;
     }
 }
@@ -943,7 +985,7 @@ function renderDropdowns() {
 
     catSelect.innerHTML = ["Food & Drink", "Transport", "Accommodation", "Shopping", "Entertainment", "Other"].map(c => `<option value="${c}">${c}</option>`).join('');
     paidSelect.innerHTML = ledgerData.members.length > 0 
-        ? ledgerData.members.map(m => `<option value="${escapeHTML(m)}">${escapeHTML(m)}</option>`).join('')
+        ? ledgerData.members.map(m => `<option value="${m}">${escapeHTML(m)}</option>`).join('')
         : '<option value="">No participants</option>';
 }
 
@@ -951,12 +993,12 @@ function renderSplitCheckboxes() {
     const container = document.getElementById('splitCheckboxes');
     if (!container) return;
 
-    const selectedValues = Array.from(document.querySelectorAll('.split-checkbox:checked')).map(cb => cb.value.toLowerCase());
+    const selectedValues = Array.from(document.querySelectorAll('.split-checkbox:checked')).map(cb => cb.value);
 
     container.innerHTML = ledgerData.members.length > 0
         ? ledgerData.members.map(m => `
             <label class="flex items-center gap-1.5 cursor-pointer bg-slate-100 px-2.5 py-1.5 rounded-xl border border-slate-300 font-semibold">
-                <input type="checkbox" value="${escapeHTML(m)}" ${selectedValues.length === 0 || selectedValues.includes(m.toLowerCase()) ? 'checked' : ''} class="split-checkbox accent-slate-900 cursor-pointer"> ${escapeHTML(m)}
+                <input type="checkbox" value="${m}" ${selectedValues.length === 0 || selectedValues.includes(m) ? 'checked' : ''} class="split-checkbox accent-slate-900 cursor-pointer"> ${escapeHTML(m)}
             </label>
         `).join('')
         : '<span class="opacity-60 italic">Add participants first.</span>';
@@ -967,25 +1009,18 @@ function renderHistory() {
     if (!list) return;
 
     list.innerHTML = ledgerData.expenses.length > 0
-        ? ledgerData.expenses.map(e => {
-            const displayDate = formatToISODate(e.date);
-            const canonicalPayer = findMemberCanonical(e.paidBy);
-            const rawSplits = Array.isArray(e.splitWith) ? e.splitWith : (e.splitBetween || []);
-            const displaySplits = rawSplits.map(s => findMemberCanonical(s)).join(', ');
-
-            return `
+        ? ledgerData.expenses.map(e => `
             <li class="p-2.5 rounded-xl border border-current/15 flex justify-between items-center bg-current/5 gap-2">
                 <div class="flex-1 min-w-0">
                     <span class="font-bold truncate block">${escapeHTML(e.desc)} (${escapeHTML(e.category)})</span>
-                    <div class="text-[10px] opacity-70">Paid by <span class="font-bold">${escapeHTML(canonicalPayer)}</span> • ${displayDate} • Split: ${escapeHTML(displaySplits)}</div>
+                    <div class="text-[10px] opacity-70">Paid by <span class="font-bold">${escapeHTML(e.paidBy)}</span> • ${e.date} • Split: ${Array.isArray(e.splitWith) ? e.splitWith.join(', ') : (e.splitBetween ? e.splitBetween.join(', ') : '')}</div>
                 </div>
                 <div class="flex items-center gap-2 flex-shrink-0">
                     <span class="font-extrabold text-sm">${getCurrencySymbol()}${parseFloat(e.amount).toFixed(2)}</span>
                     <button type="button" data-id="${e.id}" onclick="window.startEditExpense(this.getAttribute('data-id'))" class="theme-btn px-2.5 py-1 text-[10px] font-black uppercase tracking-wider bg-amber-300 text-slate-900 cursor-pointer hover:bg-amber-400">Edit</button>
                 </div>
             </li>
-        `;
-        }).join('')
+        `).join('')
         : '<li class="opacity-60 italic text-center py-4">No expenses recorded yet.</li>';
 }
 
@@ -1009,7 +1044,7 @@ function escapeHTML(str) {
     return str.toString().replace(/[&<>'"]/g, tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag));
 }
 
-// --- GLOBAL EXPORTS ---
+// --- GLOBAL WINDOW EXPORTS ---
 window.switchModalTab = switchModalTab;
 window.createNewLedger = createNewLedger;
 window.recallLedger = recallLedger;
@@ -1047,5 +1082,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (dateInput) dateInput.value = formatToISODate(new Date());
 
     render();
+
+    // PERFORMANCE OPTIMIZATION: Async background prefetching of archive list on load
     loadGoogleSheetsArchive();
 });

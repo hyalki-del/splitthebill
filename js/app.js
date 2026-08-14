@@ -1,9 +1,9 @@
 /**
  * SPENSE - Main Application Logic & Controller
- * Architecture: Segmented Controls + Active Framing State + Dynamic Motion
+ * Senior CS Implementation: Pure State Machine + Dynamic Class Sanitizer + Backend Persistence
  */
 
-console.log("%c[SPENSE] Controller initialized successfully.", "color: #059669; font-weight: bold;");
+console.log("%c[SPENSE] Engine & Settings Controller Ready.", "color: #059669; font-weight: bold;");
 
 // --- Global Application State ---
 let currentTab = null;
@@ -88,7 +88,7 @@ const TRANSLATIONS = {
     }
 };
 
-// --- Settings Selection Framing Renderers ---
+// --- SETTINGS SELECTION ENGINE (ROBUST STATE & FRAMING) ---
 function selectSettingsLang(lang) {
     selectedModalLang = lang;
     ['tr', 'en', 'de'].forEach(l => {
@@ -97,7 +97,7 @@ function selectSettingsLang(lang) {
             if (l === lang) {
                 btn.className = "theme-btn py-2.5 px-3 flex items-center justify-center gap-2 text-xs font-extrabold rounded-xl transition cursor-pointer option-btn-selected";
             } else {
-                btn.className = "theme-btn py-2.5 px-3 flex items-center justify-center gap-2 text-xs font-extrabold border-2 border-slate-200 rounded-xl hover:border-slate-400 bg-slate-50 transition cursor-pointer opacity-70";
+                btn.className = "theme-btn py-2.5 px-3 flex items-center justify-center gap-2 text-xs font-extrabold border-2 border-slate-200 rounded-xl hover:border-slate-400 bg-slate-50 transition cursor-pointer opacity-50";
             }
         }
     });
@@ -111,7 +111,7 @@ function selectSettingsCurrency(curr) {
             if (c === curr) {
                 btn.className = "theme-btn py-2.5 px-3 flex items-center justify-center gap-1.5 text-xs font-extrabold rounded-xl transition cursor-pointer option-btn-selected";
             } else {
-                btn.className = "theme-btn py-2.5 px-3 flex items-center justify-center gap-1.5 text-xs font-extrabold border-2 border-slate-200 rounded-xl hover:border-slate-400 bg-slate-50 transition cursor-pointer opacity-70";
+                btn.className = "theme-btn py-2.5 px-3 flex items-center justify-center gap-1.5 text-xs font-extrabold border-2 border-slate-200 rounded-xl hover:border-slate-400 bg-slate-50 transition cursor-pointer opacity-50";
             }
         }
     });
@@ -119,13 +119,21 @@ function selectSettingsCurrency(curr) {
 
 function selectSettingsTheme(theme) {
     selectedModalTheme = theme;
+    
+    const themeStyles = {
+        Silk: 'bg-slate-50 text-slate-900',
+        Toon: 'bg-amber-100 text-slate-900',
+        Neon: 'bg-slate-950 text-cyan-400'
+    };
+
     ['Silk', 'Toon', 'Neon'].forEach(t => {
         const btn = document.getElementById(`setTheme${t}`);
         if (btn) {
+            const baseBg = themeStyles[t] || 'bg-slate-50';
             if (t === theme) {
-                btn.className = "theme-btn py-3 px-2 rounded-xl text-center transition cursor-pointer option-btn-selected";
+                btn.className = `theme-btn py-3 px-2 ${baseBg} rounded-xl text-center transition cursor-pointer option-btn-selected`;
             } else {
-                btn.className = "theme-btn py-3 px-2 border-2 border-slate-200 bg-slate-50 rounded-xl text-center transition cursor-pointer opacity-70";
+                btn.className = `theme-btn py-3 px-2 border-2 border-slate-200 ${baseBg} rounded-xl text-center transition cursor-pointer opacity-50`;
             }
         }
     });
@@ -143,16 +151,22 @@ function openSettingsModal() {
     document.getElementById('settingsModal')?.classList.remove('hidden'); 
 }
 
-function closeSettingsModal() { document.getElementById('settingsModal')?.classList.add('hidden'); }
+function closeSettingsModal() { 
+    document.getElementById('settingsModal')?.classList.add('hidden'); 
+}
 
 async function saveSettings() {
+    // 1. Commit Modal Staging State to Global Runtime Engine
     currentLang = selectedModalLang;
     currentCurrency = selectedModalCurrency;
     applyTheme(selectedModalTheme);
 
+    // 2. Hide Modal & Re-render Full Application UI
     document.getElementById('settingsModal')?.classList.add('hidden');
     render();
+    initTaglineCarousel(); // Refresh tagline language dynamically
 
+    // 3. Persist to Backend / Google Sheet Metadata if Ledger Active
     if (currentTab) {
         const res = await callBackend('updateSettings', {
             language: currentLang,
@@ -161,7 +175,7 @@ async function saveSettings() {
         });
 
         if (res && res.status !== "success") {
-            console.warn("[SPENSE Warning] Persistent settings save notice:", res?.message);
+            console.warn("[SPENSE Warning] Backend settings save notice:", res?.message);
         }
     }
 }

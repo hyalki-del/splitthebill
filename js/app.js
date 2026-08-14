@@ -394,6 +394,9 @@ async function createNewLedger() {
         return;
     }
 
+    currentTab = nameVal;
+    currentPin = pinVal;
+
     const initialOrder = getCurrentCardOrder();
     const res = await callBackend('createLedger', { 
         name: nameVal, 
@@ -404,12 +407,17 @@ async function createNewLedger() {
         cardOrder: initialOrder 
     });
 
-    currentTab = res?.createdTab || nameVal;
-    currentPin = pinVal;
-    ledgerData = { members: [], expenses: [] };
-    unsavedMembers = [];
-    document.getElementById('welcomeModal')?.classList.add('hidden');
-    render();
+    if (res && res.status === "success") {
+        ledgerData = { members: [], expenses: [] };
+        unsavedMembers = [];
+        document.getElementById('welcomeModal')?.classList.add('hidden');
+        render();
+    } else {
+        ledgerData = { members: [], expenses: [] };
+        unsavedMembers = [];
+        document.getElementById('welcomeModal')?.classList.add('hidden');
+        render();
+    }
 }
 
 async function recallLedger() {
@@ -424,36 +432,25 @@ async function recallLedger() {
         return;
     }
 
+    currentTab = targetLedger;
+    currentPin = pinVal;
+
     try {
-        const sheetUrl = await getConfig();
-        if (!sheetUrl) {
-            currentTab = targetLedger;
-            currentPin = pinVal;
-            document.getElementById('welcomeModal')?.classList.add('hidden');
-            render();
-            return;
-        }
+        const res = await callBackend('recallLedger', { tab: targetLedger, pin: pinVal });
 
-        const res = await fetch(`${sheetUrl}?tab=${encodeURIComponent(targetLedger)}&pin=${encodeURIComponent(pinVal)}`);
-        const data = await res.json();
-
-        if (data.status === "success") {
-            currentTab = targetLedger;
-            currentPin = pinVal;
-            currentTheme = data.theme || "Silk";
-            currentCurrency = data.currency || "USD";
-            currentLang = data.language || "en";
+        if (res && res.status === "success") {
+            currentTheme = res.theme || "Silk";
+            currentCurrency = res.currency || "USD";
+            currentLang = res.language || "en";
             applyTheme(currentTheme);
 
-            if (data.cardOrder) applyCardOrder(data.cardOrder);
+            if (res.cardOrder) applyCardOrder(res.cardOrder);
 
-            // SANITIZATION FIX: Filter out nulls, empty strings, and sparse gaps
-            const rawMembers = Array.isArray(data.members) ? data.members : [];
+            const rawMembers = Array.isArray(res.members) ? res.members : [];
             const cleanServerMembers = rawMembers
                 .map(m => (m || '').toString().trim())
                 .filter(m => m.length > 0 && m.toLowerCase() !== 'members');
 
-            // Deduplicate case-insensitively using a Map
             const memberMap = new Map();
             [...cleanServerMembers, ...unsavedMembers].forEach(m => {
                 const lower = m.toLowerCase();
@@ -463,15 +460,19 @@ async function recallLedger() {
             });
 
             ledgerData.members = Array.from(memberMap.values());
-            ledgerData.expenses = data.expenses || [];
+            ledgerData.expenses = res.expenses || [];
 
             document.getElementById('welcomeModal')?.classList.add('hidden');
             render();
         } else {
-            alert("Authentication failed: " + (data.message || "Invalid PIN"));
+            currentTab = null;
+            currentPin = null;
+            alert("Authentication failed: " + (res?.message || "Invalid PIN"));
         }
     } catch (err) {
         console.error("Recall error:", err);
+        currentTab = null;
+        currentPin = null;
         alert("Failed to connect to backend ledger archive.");
     }
 }
@@ -515,7 +516,6 @@ async function addMemberDirect() {
         return; 
     }
     
-    // Case-insensitive duplicate check
     if (ledgerData.members.some(m => m.toLowerCase() === name.toLowerCase())) { 
         alert("Participant already exists."); 
         input.value = ''; 

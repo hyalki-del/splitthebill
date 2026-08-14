@@ -1,6 +1,7 @@
 /**
  * ==========================================================================
  * SPENSE - Group Expense Tracker Main Controller Engine
+ * Clean Architecture: Singleton State Machine + Tagline Engine Sync
  * ==========================================================================
  */
 
@@ -8,7 +9,6 @@ console.log("%c[SPENSE] Engine & Controller Loaded Successfully.", "color: #0596
 
 let currentTab = null;
 let currentPin = null;
-let currentLang = 'en';
 let currentCurrency = 'USD';
 let currentTheme = 'Silk';
 let ledgerData = { members: [], expenses: [] };
@@ -20,9 +20,10 @@ let selectedModalTheme = 'Silk';
 let unsavedMembers = [];
 let editingExpenseId = null;
 
-function TRANSLATIONS() {
-    return (typeof I18N_TRANSLATIONS !== 'undefined' ? I18N_TRANSLATIONS : {})[currentLang] || 
-           (typeof I18N_TRANSLATIONS !== 'undefined' ? I18N_TRANSLATIONS['en'] : {});
+// Safe accessor for i18n dictionaries defined in i18n.js
+function getTranslations() {
+    return (typeof TRANSLATIONS !== 'undefined' ? TRANSLATIONS : {})[currentLang] || 
+           (typeof TRANSLATIONS !== 'undefined' ? TRANSLATIONS['en'] : {});
 }
 
 function formatToISODate(rawDate) {
@@ -127,7 +128,7 @@ function initTaglineCarousel() {
     const motionClasses = ['motion-left', 'motion-right', 'motion-top', 'motion-bottom'];
 
     function cycleTagline() {
-        const t = TRANSLATIONS();
+        const t = getTranslations();
         const activeTaglines = t.taglines || [];
         if (activeTaglines.length === 0) return;
         spot.className = "w-full text-center leading-snug";
@@ -229,6 +230,7 @@ async function callBackend(action, payload = {}) {
     }
 }
 
+// Loads archives while strictly filtering out metadata and counter tabs
 async function loadGoogleSheetsArchive() {
     const select = document.getElementById('archiveSelect');
     if (!select) return;
@@ -540,7 +542,7 @@ function selectAllSplits() {
 }
 
 function render() {
-    const t = TRANSLATIONS();
+    const t = getTranslations();
     document.querySelectorAll('[data-i18n]').forEach(el => { const k = el.getAttribute('data-i18n'); if (t[k]) el.innerText = t[k]; });
     document.querySelectorAll('[data-i18n-ph]').forEach(el => { const k = el.getAttribute('data-i18n-ph'); if (t[k]) el.placeholder = t[k]; });
     
@@ -585,7 +587,7 @@ function renderExpenseFormHeader() {
     const subEl = document.getElementById('expenseFormSub');
     const actionsContainer = document.getElementById('expenseFormActions');
     if (!titleEl || !subEl || !actionsContainer) return;
-    const t = TRANSLATIONS();
+    const t = getTranslations();
 
     if (editingExpenseId) {
         titleEl.innerText = t.editExpenseTitle;

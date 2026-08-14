@@ -1,6 +1,6 @@
 /**
  * SPENSE - Group Expense Tracker Main Controller
- * CS Senior Architecture: Modular State Machine + Control-Plane Metadata Filtering + Motion Engine + Auto-Persistence
+ * CS Senior Architecture: Modular State Machine + Case-Insensitive Balance Resolution + Auto-Persistence
  */
 
 console.log("%c[SPENSE] Engine & Full Controller Loaded Successfully.", "color: #059669; font-weight: bold;");
@@ -136,6 +136,13 @@ function formatToISODate(rawDate) {
     // Fallback to today
     const fallback = new Date();
     return `${fallback.getFullYear()}-${String(fallback.getMonth() + 1).padStart(2, '0')}-${String(fallback.getDate()).padStart(2, '0')}`;
+}
+
+// Helper to resolve canonical participant case
+function findMemberCanonical(targetName) {
+    if (!targetName) return targetName;
+    const match = ledgerData.members.find(m => m.toLowerCase() === targetName.toLowerCase());
+    return match || targetName;
 }
 
 // --- SETTINGS SELECTION ENGINE ---
@@ -579,7 +586,8 @@ async function addMemberDirect() {
         return; 
     }
     
-    if (ledgerData.members.includes(name)) { 
+    // Case-insensitive duplicate check
+    if (ledgerData.members.some(m => m.toLowerCase() === name.toLowerCase())) { 
         alert("Participant already exists."); 
         input.value = ''; 
         return; 
@@ -622,17 +630,19 @@ async function deleteMember(name) {
     if (!name) return;
     if (!confirm(`Are you sure you want to remove participant '${name}'?`)) return;
 
-    ledgerData.members = ledgerData.members.filter(m => m !== name);
-    unsavedMembers = unsavedMembers.filter(m => m !== name);
+    const canonicalName = findMemberCanonical(name);
+
+    ledgerData.members = ledgerData.members.filter(m => m.toLowerCase() !== canonicalName.toLowerCase());
+    unsavedMembers = unsavedMembers.filter(m => m.toLowerCase() !== canonicalName.toLowerCase());
     render();
 
-    const res = await callBackend('removeMember', { name: name });
+    const res = await callBackend('removeMember', { name: canonicalName });
     if (res && res.status !== "success") {
         console.warn("[SPENSE Notice] Backend deletion notice:", res?.message);
     }
 }
 
-// --- EXPENSE EDITING & VALIDATION (HISTORICAL DATE SAFE) ---
+// --- EXPENSE EDITING & VALIDATION ---
 function startEditExpense(id) {
     const exp = ledgerData.expenses.find(e => e.id.toString() === id.toString());
     if (!exp) return;
@@ -645,7 +655,6 @@ function startEditExpense(id) {
     const catInput = document.getElementById('expenseCategory');
     const paidByInput = document.getElementById('expensePaidBy');
 
-    // Deterministically normalize stored date to YYYY-MM-DD for HTML5 date input
     if (dateInput) {
         dateInput.value = formatToISODate(exp.date);
     }
@@ -653,11 +662,11 @@ function startEditExpense(id) {
     if (descInput) descInput.value = exp.desc || '';
     if (amountInput) amountInput.value = exp.amount || '';
     if (catInput) catInput.value = exp.category || 'Food & Drink';
-    if (paidByInput) paidByInput.value = exp.paidBy || '';
+    if (paidByInput) paidByInput.value = findMemberCanonical(exp.paidBy) || '';
 
-    const splitArr = Array.isArray(exp.splitWith) ? exp.splitWith : (exp.splitBetween || []);
+    const splitArr = (Array.isArray(exp.splitWith) ? exp.splitWith : (exp.splitBetween || [])).map(s => s.toLowerCase());
     document.querySelectorAll('.split-checkbox').forEach(cb => {
-        cb.checked = splitArr.includes(cb.value);
+        cb.checked = splitArr.includes(cb.value.toLowerCase());
     });
 
     render();
@@ -689,7 +698,8 @@ async function updateExpense() {
     const date = formatToISODate(rawDate);
     const desc = document.getElementById('expenseDesc')?.value.trim();
     const amount = parseFloat(document.getElementById('expenseAmount')?.value);
-    const paidBy = document.getElementById('expensePaidBy')?.value;
+    const rawPaidBy = document.getElementById('expensePaidBy')?.value;
+    const paidBy = findMemberCanonical(rawPaidBy);
 
     if (!date) {
         alert("Please select a valid date.");
@@ -712,7 +722,7 @@ async function updateExpense() {
     }
 
     const checkboxes = document.querySelectorAll('.split-checkbox:checked');
-    const splitWith = Array.from(checkboxes).map(cb => cb.value);
+    const splitWith = Array.from(checkboxes).map(cb => findMemberCanonical(cb.value));
 
     if (splitWith.length === 0) {
         alert("Select at least one participant to split with.");
@@ -753,7 +763,8 @@ async function addExpense() {
     const date = formatToISODate(rawDate);
     const desc = document.getElementById('expenseDesc')?.value.trim();
     const amount = parseFloat(document.getElementById('expenseAmount')?.value);
-    const paidBy = document.getElementById('expensePaidBy')?.value;
+    const rawPaidBy = document.getElementById('expensePaidBy')?.value;
+    const paidBy = findMemberCanonical(rawPaidBy);
 
     if (!date || !desc || isNaN(amount) || amount <= 0 || !paidBy) {
         alert("Fill all expense fields correctly.");
@@ -761,7 +772,7 @@ async function addExpense() {
     }
 
     const checkboxes = document.querySelectorAll('.split-checkbox:checked');
-    const splitWith = Array.from(checkboxes).map(cb => cb.value);
+    const splitWith = Array.from(checkboxes).map(cb => findMemberCanonical(cb.value));
 
     if (splitWith.length === 0) {
         alert("Select at least one participant to split with.");
@@ -778,29 +789,44 @@ async function addExpense() {
     await callBackend('addExpense', { id, date, category, desc, amount, paidBy, splitWith });
 }
 
-// --- SETTLEMENT COMPUTATION ALGORITHM ---
+// --- CASE-INSENSITIVE SETTLEMENT COMPUTATION ALGORITHM ---
 function calculateSettlement() {
     const balances = {};
-    ledgerData.members.forEach(m => balances[m] = 0);
+    const lowerMap = {}; // Maps lowercase name -> stored canonical name
+
+    ledgerData.members.forEach(m => {
+        const lower = m.toLowerCase();
+        balances[lower] = 0;
+        lowerMap[lower] = m;
+    });
 
     ledgerData.expenses.forEach(e => {
         const amt = parseFloat(e.amount) || 0;
-        const splitList = Array.isArray(e.splitWith) ? e.splitWith : (e.splitBetween || []);
+        const rawSplitList = Array.isArray(e.splitWith) ? e.splitWith : (e.splitBetween || []);
+        const splitList = rawSplitList.map(s => s.toLowerCase());
+
         if (splitList.length === 0) return;
 
         const share = amt / splitList.length;
-        if (balances[e.paidBy] !== undefined) balances[e.paidBy] += amt;
+        const payerKey = (e.paidBy || '').toLowerCase();
 
-        splitList.forEach(m => {
-            if (balances[m] !== undefined) balances[m] -= share;
+        if (balances[payerKey] !== undefined) {
+            balances[payerKey] += amt;
+        }
+
+        splitList.forEach(mKey => {
+            if (balances[mKey] !== undefined) {
+                balances[mKey] -= share;
+            }
         });
     });
 
     const debtors = [], creditors = [];
-    Object.keys(balances).forEach(m => {
-        const bal = balances[m];
-        if (bal < -0.01) debtors.push({ member: m, amount: -bal });
-        else if (bal > 0.01) creditors.push({ member: m, amount: bal });
+    Object.keys(balances).forEach(lowerKey => {
+        const bal = balances[lowerKey];
+        const displayName = lowerMap[lowerKey] || lowerKey;
+        if (bal < -0.01) debtors.push({ member: displayName, amount: -bal });
+        else if (bal > 0.01) creditors.push({ member: displayName, amount: bal });
     });
 
     const transactions = [];
@@ -871,9 +897,10 @@ function generateLedgerReport() {
     report += `--- ITEMIZED TRANSACTION HISTORY ---\n`;
     if (ledgerData.expenses.length > 0) {
         ledgerData.expenses.forEach((e, idx) => {
-            const splitStr = Array.isArray(e.splitWith) ? e.splitWith.join(', ') : (e.splitBetween ? e.splitBetween.join(', ') : 'All');
-            report += `${idx + 1}. [${e.date}] ${e.desc} (${e.category})\n`;
-            report += `   Amount: ${sym}${parseFloat(e.amount).toFixed(2)} | Paid By: ${e.paidBy}\n`;
+            const splitArr = Array.isArray(e.splitWith) ? e.splitWith : (e.splitBetween || []);
+            const splitStr = splitArr.map(s => findMemberCanonical(s)).join(', ');
+            report += `${idx + 1}. [${formatToISODate(e.date)}] ${e.desc} (${e.category})\n`;
+            report += `   Amount: ${sym}${parseFloat(e.amount).toFixed(2)} | Paid By: ${findMemberCanonical(e.paidBy)}\n`;
             report += `   Split With: ${splitStr}\n\n`;
         });
     } else {
@@ -881,11 +908,8 @@ function generateLedgerReport() {
     }
     report += `====================================================\n`;
 
-    // Create a Blob containing the plain text report
     const blob = new Blob([report], { type: 'text/plain;charset=utf-8' });
     const reportUrl = URL.createObjectURL(blob);
-
-    // Open the Blob URL directly in a new browser tab
     const reportWindow = window.open(reportUrl, '_blank');
 
     if (!reportWindow) {
@@ -1006,7 +1030,7 @@ function renderDropdowns() {
 
     catSelect.innerHTML = ["Food & Drink", "Transport", "Accommodation", "Shopping", "Entertainment", "Other"].map(c => `<option value="${c}">${c}</option>`).join('');
     paidSelect.innerHTML = ledgerData.members.length > 0 
-        ? ledgerData.members.map(m => `<option value="${m}">${escapeHTML(m)}</option>`).join('')
+        ? ledgerData.members.map(m => `<option value="${escapeHTML(m)}">${escapeHTML(m)}</option>`).join('')
         : '<option value="">No participants</option>';
 }
 
@@ -1014,12 +1038,12 @@ function renderSplitCheckboxes() {
     const container = document.getElementById('splitCheckboxes');
     if (!container) return;
 
-    const selectedValues = Array.from(document.querySelectorAll('.split-checkbox:checked')).map(cb => cb.value);
+    const selectedValues = Array.from(document.querySelectorAll('.split-checkbox:checked')).map(cb => cb.value.toLowerCase());
 
     container.innerHTML = ledgerData.members.length > 0
         ? ledgerData.members.map(m => `
             <label class="flex items-center gap-1.5 cursor-pointer bg-slate-100 px-2.5 py-1.5 rounded-xl border border-slate-300 font-semibold">
-                <input type="checkbox" value="${m}" ${selectedValues.length === 0 || selectedValues.includes(m) ? 'checked' : ''} class="split-checkbox accent-slate-900 cursor-pointer"> ${escapeHTML(m)}
+                <input type="checkbox" value="${escapeHTML(m)}" ${selectedValues.length === 0 || selectedValues.includes(m.toLowerCase()) ? 'checked' : ''} class="split-checkbox accent-slate-900 cursor-pointer"> ${escapeHTML(m)}
             </label>
         `).join('')
         : '<span class="opacity-60 italic">Add participants first.</span>';
@@ -1030,18 +1054,25 @@ function renderHistory() {
     if (!list) return;
 
     list.innerHTML = ledgerData.expenses.length > 0
-        ? ledgerData.expenses.map(e => `
+        ? ledgerData.expenses.map(e => {
+            const displayDate = formatToISODate(e.date);
+            const canonicalPayer = findMemberCanonical(e.paidBy);
+            const rawSplits = Array.isArray(e.splitWith) ? e.splitWith : (e.splitBetween || []);
+            const displaySplits = rawSplits.map(s => findMemberCanonical(s)).join(', ');
+
+            return `
             <li class="p-2.5 rounded-xl border border-current/15 flex justify-between items-center bg-current/5 gap-2">
                 <div class="flex-1 min-w-0">
                     <span class="font-bold truncate block">${escapeHTML(e.desc)} (${escapeHTML(e.category)})</span>
-                    <div class="text-[10px] opacity-70">Paid by <span class="font-bold">${escapeHTML(e.paidBy)}</span> • ${e.date} • Split: ${Array.isArray(e.splitWith) ? e.splitWith.join(', ') : (e.splitBetween ? e.splitBetween.join(', ') : '')}</div>
+                    <div class="text-[10px] opacity-70">Paid by <span class="font-bold">${escapeHTML(canonicalPayer)}</span> • ${displayDate} • Split: ${escapeHTML(displaySplits)}</div>
                 </div>
                 <div class="flex items-center gap-2 flex-shrink-0">
                     <span class="font-extrabold text-sm">${getCurrencySymbol()}${parseFloat(e.amount).toFixed(2)}</span>
                     <button type="button" data-id="${e.id}" onclick="window.startEditExpense(this.getAttribute('data-id'))" class="theme-btn px-2.5 py-1 text-[10px] font-black uppercase tracking-wider bg-amber-300 text-slate-900 cursor-pointer hover:bg-amber-400">Edit</button>
                 </div>
             </li>
-        `).join('')
+        `;
+        }).join('')
         : '<li class="opacity-60 italic text-center py-4">No expenses recorded yet.</li>';
 }
 

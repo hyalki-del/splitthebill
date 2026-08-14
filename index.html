@@ -210,7 +210,7 @@
                 <div id="archiveDropdownContainer" class="space-y-1">
                     <label data-i18n="selectArchiveLabel" class="text-xs font-extrabold text-slate-800">Select Archive from Google Sheets</label>
                     <select id="archiveSelect" class="w-full theme-input px-3 py-2 text-sm cursor-pointer">
-                        <option value="">-- Connecting to Google Sheets... --</option>
+                        <option value="">-- Reading config.json & Sheets... --</option>
                     </select>
                 </div>
                 <div class="space-y-1">
@@ -285,7 +285,7 @@
         </div>
     </div>
 
-    <!-- Embedded Scripts -->
+    <!-- Embedded Scripts with config.json Loader -->
     <script>
         const TRANSLATIONS = {
             en: {
@@ -418,34 +418,43 @@
             });
         }
 
-        // Asynchronous Google Sheets Archive Loader
+        // --- Fetch Google Sheets Archive via config.json ---
         async function loadGoogleSheetsArchive() {
             const select = document.getElementById('archiveSelect');
             if (!select) return;
 
-            select.innerHTML = `<option value="">-- Loading ledgers from Google Sheets... --</option>`;
+            select.innerHTML = `<option value="">-- Reading config.json & fetching Sheets... --</option>`;
 
             try {
-                // Architectural integration endpoint (Replace with your Apps Script Web App URL or Sheets API endpoint)
-                const SHEET_API_URL = "https://script.google.com/macros/s/AKfycby.../exec?action=getLedgers"; 
-
-                // Fallback simulation for local/direct evaluation if no live endpoint is configured yet
-                await new Promise(resolve => setTimeout(resolve, 800));
+                // Step 1: Read config.json from root folder
+                const configRes = await fetch('config.json');
+                if (!configRes.ok) throw new Error("Could not load config.json from root folder.");
+                const config = await configRes.json();
                 
-                // Simulated live ledger items parsed from a Google Sheet database table
-                const fetchedLedgers = ["dinner-club", "roommates-2026", "vacation-antalya", "weekend-trip"];
+                // Extract sheet endpoint from config.json (supporting standard key naming conventions)
+                const sheetUrl = config.sheetUrl || config.googleSheetApiUrl || config.apiUrl;
+                if (!sheetUrl) throw new Error("Sheet endpoint not found in config.json.");
 
-                if (fetchedLedgers.length === 0) {
-                    select.innerHTML = `<option value="">-- No ledgers found in Google Sheets --</option>';`;
+                // Step 2: Fetch actual ledger names from Google Sheets endpoint
+                const res = await fetch(sheetUrl);
+                if (!res.ok) throw new Error("Failed to fetch data from Google Sheets.");
+                const ledgers = await res.json(); // Expected format: array of strings or objects
+
+                if (!Array.isArray(ledgers) || ledgers.length === 0) {
+                    select.innerHTML = `<option value="">-- No ledgers found in Google Sheet --</option>`;
                     return;
                 }
 
+                // Step 3: Populate dropdown with authentic sheet records
                 select.innerHTML = `<option value="">-- Select a Ledger --</option>` + 
-                    fetchedLedgers.map(name => `<option value="${name}">${name}</option>`).join('');
+                    ledgers.map(item => {
+                        const name = typeof item === 'object' ? (item.name || item.ledger) : item;
+                        return `<option value="${name}">${name}</option>`;
+                    }).join('');
 
             } catch (error) {
-                console.error("Failed to fetch archives from Google Sheets:", error);
-                select.innerHTML = `<option value="">-- Error loading archives from Sheets --</option>`;
+                console.error("Archive fetch error:", error);
+                select.innerHTML = `<option value="">-- Error: Check config.json & Sheets API --</option>`;
             }
         }
 
@@ -463,7 +472,7 @@
                 if (tabRecallBtn) tabRecallBtn.className = "flex-1 theme-btn py-2 text-xs font-black uppercase tracking-wider bg-amber-300 text-slate-900 rounded-xl cursor-pointer";
                 if (tabCreateBtn) tabCreateBtn.className = "flex-1 theme-btn py-2 text-xs font-black uppercase tracking-wider bg-slate-100 text-slate-500 rounded-xl cursor-pointer";
                 
-                // Trigger live Google Sheets archive listing
+                // Fetch authentic Google Sheets data using config.json
                 loadGoogleSheetsArchive();
             }
         }

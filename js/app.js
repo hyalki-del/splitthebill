@@ -1,6 +1,6 @@
 /**
  * SPENSE - Main Application Logic & Controller
- * Architecture: Defensively Guarded Functions + Global Exports + Dynamic Motion
+ * Architecture: Segmented Controls + Active Framing State + Dynamic Motion
  */
 
 console.log("%c[SPENSE] Controller initialized successfully.", "color: #059669; font-weight: bold;");
@@ -13,7 +13,11 @@ let currentCurrency = 'USD';
 let currentTheme = 'Silk';
 let ledgerData = { members: [], expenses: [] };
 
-// Staging & Edit State Variables
+// Staging & Modal Selection State
+let selectedModalLang = 'en';
+let selectedModalCurrency = 'USD';
+let selectedModalTheme = 'Silk';
+
 let unsavedMembers = [];
 let editingExpenseId = null;
 
@@ -84,6 +88,84 @@ const TRANSLATIONS = {
     }
 };
 
+// --- Settings Selection Framing Renderers ---
+function selectSettingsLang(lang) {
+    selectedModalLang = lang;
+    ['tr', 'en', 'de'].forEach(l => {
+        const btn = document.getElementById(`setLang${l.toUpperCase()}`);
+        if (btn) {
+            if (l === lang) {
+                btn.className = "theme-btn py-2.5 px-3 flex items-center justify-center gap-2 text-xs font-extrabold rounded-xl transition cursor-pointer option-btn-selected";
+            } else {
+                btn.className = "theme-btn py-2.5 px-3 flex items-center justify-center gap-2 text-xs font-extrabold border-2 border-slate-200 rounded-xl hover:border-slate-400 bg-slate-50 transition cursor-pointer opacity-70";
+            }
+        }
+    });
+}
+
+function selectSettingsCurrency(curr) {
+    selectedModalCurrency = curr;
+    ['USD', 'EUR', 'TRY'].forEach(c => {
+        const btn = document.getElementById(`setCurr${c}`);
+        if (btn) {
+            if (c === curr) {
+                btn.className = "theme-btn py-2.5 px-3 flex items-center justify-center gap-1.5 text-xs font-extrabold rounded-xl transition cursor-pointer option-btn-selected";
+            } else {
+                btn.className = "theme-btn py-2.5 px-3 flex items-center justify-center gap-1.5 text-xs font-extrabold border-2 border-slate-200 rounded-xl hover:border-slate-400 bg-slate-50 transition cursor-pointer opacity-70";
+            }
+        }
+    });
+}
+
+function selectSettingsTheme(theme) {
+    selectedModalTheme = theme;
+    ['Silk', 'Toon', 'Neon'].forEach(t => {
+        const btn = document.getElementById(`setTheme${t}`);
+        if (btn) {
+            if (t === theme) {
+                btn.className = "theme-btn py-3 px-2 rounded-xl text-center transition cursor-pointer option-btn-selected";
+            } else {
+                btn.className = "theme-btn py-3 px-2 border-2 border-slate-200 bg-slate-50 rounded-xl text-center transition cursor-pointer opacity-70";
+            }
+        }
+    });
+}
+
+function openSettingsModal() { 
+    selectedModalLang = currentLang;
+    selectedModalCurrency = currentCurrency;
+    selectedModalTheme = currentTheme;
+
+    selectSettingsLang(selectedModalLang);
+    selectSettingsCurrency(selectedModalCurrency);
+    selectSettingsTheme(selectedModalTheme);
+
+    document.getElementById('settingsModal')?.classList.remove('hidden'); 
+}
+
+function closeSettingsModal() { document.getElementById('settingsModal')?.classList.add('hidden'); }
+
+async function saveSettings() {
+    currentLang = selectedModalLang;
+    currentCurrency = selectedModalCurrency;
+    applyTheme(selectedModalTheme);
+
+    document.getElementById('settingsModal')?.classList.add('hidden');
+    render();
+
+    if (currentTab) {
+        const res = await callBackend('updateSettings', {
+            language: currentLang,
+            currency: currentCurrency,
+            theme: currentTheme
+        });
+
+        if (res && res.status !== "success") {
+            console.warn("[SPENSE Warning] Persistent settings save notice:", res?.message);
+        }
+    }
+}
+
 // --- Guaranteed 4-Directional Keyframe Tagline Engine ---
 let taglineTimer = null;
 let currentTaglineIndex = 0;
@@ -101,7 +183,7 @@ function initTaglineCarousel() {
         const activeTaglines = t.taglines;
 
         spot.className = "w-full text-center leading-snug";
-        void spot.offsetWidth; // Synchronous DOM reflow
+        void spot.offsetWidth; // Force synchronous browser DOM layout reflow
 
         spot.innerHTML = activeTaglines[currentTaglineIndex % activeTaglines.length];
 
@@ -270,7 +352,6 @@ async function loadGoogleSheetsArchive() {
     }
 }
 
-// --- Defensively Guarded Welcome Box Tab Switching ---
 function switchModalTab(tabMode) {
     const createSec = document.getElementById('createSection');
     const recallSec = document.getElementById('recallSection');
@@ -385,20 +466,6 @@ async function recallLedger() {
         render();
     }
 }
-
-function openSettingsModal() { 
-    const langSelect = document.getElementById('settingsLangSelect');
-    const currSelect = document.getElementById('settingsCurrencySelect');
-    if (langSelect) langSelect.value = currentLang;
-    if (currSelect) currSelect.value = currentCurrency;
-
-    const themeRadio = document.querySelector(`input[name="modalThemeSelect"][value="${currentTheme}"]`);
-    if (themeRadio) themeRadio.checked = true;
-
-    document.getElementById('settingsModal')?.classList.remove('hidden'); 
-}
-
-function closeSettingsModal() { document.getElementById('settingsModal')?.classList.add('hidden'); }
 
 function openShareModal() {
     document.getElementById('shareModal')?.classList.remove('hidden');
@@ -730,32 +797,6 @@ function selectAllSplits() {
     document.querySelectorAll('.split-checkbox').forEach(cb => cb.checked = true);
 }
 
-// --- SETTINGS PERSISTENCE ENGINE ---
-async function saveSettings() {
-    currentLang = document.getElementById('settingsLangSelect')?.value || 'en';
-    currentCurrency = document.getElementById('settingsCurrencySelect')?.value || 'USD';
-    
-    const themeRadio = document.querySelector('input[name="modalThemeSelect"]:checked');
-    if (themeRadio) {
-        applyTheme(themeRadio.value);
-    }
-
-    document.getElementById('settingsModal')?.classList.add('hidden');
-    render();
-
-    if (currentTab) {
-        const res = await callBackend('updateSettings', {
-            language: currentLang,
-            currency: currentCurrency,
-            theme: currentTheme
-        });
-
-        if (res && res.status !== "success") {
-            console.warn("[SPENSE Warning] Persistent settings save notice:", res?.message);
-        }
-    }
-}
-
 // --- Master Rendering Engine ---
 function render() {
     const t = TRANSLATIONS[currentLang] || TRANSLATIONS['en'];
@@ -915,6 +956,9 @@ window.createNewLedger = createNewLedger;
 window.recallLedger = recallLedger;
 window.openSettingsModal = openSettingsModal;
 window.closeSettingsModal = closeSettingsModal;
+window.selectSettingsLang = selectSettingsLang;
+window.selectSettingsCurrency = selectSettingsCurrency;
+window.selectSettingsTheme = selectSettingsTheme;
 window.openShareModal = openShareModal;
 window.closeShareModal = closeShareModal;
 window.copyShareLink = copyShareLink;

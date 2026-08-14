@@ -1,6 +1,6 @@
 /**
  * SPENSE - Main Application Logic & Controller
- * Architecture: Fail-Safe Global Scope Functions + Synchronous State Engine
+ * Architecture: State Engine + Staging Queues + Contextual Form Editing
  */
 
 console.log("%c[SPENSE] System initialized and app.js active.", "color: #059669; font-weight: bold;");
@@ -13,15 +13,21 @@ let currentCurrency = 'USD';
 let currentTheme = 'Silk';
 let ledgerData = { members: [], expenses: [] };
 
+// Staging & Edit State Variables
+let unsavedMembers = [];
+let editingExpenseId = null;
+
 // --- Internationalization Dictionary ---
 const TRANSLATIONS = {
     en: {
         settingsBtn: "⚙ Settings", shareLinkBtn: "Share Link", deleteBtn: "Delete",
         participantsTitle: "Participants", participantsSub: "Add or remove people from this group.",
-        namePlaceholder: "Name...", addBtn: "Add",
-        newExpenseTitle: "New Expense", newExpenseSub: "Log a transaction to split.",
+        namePlaceholder: "Name...", addBtn: "Add", saveMembersBtn: "Save Participants",
+        newExpenseTitle: "New Expense", editExpenseTitle: "Edit Expense",
+        newExpenseSub: "Log a transaction to split.", editExpenseSub: "Modify or delete this expense.",
         dateLabel: "Date", categoryLabel: "Category", descLabel: "Description", descPlaceholder: "e.g. Dinner",
-        amountLabel: "Amount", paidByLabel: "Paid By", splitBetweenLabel: "Split Between:", selectAllBtn: "Select All", recordExpenseBtn: "Record Expense",
+        amountLabel: "Amount", paidByLabel: "Paid By", splitBetweenLabel: "Split Between:", selectAllBtn: "Select All", 
+        recordExpenseBtn: "Record Expense", updateExpenseBtn: "Update Expense", cancelEditBtn: "Cancel", deleteExpenseBtn: "Delete Expense",
         settlementTitle: "Settlement Matrix", copySummaryBtn: "Copy Summary",
         historyTitle: "Ledger History", generateReportBtn: "Generate Report",
         modalSub: "Create or open a confidential group ledger.", tabCreate: "Create New", tabRecall: "Recall Existing",
@@ -37,10 +43,12 @@ const TRANSLATIONS = {
     tr: {
         settingsBtn: "⚙ Ayarlar", shareLinkBtn: "Bağlantıyı Paylaş", deleteBtn: "Sil",
         participantsTitle: "Katılımcılar", participantsSub: "Bu gruba kişi ekleyin veya çıkarın.",
-        namePlaceholder: "İsim...", addBtn: "Ekle",
-        newExpenseTitle: "Yeni Harcama", newExpenseSub: "Bölüştürmek için işlem kaydedin.",
+        namePlaceholder: "İsim...", addBtn: "Ekle", saveMembersBtn: "Katılımcıları Kaydet",
+        newExpenseTitle: "Yeni Harcama", editExpenseTitle: "Harcamayı Düzenle",
+        newExpenseSub: "Bölüştürmek için işlem kaydedin.", editExpenseSub: "Bu harcamayı güncelleyin veya silin.",
         dateLabel: "Tarih", categoryLabel: "Kategori", descLabel: "Açıklama", descPlaceholder: "ör. Akşam Yemeği",
-        amountLabel: "Tutar", paidByLabel: "Ödeyen", splitBetweenLabel: "Paylaşanlar:", selectAllBtn: "Tümünü Seç", recordExpenseBtn: "Harcamayı Kaydet",
+        amountLabel: "Tutar", paidByLabel: "Ödeyen", splitBetweenLabel: "Paylaşanlar:", selectAllBtn: "Tümünü Seç", 
+        recordExpenseBtn: "Harcamayı Kaydet", updateExpenseBtn: "Harcamayı Güncelle", cancelEditBtn: "İptal", deleteExpenseBtn: "Harcamayı Sil",
         settlementTitle: "Ödeme Matrisi", copySummaryBtn: "Özeti Kopyala",
         historyTitle: "Geçmiş Kayıtlar", generateReportBtn: "Rapor Oluştur",
         modalSub: "Gizli bir grup defteri oluşturun veya açın.", tabCreate: "Yeni Oluştur", tabRecall: "Var Olanı Aç",
@@ -56,12 +64,14 @@ const TRANSLATIONS = {
     de: {
         settingsBtn: "⚙ Einstellungen", shareLinkBtn: "Link Teilen", deleteBtn: "Löschen",
         participantsTitle: "Teilnehmer", participantsSub: "Personen hinzufügen oder entfernen.",
-        namePlaceholder: "Name...", addBtn: "Hinzufügen",
-        newExpenseTitle: "Neue Ausgabe", newExpenseSub: "Transaktion eintragen.",
+        namePlaceholder: "Name...", addBtn: "Hinzufügen", saveMembersBtn: "Teilnehmer Speichern",
+        newExpenseTitle: "Neue Ausgabe", editExpenseTitle: "Ausgabe Bearbeiten",
+        newExpenseSub: "Transaktion eintragen.", editExpenseSub: "Ändern oder löschen Sie diese Ausgabe.",
         dateLabel: "Datum", categoryLabel: "Kategorie", descLabel: "Beschreibung", descPlaceholder: "z.B. Abendessen",
-        amountLabel: "Betrag", paidByLabel: "Bezahlt von", splitBetweenLabel: "Aufteilen:", selectAllBtn: "Alle", recordExpenseBtn: "Speichern",
+        amountLabel: "Betrag", paidByLabel: "Bezahlt von", splitBetweenLabel: "Aufteilen:", selectAllBtn: "Alle", 
+        recordExpenseBtn: "Speichern", updateExpenseBtn: "Aktualisieren", cancelEditBtn: "Abbrechen", deleteExpenseBtn: "Löschen",
         settlementTitle: "Abrechnungsmatrix", copySummaryBtn: "Kopieren",
-        historyTitle: "Verlauf", generateReportBtn: "Bericht",
+        historyTitle: "Verlauf", generateReportBtn: "Bericht Erstellen",
         modalSub: "Gruppenbuch öffnen.", tabCreate: "Neu", tabRecall: "Öffnen",
         ledgerNameLabel: "Name", ledgerNamePh: "z.B. club", setPinLabel: "PIN", initializeBtn: "Starten",
         selectArchiveLabel: "Archiv Wählen", enterPinLabel: "PIN Eingeben", accessLedgerBtn: "Zugreifen",
@@ -194,7 +204,7 @@ async function saveCardLayout() {
     }
 }
 
-// --- Google Sheets Configuration & Backend Access ---
+// --- Google Sheets Integration ---
 async function getConfig() {
     try {
         const configRes = await fetch('config.json');
@@ -223,7 +233,6 @@ async function callBackend(action, payload = {}) {
     }
 }
 
-// --- Problem 1 Fix: Explicit Parsing of `rawData.archives` ---
 async function loadGoogleSheetsArchive() {
     const select = document.getElementById('archiveSelect');
     if (!select) return;
@@ -246,7 +255,6 @@ async function loadGoogleSheetsArchive() {
         if (Array.isArray(rawData)) {
             ledgers = rawData;
         } else if (typeof rawData === 'object' && rawData !== null) {
-            // FIX: Prioritize rawData.archives returned by Google Apps Script doGet()
             ledgers = rawData.archives || rawData.sheets || rawData.ledgers || Object.keys(rawData);
         }
 
@@ -268,7 +276,6 @@ async function loadGoogleSheetsArchive() {
 
 // --- Navigation & Modal Core Functions ---
 function switchModalTab(tabMode) {
-    console.log("[SPENSE UI] Switch Modal Tab:", tabMode);
     const createSec = document.getElementById('createSection');
     const recallSec = document.getElementById('recallSection');
     const tabCreateBtn = document.getElementById('tabCreateBtn');
@@ -292,7 +299,6 @@ function switchModalTab(tabMode) {
 }
 
 async function createNewLedger() {
-    console.log("[SPENSE Action] Create New Ledger triggered.");
     const nameInput = document.getElementById('newLedgerName');
     const pinInput = document.getElementById('newLedgerPin');
 
@@ -318,19 +324,20 @@ async function createNewLedger() {
         currentTab = res.createdTab || nameVal;
         currentPin = pinVal;
         ledgerData = { members: [], expenses: [] };
+        unsavedMembers = [];
         document.getElementById('welcomeModal')?.classList.add('hidden');
         render();
     } else {
         currentTab = nameVal;
         currentPin = pinVal;
         ledgerData = { members: [], expenses: [] };
+        unsavedMembers = [];
         document.getElementById('welcomeModal')?.classList.add('hidden');
         render();
     }
 }
 
 async function recallLedger() {
-    console.log("[SPENSE Action] Recall Ledger triggered.");
     const archiveSelect = document.getElementById('archiveSelect');
     const pinInput = document.getElementById('recallLedgerPin');
 
@@ -367,6 +374,7 @@ async function recallLedger() {
 
             ledgerData.members = data.members || [];
             ledgerData.expenses = data.expenses || [];
+            unsavedMembers = [];
 
             document.getElementById('welcomeModal')?.classList.add('hidden');
             render();
@@ -399,6 +407,8 @@ function goHome() {
     currentTab = null;
     currentPin = null;
     ledgerData = { members: [], expenses: [] };
+    unsavedMembers = [];
+    editingExpenseId = null;
     document.getElementById('welcomeModal')?.classList.remove('hidden');
     render();
 }
@@ -409,8 +419,8 @@ async function deleteActiveLedger() {
     goHome();
 }
 
-// --- Problem 2 Fix: Participant Engine ---
-async function addMemberDirect() {
+// --- FEATURE 1 FIX: Staging Participant Management ---
+function addMemberDirect() {
     const input = document.getElementById('memberName');
     if (!input) return;
     const name = input.value.trim();
@@ -419,35 +429,101 @@ async function addMemberDirect() {
     if (!currentTab) { alert("Access or initialize a ledger first."); return; }
     if (ledgerData.members.includes(name)) { alert("Participant already exists."); input.value = ''; return; }
 
-    // Synchronously update UI state immediately
+    // Stage member locally WITHOUT saving to backend tab yet
     ledgerData.members.push(name);
+    unsavedMembers.push(name);
     input.value = '';
     render();
+}
 
-    // Persist to Google Sheets backend
-    const res = await callBackend('addMembers', { names: [name] });
-    if (res && res.status !== "success") {
-        console.warn("[SPENSE Warning] Backend addMembers notice:", res?.message);
+async function saveMembers() {
+    if (unsavedMembers.length === 0) return;
+
+    const btn = document.getElementById('btnSaveMembers');
+    if (btn) btn.innerText = "Saving...";
+
+    const res = await callBackend('addMembers', { names: unsavedMembers });
+    if (res && res.status === "success") {
+        unsavedMembers = [];
+        render();
+        alert("Participants saved to sheet!");
+    } else {
+        alert("Failed to save participants: " + (res?.message || "Error"));
+        render();
     }
 }
 
 async function deleteMember(name) {
     if (!name) return;
-    if (!confirm(`Remove participant '${name}'?`)) return;
+    
+    // Explicit Confirmation Requirement
+    if (!confirm(`Are you sure you want to remove participant '${name}'?`)) return;
 
-    // Synchronously update local UI state
+    // Remove locally
     ledgerData.members = ledgerData.members.filter(m => m !== name);
+    unsavedMembers = unsavedMembers.filter(m => m !== name);
     render();
 
-    // Persist removal to Google Sheets backend
+    // Save deletion immediately to Google Sheets tab
     const res = await callBackend('removeMember', { name: name });
     if (res && res.status !== "success") {
-        console.warn("[SPENSE Warning] Backend removeMember notice:", res?.message);
+        console.warn("[SPENSE Notice] Backend deletion notice:", res?.message);
     }
 }
 
-// --- Expense & Settlement Engine ---
-async function addExpense() {
+// --- FEATURE 2 FIX: Expense Editing State Machine ---
+function startEditExpense(id) {
+    const exp = ledgerData.expenses.find(e => e.id.toString() === id.toString());
+    if (!exp) return;
+
+    editingExpenseId = id.toString();
+
+    // Populate Form Inputs
+    const dateInput = document.getElementById('expenseDate');
+    const descInput = document.getElementById('expenseDesc');
+    const amountInput = document.getElementById('expenseAmount');
+    const catInput = document.getElementById('expenseCategory');
+    const paidByInput = document.getElementById('expensePaidBy');
+
+    if (dateInput) dateInput.value = exp.date || '';
+    if (descInput) descInput.value = exp.desc || '';
+    if (amountInput) amountInput.value = exp.amount || '';
+    if (catInput) catInput.value = exp.category || 'General';
+    if (paidByInput) paidByInput.value = exp.paidBy || '';
+
+    // Check target split checkboxes
+    const splitArr = Array.isArray(exp.splitWith) ? exp.splitWith : (exp.splitBetween || []);
+    document.querySelectorAll('.split-checkbox').forEach(cb => {
+        cb.checked = splitArr.includes(cb.value);
+    });
+
+    render();
+
+    // Smooth scroll to expense editing frame
+    document.getElementById('expenseFormSection')?.scrollIntoView({ behavior: 'smooth' });
+}
+
+function cancelEditExpense() {
+    editingExpenseId = null;
+    resetExpenseForm();
+    render();
+}
+
+function resetExpenseForm() {
+    const descInput = document.getElementById('expenseDesc');
+    const amountInput = document.getElementById('expenseAmount');
+    if (descInput) descInput.value = '';
+    if (amountInput) amountInput.value = '';
+    
+    const dateInput = document.getElementById('expenseDate');
+    if (dateInput) dateInput.valueAsDate = new Date();
+
+    document.querySelectorAll('.split-checkbox').forEach(cb => cb.checked = true);
+}
+
+async function updateExpense() {
+    if (!editingExpenseId) return;
+
     const date = document.getElementById('expenseDate')?.value;
     const desc = document.getElementById('expenseDesc')?.value.trim();
     const amount = parseFloat(document.getElementById('expenseAmount')?.value);
@@ -468,16 +544,70 @@ async function addExpense() {
 
     const category = document.getElementById('expenseCategory')?.value || "General";
 
-    // Immediate local UI update
-    ledgerData.expenses.push({ date, category, desc, amount, paidBy, splitWith });
-    document.getElementById('expenseDesc').value = '';
-    document.getElementById('expenseAmount').value = '';
+    // Synchronous state update
+    const idx = ledgerData.expenses.findIndex(e => e.id.toString() === editingExpenseId);
+    if (idx !== -1) {
+        ledgerData.expenses[idx] = { id: editingExpenseId, date, category, desc, amount, paidBy, splitWith };
+    }
+
+    const targetId = editingExpenseId;
+    editingExpenseId = null;
+    resetExpenseForm();
     render();
 
     // Async backend call
-    await callBackend('addExpense', { date, category, desc, amount, paidBy, splitWith });
+    await callBackend('updateExpense', { id: targetId, date, category, desc, amount, paidBy, splitWith });
 }
 
+async function deleteExpenseFromEdit() {
+    if (!editingExpenseId) return;
+    if (!confirm("Are you sure you want to delete this expense entry?")) return;
+
+    const targetId = editingExpenseId;
+    
+    // Remove locally
+    ledgerData.expenses = ledgerData.expenses.filter(e => e.id.toString() !== targetId);
+    
+    editingExpenseId = null;
+    resetExpenseForm();
+    render();
+
+    // Async backend call
+    await callBackend('deleteExpense', { id: targetId });
+}
+
+async function addExpense() {
+    const date = document.getElementById('expenseDate')?.value;
+    const desc = document.getElementById('expenseDesc')?.value.trim();
+    const amount = parseFloat(document.getElementById('expenseAmount')?.value);
+    const paidBy = document.getElementById('expensePaidBy')?.value;
+
+    if (!date || !desc || isNaN(amount) || amount <= 0 || !paidBy) {
+        alert("Fill all expense fields correctly.");
+        return;
+    }
+
+    const checkboxes = document.querySelectorAll('.split-checkbox:checked');
+    const splitWith = Array.from(checkboxes).map(cb => cb.value);
+
+    if (splitWith.length === 0) {
+        alert("Select at least one participant to split with.");
+        return;
+    }
+
+    const category = document.getElementById('expenseCategory')?.value || "General";
+    const id = Date.now().toString();
+
+    // Immediate local UI update
+    ledgerData.expenses.push({ id, date, category, desc, amount, paidBy, splitWith });
+    resetExpenseForm();
+    render();
+
+    // Async backend call
+    await callBackend('addExpense', { id, date, category, desc, amount, paidBy, splitWith });
+}
+
+// --- Settlement Math Engine ---
 function calculateSettlement() {
     const balances = {};
     ledgerData.members.forEach(m => balances[m] = 0);
@@ -516,6 +646,80 @@ function calculateSettlement() {
     }
 
     return transactions;
+}
+
+// --- FEATURE 3 FIX: Copy Settlement Summary ---
+function copySettlementSummary() {
+    const txs = calculateSettlement();
+    if (txs.length === 0) {
+        alert("No settlement balances to copy.");
+        return;
+    }
+
+    const summaryText = `=== SPENSE SETTLEMENT MATRIX ===\nLedger: ${currentTab || 'General'}\nDate: ${new Date().toLocaleDateString()}\n--------------------------------\n` + 
+        txs.join('\n') + 
+        `\n================================`;
+
+    navigator.clipboard.writeText(summaryText).then(() => {
+        alert("Settlement summary copied to clipboard as plain text!");
+    }).catch(err => {
+        console.error("Copy failed:", err);
+        alert("Failed to copy automatically. Summary:\n\n" + summaryText);
+    });
+}
+
+// --- FEATURE 4 FIX: Generate Ledger Report ---
+function generateLedgerReport() {
+    if (!currentTab) {
+        alert("Please open an active ledger first.");
+        return;
+    }
+
+    const sym = getCurrencySymbol();
+    let totalSpent = 0;
+    ledgerData.expenses.forEach(e => totalSpent += (parseFloat(e.amount) || 0));
+
+    const settlement = calculateSettlement();
+
+    let report = `====================================================\n`;
+    report += `               SPENSE LEDGER REPORT                 \n`;
+    report += `====================================================\n`;
+    report += `Ledger Name  : ${currentTab}\n`;
+    report += `Generated On : ${new Date().toLocaleString()}\n`;
+    report += `Participants : ${ledgerData.members.join(', ') || 'None'}\n`;
+    report += `Total Spend  : ${sym}${totalSpent.toFixed(2)}\n`;
+    report += `====================================================\n\n`;
+
+    report += `--- SETTLEMENT MATRIX ---\n`;
+    if (settlement.length > 0) {
+        settlement.forEach(s => report += `• ${s}\n`);
+    } else {
+        report += `All balances are currently settled!\n`;
+    }
+    report += `\n----------------------------------------------------\n\n`;
+
+    report += `--- ITEMIZED TRANSACTION HISTORY ---\n`;
+    if (ledgerData.expenses.length > 0) {
+        ledgerData.expenses.forEach((e, idx) => {
+            const splitStr = Array.isArray(e.splitWith) ? e.splitWith.join(', ') : (e.splitBetween ? e.splitBetween.join(', ') : 'All');
+            report += `${idx + 1}. [${e.date}] ${e.desc} (${e.category})\n`;
+            report += `   Amount: ${sym}${parseFloat(e.amount).toFixed(2)} | Paid By: ${e.paidBy}\n`;
+            report += `   Split With: ${splitStr}\n\n`;
+        });
+    } else {
+        report += `No expenses recorded.\n`;
+    }
+    report += `====================================================\n`;
+
+    // Trigger text file download in browser
+    const blob = new Blob([report], { type: 'text/plain;charset=utf-8' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `${currentTab}-report.txt`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(link.href);
 }
 
 function getCurrencySymbol() {
@@ -576,6 +780,7 @@ function render() {
     });
 
     renderMembers();
+    renderExpenseFormHeader();
     renderDropdowns();
     renderSplitCheckboxes();
     renderHistory();
@@ -584,17 +789,53 @@ function render() {
 
 function renderMembers() {
     const container = document.getElementById('memberList');
+    const saveBtn = document.getElementById('btnSaveMembers');
     if (!container) return;
     
-    // FIX: Use data-member attribute to prevent inline string quoting syntax errors
     container.innerHTML = ledgerData.members.length > 0 
         ? ledgerData.members.map(m => `
-            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-slate-200 text-slate-800 font-bold">
+            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl ${unsavedMembers.includes(m) ? 'bg-amber-200 text-amber-900 border border-amber-400' : 'bg-slate-200 text-slate-800'} font-bold">
                 ${escapeHTML(m)}
-                <button type="button" data-member="${escapeHTML(m)}" onclick="window.deleteMember(this.getAttribute('data-member'))" class="text-rose-600 hover:text-rose-800 font-black text-xs ml-1 cursor-pointer">×</button>
+                <button type="button" data-member="${escapeHTML(m)}" onclick="window.deleteMember(this.getAttribute('data-member'))" class="text-rose-600 hover:text-rose-800 font-black text-xs ml-1 cursor-pointer" title="Remove participant">×</button>
             </span>
         `).join('') 
         : '<span class="opacity-60 italic">No participants yet.</span>';
+
+    // Show/Hide Save Participants Button when unsaved members exist
+    if (saveBtn) {
+        if (unsavedMembers.length > 0) {
+            saveBtn.classList.remove('hidden');
+        } else {
+            saveBtn.classList.add('hidden');
+        }
+    }
+}
+
+function renderExpenseFormHeader() {
+    const titleEl = document.getElementById('expenseFormTitle');
+    const subEl = document.getElementById('expenseFormSub');
+    const actionsContainer = document.getElementById('expenseFormActions');
+    if (!titleEl || !subEl || !actionsContainer) return;
+
+    const t = TRANSLATIONS[currentLang] || TRANSLATIONS['en'];
+
+    if (editingExpenseId) {
+        titleEl.innerText = t.editExpenseTitle;
+        subEl.innerText = t.editExpenseSub;
+        actionsContainer.innerHTML = `
+            <div class="flex flex-wrap gap-2">
+                <button type="button" onclick="window.updateExpense()" class="flex-1 theme-btn bg-emerald-400 hover:bg-emerald-500 text-slate-900 py-3 text-xs font-black uppercase tracking-wider cursor-pointer">${t.updateExpenseBtn}</button>
+                <button type="button" onclick="window.cancelEditExpense()" class="theme-btn bg-slate-200 hover:bg-slate-300 text-slate-800 px-4 py-3 text-xs font-black uppercase tracking-wider cursor-pointer">${t.cancelEditBtn}</button>
+                <button type="button" onclick="window.deleteExpenseFromEdit()" class="theme-btn bg-rose-500 hover:bg-rose-600 text-white px-4 py-3 text-xs font-black uppercase tracking-wider cursor-pointer">${t.deleteExpenseBtn}</button>
+            </div>
+        `;
+    } else {
+        titleEl.innerText = t.newExpenseTitle;
+        subEl.innerText = t.newExpenseSub;
+        actionsContainer.innerHTML = `
+            <button id="btnRecordExpense" type="button" onclick="window.addExpense()" data-i18n="recordExpenseBtn" class="w-full theme-btn py-3 text-sm font-extrabold cursor-pointer">${t.recordExpenseBtn}</button>
+        `;
+    }
 }
 
 function renderDropdowns() {
@@ -612,10 +853,13 @@ function renderSplitCheckboxes() {
     const container = document.getElementById('splitCheckboxes');
     if (!container) return;
 
+    // Preserve check states if in middle of render
+    const selectedValues = Array.from(document.querySelectorAll('.split-checkbox:checked')).map(cb => cb.value);
+
     container.innerHTML = ledgerData.members.length > 0
         ? ledgerData.members.map(m => `
             <label class="flex items-center gap-1.5 cursor-pointer bg-slate-100 px-2.5 py-1.5 rounded-xl border border-slate-300 font-semibold">
-                <input type="checkbox" value="${m}" checked class="split-checkbox accent-slate-900 cursor-pointer"> ${escapeHTML(m)}
+                <input type="checkbox" value="${m}" ${selectedValues.length === 0 || selectedValues.includes(m) ? 'checked' : ''} class="split-checkbox accent-slate-900 cursor-pointer"> ${escapeHTML(m)}
             </label>
         `).join('')
         : '<span class="opacity-60 italic">Add participants first.</span>';
@@ -627,12 +871,15 @@ function renderHistory() {
 
     list.innerHTML = ledgerData.expenses.length > 0
         ? ledgerData.expenses.map(e => `
-            <li class="p-2.5 rounded-xl border border-current/15 flex justify-between items-center bg-current/5">
-                <div>
-                    <span class="font-bold">${escapeHTML(e.desc)}</span> (${escapeHTML(e.category)}) — Paid by <span class="font-bold">${escapeHTML(e.paidBy)}</span>
-                    <div class="text-[10px] opacity-70">${e.date} • Split: ${Array.isArray(e.splitWith) ? e.splitWith.join(', ') : (e.splitBetween ? e.splitBetween.join(', ') : '')}</div>
+            <li class="p-2.5 rounded-xl border border-current/15 flex justify-between items-center bg-current/5 gap-2">
+                <div class="flex-1 min-w-0">
+                    <span class="font-bold truncate block">${escapeHTML(e.desc)} (${escapeHTML(e.category)})</span>
+                    <div class="text-[10px] opacity-70">Paid by <span class="font-bold">${escapeHTML(e.paidBy)}</span> • ${e.date} • Split: ${Array.isArray(e.splitWith) ? e.splitWith.join(', ') : (e.splitBetween ? e.splitBetween.join(', ') : '')}</div>
                 </div>
-                <span class="font-extrabold text-sm">${getCurrencySymbol()}${parseFloat(e.amount).toFixed(2)}</span>
+                <div class="flex items-center gap-2 flex-shrink-0">
+                    <span class="font-extrabold text-sm">${getCurrencySymbol()}${parseFloat(e.amount).toFixed(2)}</span>
+                    <button type="button" data-id="${e.id}" onclick="window.startEditExpense(this.getAttribute('data-id'))" class="theme-btn px-2.5 py-1 text-[10px] font-black uppercase tracking-wider bg-amber-300 text-slate-900 cursor-pointer hover:bg-amber-400">Edit</button>
+                </div>
             </li>
         `).join('')
         : '<li class="opacity-60 italic text-center py-4">No expenses recorded yet.</li>';
@@ -658,7 +905,7 @@ function escapeHTML(str) {
     return str.toString().replace(/[&<>'"]/g, tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag));
 }
 
-// --- ABSOLUTE GLOBAL WINDOW BINDINGS ---
+// --- GLOBAL WINDOW EXPORTS ---
 window.switchModalTab = switchModalTab;
 window.createNewLedger = createNewLedger;
 window.recallLedger = recallLedger;
@@ -670,8 +917,15 @@ window.copyShareLink = copyShareLink;
 window.goHome = goHome;
 window.deleteActiveLedger = deleteActiveLedger;
 window.addMemberDirect = addMemberDirect;
+window.saveMembers = saveMembers;
 window.deleteMember = deleteMember;
 window.addExpense = addExpense;
+window.startEditExpense = startEditExpense;
+window.cancelEditExpense = cancelEditExpense;
+window.updateExpense = updateExpense;
+window.deleteExpenseFromEdit = deleteExpenseFromEdit;
+window.copySettlementSummary = copySettlementSummary;
+window.generateLedgerReport = generateLedgerReport;
 window.switchLanguage = switchLanguage;
 window.saveCardLayout = saveCardLayout;
 window.selectAllSplits = selectAllSplits;

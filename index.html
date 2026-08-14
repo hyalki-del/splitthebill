@@ -198,23 +198,15 @@
                 <button id="btnCloseSettings" type="button" onclick="window.closeSettingsModal()" class="text-slate-500 hover:text-slate-900 text-xl font-bold cursor-pointer">×</button>
             </div>
 
-            <!-- Language Buttons with Flags -->
             <div class="space-y-2">
                 <label class="text-xs font-extrabold text-slate-800 block uppercase tracking-wider">Language</label>
                 <div class="grid grid-cols-3 gap-2">
-                    <button type="button" onclick="window.selectSettingsLang('tr')" id="setLangTR" class="theme-btn py-2.5 px-3 flex items-center justify-center gap-2 text-xs font-extrabold border-2 border-slate-200 rounded-xl hover:border-slate-400 bg-slate-50 transition cursor-pointer">
-                        TÜRKÇE
-                    </button>
-                    <button type="button" onclick="window.selectSettingsLang('en')" id="setLangEN" class="theme-btn py-2.5 px-3 flex items-center justify-center gap-2 text-xs font-extrabold border-2 border-slate-200 rounded-xl hover:border-slate-400 bg-slate-50 transition cursor-pointer">
-                        ENGLISH
-                    </button>
-                    <button type="button" onclick="window.selectSettingsLang('de')" id="setLangDE" class="theme-btn py-2.5 px-3 flex items-center justify-center gap-2 text-xs font-extrabold border-2 border-slate-200 rounded-xl hover:border-slate-400 bg-slate-50 transition cursor-pointer">
-                        DEUTSCH
-                    </button>
+                    <button type="button" onclick="window.selectSettingsLang('tr')" id="setLangTR" class="theme-btn py-2.5 px-3 flex items-center justify-center gap-2 text-xs font-extrabold border-2 border-slate-200 rounded-xl hover:border-slate-400 bg-slate-50 transition cursor-pointer">TÜRKÇE</button>
+                    <button type="button" onclick="window.selectSettingsLang('en')" id="setLangEN" class="theme-btn py-2.5 px-3 flex items-center justify-center gap-2 text-xs font-extrabold border-2 border-slate-200 rounded-xl hover:border-slate-400 bg-slate-50 transition cursor-pointer">ENGLISH</button>
+                    <button type="button" onclick="window.selectSettingsLang('de')" id="setLangDE" class="theme-btn py-2.5 px-3 flex items-center justify-center gap-2 text-xs font-extrabold border-2 border-slate-200 rounded-xl hover:border-slate-400 bg-slate-50 transition cursor-pointer">DEUTSCH</button>
                 </div>
             </div>
 
-            <!-- Currency Buttons -->
             <div class="space-y-2">
                 <label class="text-xs font-extrabold text-slate-800 block uppercase tracking-wider">Currency</label>
                 <div class="grid grid-cols-3 gap-2">
@@ -224,7 +216,6 @@
                 </div>
             </div>
 
-            <!-- Visual Theme Selection Buttons -->
             <div class="space-y-2">
                 <label class="text-xs font-extrabold text-slate-800 block uppercase tracking-wider">Visual Template</label>
                 <div class="grid grid-cols-3 gap-2">
@@ -253,7 +244,8 @@
         </div>
     </div>
 
-    <!-- Script Engine -->
+    <!-- Script Loaders -->
+    <script src="i18n.js"></script>
     <script src="app.js"></script>
 </body>
 </html>

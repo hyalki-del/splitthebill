@@ -378,6 +378,7 @@ async function callBackend(action, payload = {}) {
 }
 
 // --- ARCHIVE LOADER WITH METADATA EXCLUSION ---
+// --- ARCHIVE LOADER WITH COUNTER & METADATA EXCLUSION ---
 async function loadGoogleSheetsArchive() {
     const select = document.getElementById('archiveSelect');
     if (!select) return;
@@ -407,7 +408,10 @@ async function loadGoogleSheetsArchive() {
 
         ledgers = ledgers
             .filter(Boolean)
-            .filter(name => name.toString().trim().toLowerCase() !== 'metadata');
+            .filter(name => {
+                const lower = name.toString().trim().toLowerCase();
+                return lower !== 'metadata' && lower !== 'counter';
+            });
 
         if (ledgers.length === 0) {
             select.innerHTML = `<option value="">-- No archives found --</option>`;
@@ -422,7 +426,7 @@ async function loadGoogleSheetsArchive() {
         select.innerHTML = `<option value="">-- Error loading archives --</option>`;
     }
 }
-
+[cite: 2]
 // --- WELCOME MODAL CORE NAVIGATION ---
 function switchModalTab(tabMode) {
     const createSec = document.getElementById('createSection');

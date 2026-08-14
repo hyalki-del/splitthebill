@@ -626,16 +626,30 @@ async function saveMembers() {
     }
 }
 
-async function deleteMember(name) {
-    if (!name) return;
-    if (!confirm(`Are you sure you want to remove participant '${name}'?`)) return;
+async function deleteMember(name, event) {
+    // 1. Prevent event bubbling to parent elements
+    if (event) {
+        event.stopPropagation();
+        event.preventDefault();
+    }
 
+    if (!name) return;
+    
+    // Resolve canonical name
     const canonicalName = findMemberCanonical(name);
 
-    ledgerData.members = ledgerData.members.filter(m => m.toLowerCase() !== canonicalName.toLowerCase());
-    unsavedMembers = unsavedMembers.filter(m => m.toLowerCase() !== canonicalName.toLowerCase());
+    if (!confirm(`Are you sure you want to remove participant '${canonicalName}'?`)) return;
+
+    // 2. Exact match filter (preserves all other members)
+    const targetLower = canonicalName.toLowerCase();
+    
+    ledgerData.members = ledgerData.members.filter(m => m.toLowerCase() !== targetLower);
+    unsavedMembers = unsavedMembers.filter(m => m.toLowerCase() !== targetLower);
+
+    // 3. Re-render UI immediately
     render();
 
+    // 4. Persist change to Google Sheets backend
     const res = await callBackend('removeMember', { name: canonicalName });
     if (res && res.status !== "success") {
         console.warn("[SPENSE Notice] Backend deletion notice:", res?.message);

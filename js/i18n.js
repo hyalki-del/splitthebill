@@ -1,20 +1,25 @@
+/* ==========================================
+   SPENSE - Internationalization (i18n) Engine
+   Architecture: Centralized Multilingual Dictionaries
+   ========================================== */
+
 const TRANSLATIONS = {
     en: {
-        activeLedgerTitle: "Active Confidential Ledger",
-        noLedgerLoaded: "No Ledger Loaded",
-        encryptedSub: "Isolated encrypted tab",
+        // App / Header
+        settingsBtn: "⚙ Settings",
         shareLinkBtn: "Share Link",
         deleteBtn: "Delete",
+        
+        // Participants Frame
         participantsTitle: "Participants",
         participantsSub: "Add or remove people from this group.",
         namePlaceholder: "Name...",
         addBtn: "Add",
         saveMembersBtn: "Save New Participants",
-        noParticipants: "No participants added.",
+
+        // Expense Form Frame
         newExpenseTitle: "New Expense",
         newExpenseSub: "Log a transaction to split.",
-        editExpenseTitle: "Edit Expense",
-        editExpenseSub: "Modifying selected entry. Click Update or Delete below.",
         dateLabel: "Date",
         categoryLabel: "Category",
         descLabel: "Description",
@@ -23,18 +28,18 @@ const TRANSLATIONS = {
         paidByLabel: "Paid By",
         splitBetweenLabel: "Split Between:",
         selectAllBtn: "Select All",
-        addMembersFirstMsg: "Add participants first.",
         recordExpenseBtn: "Record Expense",
-        updateExpenseBtn: "Update Expense",
-        cancelBtn: "Cancel",
+
+        // Settlement Matrix Frame
         settlementTitle: "Settlement Matrix",
         copySummaryBtn: "Copy Summary",
-        awaitingLedgerMsg: "Awaiting ledger input...",
-        allAccountsBalanced: "All accounts balanced.",
+
+        // Ledger History Frame
         historyTitle: "Ledger History",
         clickToEditSub: "(Click item to edit)",
         generateReportBtn: "Generate Report",
-        noExpenseEntries: "No expense entries.",
+
+        // Welcome Modal
         modalSub: "Create or open a confidential group ledger.",
         tabCreate: "Create New",
         tabRecall: "Recall Existing",
@@ -43,190 +48,148 @@ const TRANSLATIONS = {
         setPinLabel: "Set 4-Digit PIN",
         initializeBtn: "Initialize Ledger",
         selectArchiveLabel: "Select Archive",
-        selectArchivePh: "Select archive...",
         accessingSharedLabel: "Accessing Shared Ledger",
         enterPinLabel: "Enter 4-Digit PIN",
         accessLedgerBtn: "Access Ledger",
+
+        // Modals / Statuses
         shareLinkHeader: "Share Ledger Link",
         shareLinkSub: "Anyone with this link will only need to enter the 4-digit PIN to access this ledger.",
         copyBtn: "Copy",
         processingMsg: "Processing...",
-        editingBadge: "Editing",
-        pays: "pays",
-        settingsBtn: "⚙ Settings",
-        categories: {
-            "General": "General",
-            "Food & Dining": "Food & Dining",
-            "Transportation": "Transportation",
-            "Accommodation": "Accommodation",
-            "Entertainment": "Entertainment",
-            "Shopping": "Shopping",
-            "Groceries": "Groceries",
-            "Utilities": "Utilities"
-        }
+
+        // Dynamic Tagline Carousel
+        taglines: [
+            `<strong class="block font-extrabold text-[#0f172a] text-sm sm:text-base">Spend simply.</strong><span class="block text-slate-700 mt-0.5">Enjoy the moment. / Leave the expense tracking to SPENSE.</span>`,
+            `<strong class="block font-extrabold text-[#0f172a] text-sm sm:text-base">Just add what you spent.</strong><span class="block text-slate-700 mt-0.5">Who paid? Who shares it? / SPENSE does the math.</span>`,
+            `<strong class="block font-extrabold text-[#0f172a] text-sm sm:text-base">Settle easily.</strong><span class="block text-slate-700 mt-0.5">See exactly who owes whom — / and how much.</span>`
+        ]
     },
+
     tr: {
-        activeLedgerTitle: "Aktif Gizli Defter",
-        noLedgerLoaded: "Defter Yüklenmedi",
-        encryptedSub: "İzole edilmiş şifreli sekme",
-        shareLinkBtn: "Bağlantı Paylaş",
+        // App / Header
+        settingsBtn: "⚙ Ayarlar",
+        shareLinkBtn: "Bağlantıyı Paylaş",
         deleteBtn: "Sil",
+
+        // Participants Frame
         participantsTitle: "Katılımcılar",
-        participantsSub: "Gruba kişi ekleyin veya çıkarın.",
+        participantsSub: "Bu gruba kişi ekleyin veya çıkarın.",
         namePlaceholder: "İsim...",
         addBtn: "Ekle",
         saveMembersBtn: "Yeni Katılımcıları Kaydet",
-        noParticipants: "Katılımcı eklenmedi.",
+
+        // Expense Form Frame
         newExpenseTitle: "Yeni Harcama",
-        newExpenseSub: "Bölüşülecek harcamayı girin.",
-        editExpenseTitle: "Harcamayı Düzenle",
-        editExpenseSub: "Seçili harcama güncelleniyor.",
+        newExpenseSub: "Bölüştürmek için işlem kaydedin.",
         dateLabel: "Tarih",
         categoryLabel: "Kategori",
         descLabel: "Açıklama",
-        descPlaceholder: "örn. Akşam Yemeği",
+        descPlaceholder: "ör. Akşam Yemeği",
         amountLabel: "Tutar",
         paidByLabel: "Ödeyen",
-        splitBetweenLabel: "Bölüşecek Kişiler:",
+        splitBetweenLabel: "Paylaşanlar:",
         selectAllBtn: "Tümünü Seç",
-        addMembersFirstMsg: "Önce katılımcı ekleyin.",
         recordExpenseBtn: "Harcamayı Kaydet",
-        updateExpenseBtn: "Harcamayı Güncelle",
-        cancelBtn: "İptal",
-        settlementTitle: "Hesaplaşma Tablosu",
+
+        // Settlement Matrix Frame
+        settlementTitle: "Ödeme Matrisi",
         copySummaryBtn: "Özeti Kopyala",
-        awaitingLedgerMsg: "Defter verisi bekleniyor...",
-        allAccountsBalanced: "Tüm hesaplar dengede.",
-        historyTitle: "Harcama Geçmişi",
-        clickToEditSub: "(Düzenlemek için tıklayın)",
+
+        // Ledger History Frame
+        historyTitle: "Geçmiş Kayıtlar",
+        clickToEditSub: "(Düzenlemek için tıkla)",
         generateReportBtn: "Rapor Oluştur",
-        noExpenseEntries: "Harcama kaydı yok.",
-        modalSub: "Gizli grup defteri oluşturun veya açın.",
+
+        // Welcome Modal
+        modalSub: "Gizli bir grup defteri oluşturun veya açın.",
         tabCreate: "Yeni Oluştur",
-        tabRecall: "Mevcut Defteri Aç",
+        tabRecall: "Var Olanı Aç",
         ledgerNameLabel: "Defter Adı",
-        ledgerNamePh: "örn. tatil-grubu",
+        ledgerNamePh: "ör. aksam-yemegi",
         setPinLabel: "4 Haneli PIN Belirleyin",
         initializeBtn: "Defteri Başlat",
-        selectArchiveLabel: "Arşiv Seçin",
-        selectArchivePh: "Arşiv seçin...",
+        selectArchiveLabel: "Arşivden Seç",
         accessingSharedLabel: "Paylaşılan Deftere Erişiliyor",
         enterPinLabel: "4 Haneli PIN Girin",
         accessLedgerBtn: "Deftere Eriş",
+
+        // Modals / Statuses
         shareLinkHeader: "Defter Bağlantısını Paylaş",
-        shareLinkSub: "Bu bağlantıya sahip kişiler yalnızca 4 haneli PIN girerek deftere erişebilir.",
+        shareLinkSub: "Bu bağlantıya sahip herkes deftere erişmek için yalnızca 4 haneli PIN'i girmelidir.",
         copyBtn: "Kopyala",
         processingMsg: "İşleniyor...",
-        editingBadge: "Düzenleniyor",
-        pays: "öder",
-        settingsBtn: "⚙ Ayarlar",
-        categories: {
-            "General": "Genel",
-            "Food & Dining": "Yeme & İçme",
-            "Transportation": "Ulaşım",
-            "Accommodation": "Konaklama",
-            "Entertainment": "Eğlence",
-            "Shopping": "Alışveriş",
-            "Groceries": "Market",
-            "Utilities": "Faturalar"
-        }
+
+        // Dynamic Tagline Carousel
+        taglines: [
+            `<strong class="block font-extrabold text-[#0f172a] text-sm sm:text-base">Kolayca harca.</strong><span class="block text-slate-700 mt-0.5">Anın tadını çıkar. / Masraf takibini SPENSE'e bırak.</span>`,
+            `<strong class="block font-extrabold text-[#0f172a] text-sm sm:text-base">Sadece harcamanı ekle.</strong><span class="block text-slate-700 mt-0.5">Kim ödedi? Kimler paylaşıyor? / Matematik işini SPENSE yapar.</span>`,
+            `<strong class="block font-extrabold text-[#0f172a] text-sm sm:text-base">Rahatça hesabı kapat.</strong><span class="block text-slate-700 mt-0.5">Kimin kime ne kadar borcu var — / anında gör.</span>`
+        ]
     },
+
     de: {
-        activeLedgerTitle: "Aktives Vertrauliches Buch",
-        noLedgerLoaded: "Kein Buch Geladen",
-        encryptedSub: "Isolierte verschlüsselte Kartei",
+        // App / Header
+        settingsBtn: "⚙ Einstellungen",
         shareLinkBtn: "Link Teilen",
         deleteBtn: "Löschen",
+
+        // Participants Frame
         participantsTitle: "Teilnehmer",
-        participantsSub: "Personen hinzufügen oder entfernen.",
+        participantsSub: "Personen zu dieser Gruppe hinzufügen oder entfernen.",
         namePlaceholder: "Name...",
         addBtn: "Hinzufügen",
         saveMembersBtn: "Neue Teilnehmer Speichern",
-        noParticipants: "Keine Teilnehmer hinzugefügt.",
+
+        // Expense Form Frame
         newExpenseTitle: "Neue Ausgabe",
-        newExpenseSub: "Transaktion zum Teilen eintragen.",
-        editExpenseTitle: "Ausgabe Bearbeiten",
-        editExpenseSub: "Ausgewählten Eintrag ändern.",
+        newExpenseSub: "Tragen Sie eine Transaktion zum Aufteilen ein.",
         dateLabel: "Datum",
         categoryLabel: "Kategorie",
         descLabel: "Beschreibung",
         descPlaceholder: "z.B. Abendessen",
         amountLabel: "Betrag",
-        paidByLabel: "Bezahlt Von",
-        splitBetweenLabel: "Aufteilen Zwischen:",
+        paidByLabel: "Bezahlt von",
+        splitBetweenLabel: "Aufteilen zwischen:",
         selectAllBtn: "Alle Auswählen",
-        addMembersFirstMsg: "Zuerst Teilnehmer hinzufügen.",
-        recordExpenseBtn: "Ausgabe Speichern",
-        updateExpenseBtn: "Ausgabe Aktualisieren",
-        cancelBtn: "Abbrechen",
+        recordExpenseBtn: "Ausgabe Aufzeichnen",
+
+        // Settlement Matrix Frame
         settlementTitle: "Abrechnungsmatrix",
         copySummaryBtn: "Zusammenfassung Kopieren",
-        awaitingLedgerMsg: "Warte auf Bucheingabe...",
-        allAccountsBalanced: "Alle Konten ausgeglichen.",
+
+        // Ledger History Frame
         historyTitle: "Verlauf",
-        clickToEditSub: "(Klicken zum Bearbeiten)",
+        clickToEditSub: "(Zum Bearbeiten anklicken)",
         generateReportBtn: "Bericht Erstellen",
-        noExpenseEntries: "Keine Ausgaben vorhanden.",
-        modalSub: "Vertrauliches Gruppenbuch erstellen oder öffnen.",
+
+        // Welcome Modal
+        modalSub: "Erstellen oder öffnen Sie ein vertrauliches Gruppenbuch.",
         tabCreate: "Neu Erstellen",
-        tabRecall: "Öffnen",
+        tabRecall: "Vorhandenes Öffnen",
         ledgerNameLabel: "Name des Buches",
-        ledgerNamePh: "z.B. reise-gruppe",
-        setPinLabel: "4-stelligen PIN Festlegen",
+        ledgerNamePh: "z.B. abendessen-club",
+        setPinLabel: "4-stellige PIN Festlegen",
         initializeBtn: "Buch Initialisieren",
-        selectArchiveLabel: "Archiv Auswählen",
-        selectArchivePh: "Archiv wählen...",
-        accessingSharedLabel: "Zugriff auf Geteiltes Buch",
-        enterPinLabel: "Enter 4-Digit PIN",
-        accessLedgerBtn: "Buch Öffnen",
-        shareLinkHeader: "Link Teilen",
-        shareLinkSub: "Jeder mit diesem Link benötigt nur den 4-stelligen PIN für den Zugriff.",
+        selectArchiveLabel: "Aus Archiv Auswählen",
+        accessingSharedLabel: "Zugriff Auf Geteiltes Buch",
+        enterPinLabel: "4-stellige PIN Eingeben",
+        accessLedgerBtn: "Auf Buch Zugreifen",
+
+        // Modals / Statuses
+        shareLinkHeader: "Buch-Link Teilen",
+        shareLinkSub: "Jeder mit diesem Link muss nur die 4-stellige PIN eingeben, um auf dieses Buch zuzugreifen.",
         copyBtn: "Kopieren",
         processingMsg: "Verarbeitung...",
-        editingBadge: "Bearbeitung",
-        pays: "zahlt an",
-        settingsBtn: "⚙ Einstellungen",
-        categories: {
-            "General": "Allgemein",
-            "Food & Dining": "Essen & Trinken",
-            "Transportation": "Transport",
-            "Accommodation": "Unterkunft",
-            "Entertainment": "Entertainment",
-            "Shopping": "Einkaufen",
-            "Groceries": "Lebensmittel",
-            "Utilities": "Nebenkosten"
-        }
+
+        // Dynamic Tagline Carousel
+        taglines: [
+            `<strong class="block font-extrabold text-[#0f172a] text-sm sm:text-base">Einfach ausgeben.</strong><span class="block text-slate-700 mt-0.5">Genieße den Moment. / Überlasse die Spesenverfolgung SPENSE.</span>`,
+            `<strong class="block font-extrabold text-[#0f172a] text-sm sm:text-base">Einfach eintragen, was ausgegeben wurde.</strong><span class="block text-slate-700 mt-0.5">Wer hat bezahlt? Wer teilt es? / SPENSE macht die Rechnung.</span>`,
+            `<strong class="block font-extrabold text-[#0f172a] text-sm sm:text-base">Einfach abrechnen.</strong><span class="block text-slate-700 mt-0.5">Sehen Sie genau, wer wem schuldet — / und wie viel.</span>`
+        ]
     }
 };
 
-function switchLanguage(lang) {
-    if (!TRANSLATIONS[lang]) return;
-    currentLang = lang;
-
-    ['tr', 'en', 'de'].forEach(l => {
-        const btn = document.getElementById(`lang-${l}`);
-        if (btn) {
-            btn.className = (l === lang)
-                ? "hover:text-amber-600 cursor-pointer transition text-slate-900 font-extrabold border-b-2 border-slate-900 pb-0.5"
-                : "hover:text-amber-600 cursor-pointer transition text-slate-400 font-bold";
-        }
-    });
-
-    document.querySelectorAll('[data-i18n]').forEach(el => {
-        const key = el.getAttribute('data-i18n');
-        if (TRANSLATIONS[lang][key]) el.innerText = TRANSLATIONS[lang][key];
-    });
-
-    document.querySelectorAll('[data-i18n-ph]').forEach(el => {
-        const key = el.getAttribute('data-i18n-ph');
-        if (TRANSLATIONS[lang][key]) el.placeholder = TRANSLATIONS[lang][key];
-    });
-
-    const catSelect = document.getElementById('expenseCategory');
-    const currentCatVal = catSelect.value || "General";
-    const catMap = TRANSLATIONS[lang].categories;
-    catSelect.innerHTML = Object.keys(catMap).map(k => `<option value="${escapeHTML(k)}">${escapeHTML(catMap[k])}</option>`).join('');
-    catSelect.value = currentCatVal;
-
-    render();
-}
+// Global default language state
+let currentLang = 'en';

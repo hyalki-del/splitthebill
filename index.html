@@ -89,9 +89,13 @@
             <!-- Participants Card -->
             <section class="theme-card p-6 flex flex-col justify-between space-y-4" data-card-id="participants">
                 <div class="card-drag-handle" draggable="true" title="Drag to reorder card">⠿</div>
-                <div class="pr-8">
-                    <h2 data-i18n="participantsTitle" class="text-xs font-black uppercase tracking-wider opacity-70">Participants</h2>
-                    <p data-i18n="participantsSub" class="text-xs font-medium opacity-70 mt-0.5">Add or remove people from this group.</p>
+                <div class="flex justify-between items-start pr-8">
+                    <div>
+                        <h2 data-i18n="participantsTitle" class="text-xs font-black uppercase tracking-wider opacity-70">Participants</h2>
+                        <p data-i18n="participantsSub" class="text-xs font-medium opacity-70 mt-0.5">Add or remove people from this group.</p>
+                    </div>
+                    <!-- Save Participants Action Button -->
+                    <button id="btnSaveMembers" type="button" onclick="window.saveMembers()" data-i18n="saveMembersBtn" class="hidden theme-btn bg-amber-300 hover:bg-amber-400 text-slate-900 px-3 py-1.5 text-xs font-black uppercase tracking-wider cursor-pointer animate-pulse">Save Participants</button>
                 </div>
                 <div class="space-y-3">
                     <div class="flex gap-2">
@@ -141,7 +145,7 @@
                     <div id="splitCheckboxes" class="flex flex-wrap gap-2 pt-1 text-xs"></div>
                 </div>
 
-                <div>
+                <div id="expenseFormActions">
                     <button id="btnRecordExpense" type="button" onclick="window.addExpense()" data-i18n="recordExpenseBtn" class="w-full theme-btn py-3 text-sm font-extrabold cursor-pointer">Record Expense</button>
                 </div>
             </section>
@@ -151,7 +155,7 @@
                 <div class="card-drag-handle" draggable="true" title="Drag to reorder card">⠿</div>
                 <div class="flex justify-between items-center border-b border-current/10 pb-3 pr-8">
                     <h2 data-i18n="settlementTitle" class="text-xs font-black uppercase tracking-wider opacity-70">Settlement Matrix</h2>
-                    <button id="btnCopySummary" type="button" onclick="alert('Settlement summary copied!')" data-i18n="copySummaryBtn" class="theme-btn text-xs px-3 py-1.5 font-extrabold cursor-pointer">Copy Summary</button>
+                    <button id="btnCopySummary" type="button" onclick="window.copySettlementSummary()" data-i18n="copySummaryBtn" class="theme-btn text-xs px-3 py-1.5 font-extrabold cursor-pointer">Copy Summary</button>
                 </div>
                 <div id="settlementList" class="space-y-2 text-xs min-h-[80px]"></div>
             </section>
@@ -163,7 +167,7 @@
                     <div class="flex items-center gap-2">
                         <h2 data-i18n="historyTitle" class="text-xs font-black uppercase tracking-wider opacity-70">Ledger History</h2>
                     </div>
-                    <button id="btnGenerateReport" type="button" onclick="alert('Report generated!')" data-i18n="generateReportBtn" class="theme-btn text-xs px-3 py-1.5 font-extrabold cursor-pointer">Generate Report</button>
+                    <button id="btnGenerateReport" type="button" onclick="window.generateLedgerReport()" data-i18n="generateReportBtn" class="theme-btn text-xs px-3 py-1.5 font-extrabold cursor-pointer">Generate Report</button>
                 </div>
                 <ul id="expenseHistory" class="space-y-2 text-xs min-h-[80px] max-h-[300px] overflow-y-auto pr-1"></ul>
             </section>

@@ -1,6 +1,6 @@
 /**
  * SPENSE - Main Application Logic & Controller
- * Architecture: Fail-Safe Global Scope Functions + Complete State Engine
+ * Architecture: Fail-Safe Global Scope Functions + Synchronous State Engine
  */
 
 console.log("%c[SPENSE] System initialized and app.js active.", "color: #059669; font-weight: bold;");
@@ -194,7 +194,7 @@ async function saveCardLayout() {
     }
 }
 
-// --- Google Sheets Integration ---
+// --- Google Sheets Configuration & Backend Access ---
 async function getConfig() {
     try {
         const configRes = await fetch('config.json');
@@ -321,7 +321,6 @@ async function createNewLedger() {
         document.getElementById('welcomeModal')?.classList.add('hidden');
         render();
     } else {
-        // Fallback for offline/local simulation
         currentTab = nameVal;
         currentPin = pinVal;
         ledgerData = { members: [], expenses: [] };
@@ -587,6 +586,7 @@ function renderMembers() {
     const container = document.getElementById('memberList');
     if (!container) return;
     
+    // FIX: Use data-member attribute to prevent inline string quoting syntax errors
     container.innerHTML = ledgerData.members.length > 0 
         ? ledgerData.members.map(m => `
             <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-slate-200 text-slate-800 font-bold">

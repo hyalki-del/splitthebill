@@ -1,9 +1,9 @@
 /**
- * SPENSE - Main Application Logic & Controller
- * Senior CS Implementation: Pure State Machine + Dynamic Class Sanitizer + Backend Persistence
+ * SPENSE - Group Expense Tracker Main Controller
+ * CS Senior Architecture: Modular State Machine + Motion Engine + Granular Validation
  */
 
-console.log("%c[SPENSE] Engine & Settings Controller Ready.", "color: #059669; font-weight: bold;");
+console.log("%c[SPENSE] Engine & Full Controller Loaded Successfully.", "color: #059669; font-weight: bold;");
 
 // --- Global Application State ---
 let currentTab = null;
@@ -13,11 +13,12 @@ let currentCurrency = 'USD';
 let currentTheme = 'Silk';
 let ledgerData = { members: [], expenses: [] };
 
-// Staging & Modal Selection State
+// Settings Modal Staging State
 let selectedModalLang = 'en';
 let selectedModalCurrency = 'USD';
 let selectedModalTheme = 'Silk';
 
+// Staging & Edit State Variables
 let unsavedMembers = [];
 let editingExpenseId = null;
 
@@ -88,7 +89,7 @@ const TRANSLATIONS = {
     }
 };
 
-// --- SETTINGS SELECTION ENGINE (ROBUST STATE & FRAMING) ---
+// --- SETTINGS SELECTION ENGINE ---
 function selectSettingsLang(lang) {
     selectedModalLang = lang;
     ['tr', 'en', 'de'].forEach(l => {
@@ -156,17 +157,14 @@ function closeSettingsModal() {
 }
 
 async function saveSettings() {
-    // 1. Commit Modal Staging State to Global Runtime Engine
     currentLang = selectedModalLang;
     currentCurrency = selectedModalCurrency;
     applyTheme(selectedModalTheme);
 
-    // 2. Hide Modal & Re-render Full Application UI
     document.getElementById('settingsModal')?.classList.add('hidden');
     render();
-    initTaglineCarousel(); // Refresh tagline language dynamically
+    initTaglineCarousel();
 
-    // 3. Persist to Backend / Google Sheet Metadata if Ledger Active
     if (currentTab) {
         const res = await callBackend('updateSettings', {
             language: currentLang,
@@ -180,7 +178,7 @@ async function saveSettings() {
     }
 }
 
-// --- Guaranteed 4-Directional Keyframe Tagline Engine ---
+// --- GUARANTEED 4-DIRECTIONAL KEYFRAME TAGLINE ENGINE ---
 let taglineTimer = null;
 let currentTaglineIndex = 0;
 
@@ -211,7 +209,7 @@ function initTaglineCarousel() {
     taglineTimer = setInterval(cycleTagline, 3200);
 }
 
-// --- Card Reordering Engine ---
+// --- CARD REORDERING DRAG ENGINE ---
 function initCardDragging() {
     const container = document.getElementById('appContainer');
     if (!container) return;
@@ -296,7 +294,7 @@ async function saveCardLayout() {
     }
 }
 
-// --- Google Sheets Integration ---
+// --- GOOGLE SHEETS & BACKEND CONNECTOR ---
 async function getConfig() {
     try {
         const configRes = await fetch('config.json');
@@ -366,6 +364,7 @@ async function loadGoogleSheetsArchive() {
     }
 }
 
+// --- WELCOME MODAL CORE NAVIGATION ---
 function switchModalTab(tabMode) {
     const createSec = document.getElementById('createSection');
     const recallSec = document.getElementById('recallSection');
@@ -508,7 +507,7 @@ async function deleteActiveLedger() {
     goHome();
 }
 
-// --- Staging Participant Management ---
+// --- PARTICIPANTS STAGING MODULE ---
 function addMemberDirect() {
     const input = document.getElementById('memberName');
     if (!input) return;
@@ -555,7 +554,7 @@ async function deleteMember(name) {
     }
 }
 
-// --- Expense Editing State Machine ---
+// --- EXPENSE EDITING & VALIDATION (RELAXED HISTORICAL DATES) ---
 function startEditExpense(id) {
     const exp = ledgerData.expenses.find(e => e.id.toString() === id.toString());
     if (!exp) return;
@@ -568,10 +567,22 @@ function startEditExpense(id) {
     const catInput = document.getElementById('expenseCategory');
     const paidByInput = document.getElementById('expensePaidBy');
 
-    if (dateInput) dateInput.value = exp.date || '';
+    if (dateInput) {
+        if (exp.date) {
+            const parsedDate = new Date(exp.date);
+            if (!isNaN(parsedDate.getTime())) {
+                dateInput.value = parsedDate.toISOString().split('T')[0];
+            } else {
+                dateInput.value = exp.date;
+            }
+        } else {
+            dateInput.value = new Date().toISOString().split('T')[0];
+        }
+    }
+
     if (descInput) descInput.value = exp.desc || '';
     if (amountInput) amountInput.value = exp.amount || '';
-    if (catInput) catInput.value = exp.category || 'General';
+    if (catInput) catInput.value = exp.category || 'Food & Drink';
     if (paidByInput) paidByInput.value = exp.paidBy || '';
 
     const splitArr = Array.isArray(exp.splitWith) ? exp.splitWith : (exp.splitBetween || []);
@@ -609,8 +620,25 @@ async function updateExpense() {
     const amount = parseFloat(document.getElementById('expenseAmount')?.value);
     const paidBy = document.getElementById('expensePaidBy')?.value;
 
-    if (!date || !desc || isNaN(amount) || amount <= 0 || !paidBy) {
-        alert("Fill all expense fields correctly.");
+    const isDateValid = date && !isNaN(Date.parse(date));
+
+    if (!isDateValid) {
+        alert("Please enter a valid date.");
+        return;
+    }
+
+    if (!desc) {
+        alert("Please provide a description.");
+        return;
+    }
+
+    if (isNaN(amount) || amount <= 0) {
+        alert("Please enter a valid amount greater than 0.");
+        return;
+    }
+
+    if (!paidBy) {
+        alert("Please select who paid for this expense.");
         return;
     }
 
@@ -657,7 +685,9 @@ async function addExpense() {
     const amount = parseFloat(document.getElementById('expenseAmount')?.value);
     const paidBy = document.getElementById('expensePaidBy')?.value;
 
-    if (!date || !desc || isNaN(amount) || amount <= 0 || !paidBy) {
+    const isDateValid = date && !isNaN(Date.parse(date));
+
+    if (!isDateValid || !desc || isNaN(amount) || amount <= 0 || !paidBy) {
         alert("Fill all expense fields correctly.");
         return;
     }
@@ -680,7 +710,7 @@ async function addExpense() {
     await callBackend('addExpense', { id, date, category, desc, amount, paidBy, splitWith });
 }
 
-// --- Settlement Math Engine ---
+// --- SETTLEMENT COMPUTATION ALGORITHM ---
 function calculateSettlement() {
     const balances = {};
     ledgerData.members.forEach(m => balances[m] = 0);
@@ -811,7 +841,7 @@ function selectAllSplits() {
     document.querySelectorAll('.split-checkbox').forEach(cb => cb.checked = true);
 }
 
-// --- Master Rendering Engine ---
+// --- MASTER UI RENDERING ENGINE ---
 function render() {
     const t = TRANSLATIONS[currentLang] || TRANSLATIONS['en'];
 
@@ -964,7 +994,7 @@ function escapeHTML(str) {
     return str.toString().replace(/[&<>'"]/g, tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag));
 }
 
-// --- ABSOLUTE GLOBAL WINDOW EXPORTS ---
+// --- GLOBAL WINDOW EXPORTS ---
 window.switchModalTab = switchModalTab;
 window.createNewLedger = createNewLedger;
 window.recallLedger = recallLedger;
@@ -993,7 +1023,7 @@ window.saveCardLayout = saveCardLayout;
 window.selectAllSplits = selectAllSplits;
 window.saveSettings = saveSettings;
 
-// --- Initialize Engine ---
+// --- INITIALIZE SYSTEM ENGINE ---
 document.addEventListener('DOMContentLoaded', () => {
     initTaglineCarousel();
     initCardDragging();

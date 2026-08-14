@@ -13,25 +13,19 @@
         <!-- Header -->
         <header class="theme-card theme-header p-4 sm:p-6 space-y-4">
             <div class="flex items-center justify-between gap-3">
-                <!-- Doubled size for the main page header logo container -->
                 <div class="flex items-center gap-3 cursor-pointer group" onclick="goHome()" title="Home">
                     <div class="relative w-56 h-24 sm:w-72 sm:h-32 flex items-center justify-center group-hover:scale-105 transition-transform flex-shrink-0">
                         <img src="logo.png" alt="Brand Logo" class="w-full h-full object-contain drop-shadow-md">
                     </div>
                 </div>
-
-                <!-- Settings & Status Controls -->
-                <div class="flex items-center gap-3 flex-shrink-0">
-                    <button id="settingsBtn" type="button" onclick="openSettingsModal()" data-i18n="settingsBtn" class="hidden theme-btn text-xs px-2.5 py-1.5 font-bold cursor-pointer">⚙ Settings</button>
-                    <div id="statusMsg" class="text-[10px] sm:text-xs font-black px-2.5 py-1.5 rounded-xl border border-current uppercase">Idle</div>
-                </div>
             </div>
 
             <div id="activeLedgerBar" class="pt-3 border-t border-current/15 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <p id="viewModeIndicator" class="text-base sm:text-xl font-black uppercase tracking-wider theme-font-head opacity-90 break-words leading-tight">
+                <p id="viewModeIndicator" class="text-base sm:text-xl font-normal opacity-90 break-words leading-tight">
                     AWAITING AUTHENTICATION...
                 </p>
                 <div class="flex items-center gap-2 flex-wrap">
+                    <button id="settingsBtn" type="button" onclick="openSettingsModal()" data-i18n="settingsBtn" class="hidden theme-btn text-xs px-3 py-1.5 font-bold cursor-pointer">⚙ Settings</button>
                     <button id="shareBtn" type="button" onclick="openShareModal()" data-i18n="shareLinkBtn" class="hidden theme-btn action-btn text-xs px-3 py-1.5 font-bold cursor-pointer">Share Link</button>
                     <button id="deleteLedgerBtn" type="button" onclick="deleteActiveLedger()" data-i18n="deleteBtn" class="hidden theme-btn text-xs bg-rose-500 hover:bg-rose-600 text-white px-3 py-1.5 font-bold cursor-pointer">Delete</button>
                 </div>
@@ -124,7 +118,6 @@
     <div id="welcomeModal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
         <div class="theme-card p-6 sm:p-8 max-w-lg w-full space-y-6 shadow-2xl bg-white text-slate-900">
             <div class="border-b border-slate-200 pb-5 text-center space-y-3">
-                <!-- Doubled size for the landing box modal logo container -->
                 <div class="w-full max-w-[400px] mx-auto py-2">
                     <img src="logo.png" alt="Brand Logo" class="w-full h-auto object-contain drop-shadow-md">
                 </div>

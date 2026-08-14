@@ -405,9 +405,13 @@ async function loadGoogleSheetsArchive() {
             ledgers = rawData.archives || rawData.sheets || rawData.ledgers || Object.keys(rawData);
         }
 
+        // CRITICAL: Filter out system tables like metadata and counter so they never appear in dropdowns
         ledgers = ledgers
             .filter(Boolean)
-            .filter(name => name.toString().trim().toLowerCase() !== 'metadata');
+            .filter(name => {
+                const lower = name.toString().trim().toLowerCase();
+                return lower !== 'metadata' && lower !== 'counter';
+            });
 
         if (ledgers.length === 0) {
             select.innerHTML = `<option value="">-- No archives found --</option>`;

@@ -30,24 +30,32 @@
         [data-theme="toon"] .theme-card { border: 3px solid var(--border-color); }
         .theme-header { border-bottom-width: 3px; }
 
-        /* --- 4-Directional Motion Engine Styles --- */
-        #taglineSpot { 
-            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1); 
-            will-change: transform, opacity; 
+        /* --- HARDWARE-ACCELERATED 4-DIRECTIONAL KEYFRAME ENGINE --- */
+        @keyframes animLeft {
+            0% { transform: translateX(-120%); opacity: 0; }
+            15%, 85% { transform: translateX(0); opacity: 1; }
+            100% { transform: translateX(120%); opacity: 0; }
+        }
+        @keyframes animRight {
+            0% { transform: translateX(120%); opacity: 0; }
+            15%, 85% { transform: translateX(0); opacity: 1; }
+            100% { transform: translateX(-120%); opacity: 0; }
+        }
+        @keyframes animTop {
+            0% { transform: translateY(-120%); opacity: 0; }
+            15%, 85% { transform: translateY(0); opacity: 1; }
+            100% { transform: translateY(120%); opacity: 0; }
+        }
+        @keyframes animBottom {
+            0% { transform: translateY(120%); opacity: 0; }
+            15%, 85% { transform: translateY(0); opacity: 1; }
+            100% { transform: translateY(-120%); opacity: 0; }
         }
 
-        /* Direction Vectors */
-        .slide-out-left   { transform: translateX(-120%); opacity: 0; }
-        .slide-out-right  { transform: translateX(120%);  opacity: 0; }
-        .slide-out-top    { transform: translateY(-120%); opacity: 0; }
-        .slide-out-bottom { transform: translateY(120%);  opacity: 0; }
-
-        .slide-in-left    { transform: translateX(-120%); opacity: 0; }
-        .slide-in-right   { transform: translateX(120%);  opacity: 0; }
-        .slide-in-top     { transform: translateY(-120%); opacity: 0; }
-        .slide-in-bottom  { transform: translateY(120%);  opacity: 0; }
-
-        .slide-reset { transform: translate(0, 0); opacity: 1; }
+        .motion-left   { animation: animLeft 3.2s cubic-bezier(0.4, 0, 0.2, 1) infinite; }
+        .motion-right  { animation: animRight 3.2s cubic-bezier(0.4, 0, 0.2, 1) infinite; }
+        .motion-top    { animation: animTop 3.2s cubic-bezier(0.4, 0, 0.2, 1) infinite; }
+        .motion-bottom { animation: animBottom 3.2s cubic-bezier(0.4, 0, 0.2, 1) infinite; }
 
         .theme-input { background-color: var(--card-bg); border: 2px solid var(--border-color); border-radius: 0.85rem; color: var(--text-main); outline: none; }
         .theme-input:focus { border-color: var(--text-main); box-shadow: 0 0 0 2px rgba(15, 23, 42, 0.1); }
@@ -195,12 +203,12 @@
                     <img src="logo.png" alt="SPENSE Logo" class="w-full h-auto object-contain drop-shadow-md" onerror="this.src='https://placehold.co/300x120?text=SPENSE'">
                 </div>
 
-                <!-- Tagline Container with Expanded Height and Doubled Font Size -->
-                <div class="py-2 min-h-[100px] flex items-center justify-center overflow-hidden">
-                    <div id="taglineSpot" class="w-full text-slate-900 text-xl sm:text-2xl font-bold text-center leading-snug slide-reset"></div>
+                <!-- Expanded Dynamic Container -->
+                <div class="py-2 min-h-[110px] flex items-center justify-center overflow-hidden">
+                    <div id="taglineSpot" class="w-full text-center leading-snug"></div>
                 </div>
 
-                <!-- Expanded Language Selector Controls -->
+                <!-- Expanded Language Selector -->
                 <div class="text-sm sm:text-base font-black tracking-widest text-slate-800 flex justify-center items-center gap-4 sm:gap-6 pt-2 uppercase">
                     <button id="btnLangTR" type="button" onclick="window.switchLanguage('tr')" class="hover:text-amber-600 cursor-pointer transition px-1">TÜRKÇE</button>
                     <span class="text-slate-300 font-normal">|</span>

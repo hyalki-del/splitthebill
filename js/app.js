@@ -1,6 +1,6 @@
 /**
  * SPENSE - Group Expense Tracker Main Controller
- * CS Senior Architecture: Modular State Machine + Motion Engine + Deterministic Date Parsing
+ * Computer Science Architecture: Modular State Machine + Control-Plane Metadata Filtering + Motion Engine
  */
 
 console.log("%c[SPENSE] Engine & Full Controller Loaded Successfully.", "color: #059669; font-weight: bold;");
@@ -372,11 +372,15 @@ async function callBackend(action, payload = {}) {
     }
 }
 
+// --- ARCHIVE LOADER WITH METADATA EXCLUSION ---
 async function loadGoogleSheetsArchive() {
     const select = document.getElementById('archiveSelect');
     if (!select) return;
 
-    select.innerHTML = `<option value="">-- Reading Google Sheets... --</option>`;
+    // Preserve loading indicator only if empty
+    if (select.options.length <= 1) {
+        select.innerHTML = `<option value="">-- Reading Google Sheets... --</option>`;
+    }
 
     try {
         const sheetUrl = await getConfig();
@@ -397,7 +401,10 @@ async function loadGoogleSheetsArchive() {
             ledgers = rawData.archives || rawData.sheets || rawData.ledgers || Object.keys(rawData);
         }
 
-        ledgers = ledgers.filter(Boolean);
+        // CONTROL-PLANE FILTER: Explicitly exclude 'metadata' tab (case-insensitive)
+        ledgers = ledgers
+            .filter(Boolean)
+            .filter(name => name.toString().trim().toLowerCase() !== 'metadata');
 
         if (ledgers.length === 0) {
             select.innerHTML = `<option value="">-- No archives found --</option>`;
@@ -433,7 +440,11 @@ function switchModalTab(tabMode) {
         if (tabRecallBtn) tabRecallBtn.className = "flex-1 theme-btn py-2 text-xs font-black uppercase tracking-wider bg-amber-300 text-slate-900 rounded-xl cursor-pointer";
         if (tabCreateBtn) tabCreateBtn.className = "flex-1 theme-btn py-2 text-xs font-black uppercase tracking-wider bg-transparent text-slate-500 rounded-xl cursor-pointer";
         
-        loadGoogleSheetsArchive();
+        // Trigger backup load only if prefetch hasn't finished yet
+        const select = document.getElementById('archiveSelect');
+        if (select && (select.options.length <= 1 || select.value === "")) {
+            loadGoogleSheetsArchive();
+        }
     }
 }
 
@@ -1071,4 +1082,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (dateInput) dateInput.value = formatToISODate(new Date());
 
     render();
+
+    // PERFORMANCE OPTIMIZATION: Async background prefetching of archive list on load
+    loadGoogleSheetsArchive();
 });

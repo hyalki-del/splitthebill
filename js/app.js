@@ -1,6 +1,6 @@
 /* ==========================================
    SPENSE - Main Application Logic & Controller
-   Architecture: Modular State, UI Management, Carousel, Resizing & Google Sheets Config Integration
+   Architecture: Modular State, UI Management, Carousel, Resizing, Card Ordering & Google Sheets Config Integration
    ========================================== */
 
 let currentTab = null;
@@ -60,7 +60,7 @@ function initTaglineCarousel() {
     taglineInterval = setInterval(rotateTagline, 3000); // 3 seconds loop
 }
 
-// --- 2. Programmatic Corner-Drag Resizing Engine ---
+// --- 2. Programmatic Corner-Drag Resizing & Card Swapping Engine ---
 function initResizableFrames() {
     const cards = document.querySelectorAll('.theme-card');
 
@@ -126,6 +126,94 @@ function initResizableFrames() {
     });
 }
 
+function initCardDragging() {
+    const container = document.getElementById('appContainer');
+    if (!container) return;
+    const handles = container.querySelectorAll('.card-drag-handle');
+
+    handles.forEach(handle => {
+        const card = handle.closest('.theme-card');
+        if (!card) return;
+
+        handle.addEventListener('dragstart', (e) => {
+            e.dataTransfer.setData('text/plain', '');
+            card.classList.add('opacity-40', 'scale-95');
+            window._draggedCard = card;
+        });
+
+        handle.addEventListener('dragend', (e) => {
+            card.classList.remove('opacity-40', 'scale-95');
+            container.querySelectorAll('.theme-card').forEach(c => c.classList.remove('border-amber-400', 'border-4', 'border-dashed'));
+            window._draggedCard = null;
+        });
+
+        card.addEventListener('dragover', (e) => { e.preventDefault(); });
+
+        card.addEventListener('dragenter', (e) => {
+            e.preventDefault();
+            if (window._draggedCard && window._draggedCard !== card) {
+                card.classList.add('border-amber-400', 'border-4', 'border-dashed');
+            }
+        });
+
+        card.addEventListener('dragleave', (e) => {
+            card.classList.remove('border-amber-400', 'border-4', 'border-dashed');
+        });
+
+        card.addEventListener('drop', (e) => {
+            e.preventDefault();
+            card.classList.remove('border-amber-400', 'border-4', 'border-dashed');
+
+            if (window._draggedCard && window._draggedCard !== card) {
+                const dragged = window._draggedCard;
+                const parent = card.parentNode;
+
+                const tempNode = document.createTextNode('');
+                parent.replaceChild(tempNode, dragged);
+                parent.replaceChild(dragged, card);
+                parent.replaceChild(card, tempNode);
+
+                // Show explicit save layout notification banner
+                document.getElementById('layoutActionBar')?.classList.remove('hidden');
+            }
+        });
+    });
+}
+
+function getCurrentCardOrder() {
+    const container = document.getElementById('appContainer');
+    if (!container) return [];
+    return Array.from(container.querySelectorAll('.theme-card'))
+        .map(card => card.getAttribute('data-card-id'))
+        .filter(Boolean);
+}
+
+function applyCardOrder(orderArray) {
+    if (!Array.isArray(orderArray) || orderArray.length === 0) return;
+    const container = document.getElementById('appContainer');
+    if (!container) return;
+
+    orderArray.forEach(id => {
+        const card = container.querySelector(`[data-card-id="${id}"]`);
+        if (card) container.appendChild(card);
+    });
+}
+
+async function saveCardLayout() {
+    if (!currentTab) {
+        alert("No active ledger selected.");
+        return;
+    }
+    const newOrder = getCurrentCardOrder();
+    const res = await callBackend('updateSettings', { cardOrder: newOrder });
+    if (res && res.status === "success") {
+        document.getElementById('layoutActionBar')?.classList.add('hidden');
+        alert("Layout saved successfully to Google Sheet!");
+    } else {
+        alert("Failed to save layout: " + (res?.message || "Unknown error"));
+    }
+}
+
 // --- 3. Robust Google Sheets Archive Fetcher (via config.json) ---
 async function loadGoogleSheetsArchive() {
     const select = document.getElementById('archiveSelect');
@@ -172,6 +260,24 @@ async function loadGoogleSheetsArchive() {
     } catch (error) {
         console.error("Critical error loading Google Sheets archive:", error);
         select.innerHTML = `<option value="">-- Error: Check Console / CORS / config.json --</option>`;
+    }
+}
+
+async function callBackend(action, payload = {}) {
+    try {
+        const configRes = await fetch('config.json');
+        const config = await configRes.json();
+        const sheetUrl = config.sheetUrl || config.googleSheetApiUrl || config.apiUrl;
+        if (!sheetUrl) return null;
+
+        const response = await fetch(sheetUrl, {
+            method: 'POST',
+            body: JSON.stringify({ action, tab: currentTab, pin: currentPin, ...payload })
+        });
+        return await response.json();
+    } catch (err) {
+        console.error("Backend communication error:", err);
+        return { status: "error", message: err.toString() };
     }
 }
 
@@ -254,7 +360,7 @@ function goHome() {
     render();
 }
 
-function createNewLedger() {
+async function createNewLedger() {
     const nameInput = document.getElementById('newLedgerName');
     const pinInput = document.getElementById('newLedgerPin');
     if (!nameInput || !pinInput) return;
@@ -267,14 +373,28 @@ function createNewLedger() {
         return;
     }
 
-    currentTab = nameVal;
-    currentPin = pinVal;
-    const modal = document.getElementById('welcomeModal');
-    if (modal) modal.classList.add('hidden');
-    render();
+    const initialOrder = getCurrentCardOrder();
+    const res = await callBackend('createLedger', { 
+        name: nameVal, 
+        pin: pinVal, 
+        theme: currentTheme, 
+        currency: currentCurrency, 
+        language: currentLang,
+        cardOrder: initialOrder 
+    });
+
+    if (res && res.status === "success") {
+        currentTab = res.createdTab || nameVal;
+        currentPin = pinVal;
+        const modal = document.getElementById('welcomeModal');
+        if (modal) modal.classList.add('hidden');
+        render();
+    } else {
+        alert("Failed to create ledger: " + (res?.message || "Unknown error"));
+    }
 }
 
-function recallLedger() {
+async function recallLedger() {
     const archiveSelect = document.getElementById('archiveSelect');
     const pinInput = document.getElementById('recallLedgerPin');
     if (!pinInput) return;
@@ -286,51 +406,102 @@ function recallLedger() {
         return;
     }
 
-    currentTab = targetLedger;
-    currentPin = pinVal;
-    const modal = document.getElementById('welcomeModal');
-    if (modal) modal.classList.add('hidden');
-    render();
+    try {
+        const configRes = await fetch('config.json');
+        const config = await configRes.json();
+        const sheetUrl = config.sheetUrl || config.googleSheetApiUrl || config.apiUrl;
+
+        const res = await fetch(`${sheetUrl}?tab=${encodeURIComponent(targetLedger)}&pin=${encodeURIComponent(pinVal)}`);
+        const data = await res.json();
+
+        if (data.status === "success") {
+            currentTab = targetLedger;
+            currentPin = pinVal;
+            currentTheme = data.theme || "Silk";
+            currentCurrency = data.currency || "USD";
+            currentLang = data.language || "en";
+            applyTheme(currentTheme);
+
+            if (data.cardOrder) {
+                applyCardOrder(data.cardOrder);
+            }
+
+            ledgerData.members = data.members || [];
+            ledgerData.expenses = data.expenses || [];
+
+            const modal = document.getElementById('welcomeModal');
+            if (modal) modal.classList.add('hidden');
+            render();
+        } else {
+            alert("Authentication failed: " + (data.message || "Invalid PIN"));
+        }
+    } catch (err) {
+        console.error("Recall error:", err);
+        alert("Failed to connect to sheet backend.");
+    }
 }
 
-function deleteActiveLedger() {
+async function deleteActiveLedger() {
     if (!confirm("Are you sure you want to delete this active ledger?")) return;
+    await callBackend('deleteLedger');
     goHome();
 }
 
-function stageMember() {
+async function addMemberDirect() {
     const input = document.getElementById('memberName');
     if (!input) return;
     const name = input.value.trim();
     if (!name) return;
 
-    if (!ledgerData.members.includes(name) && !stagedMembersList.includes(name)) {
-        stagedMembersList.push(name);
-        renderMembers();
+    if (!currentTab) {
+        alert("Please initialize or access a ledger first.");
+        return;
     }
-    input.value = '';
-    const saveBtn = document.getElementById('saveMembersBtn');
-    if (saveBtn) saveBtn.classList.remove('hidden');
+
+    if (ledgerData.members.includes(name)) {
+        alert("Participant already exists in this ledger.");
+        input.value = '';
+        return;
+    }
+
+    const res = await callBackend('addMembers', { names: [name] });
+    
+    if (res && res.status === "success") {
+        ledgerData.members.push(name);
+        input.value = '';
+        render();
+    } else {
+        alert("Failed to add participant: " + (res?.message || "Unknown error"));
+    }
 }
 
-function saveStagedMembers() {
-    ledgerData.members = [...ledgerData.members, ...stagedMembersList];
-    stagedMembersList = [];
-    const saveBtn = document.getElementById('saveMembersBtn');
-    if (saveBtn) saveBtn.classList.add('hidden');
-    render();
+async function deleteMember(name) {
+    if (!confirm(`Remove participant '${name}'?`)) return;
+
+    const res = await callBackend('removeMember', { name });
+    if (res && res.status === "success") {
+        ledgerData.members = ledgerData.members.filter(m => m !== name);
+        render();
+    } else {
+        alert("Failed to remove participant: " + (res?.message || "Unknown error"));
+    }
 }
 
 function renderMembers() {
     const container = document.getElementById('memberList');
     if (!container) return;
     
-    let html = ledgerData.members.map(m => `<span class="px-2.5 py-1 rounded-xl bg-slate-200 text-slate-800 font-bold">${escapeHTML(m)}</span>`).join('');
-    html += stagedMembersList.map(m => `<span class="px-2.5 py-1 rounded-xl bg-amber-200 text-slate-800 font-bold border border-amber-400">${escapeHTML(m)} (New)</span>`).join('');
-    container.innerHTML = html || '<span class="opacity-60 italic">No participants yet.</span>';
+    container.innerHTML = ledgerData.members.length > 0 
+        ? ledgerData.members.map(m => `
+            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-slate-200 text-slate-800 font-bold">
+                ${escapeHTML(m)}
+                <button type="button" onclick="window.deleteMember('${escapeHTML(m)}')" class="text-rose-600 hover:text-rose-800 font-black text-xs ml-1 cursor-pointer" title="Remove">×</button>
+            </span>
+        `).join('') 
+        : '<span class="opacity-60 italic">No participants yet. Add someone above.</span>';
 }
 
-function addExpense() {
+async function addExpense() {
     const date = document.getElementById('expenseDate')?.value;
     const desc = document.getElementById('expenseDesc')?.value.trim();
     const amount = parseFloat(document.getElementById('expenseAmount')?.value);
@@ -342,20 +513,27 @@ function addExpense() {
     }
 
     const checkboxes = document.querySelectorAll('.split-checkbox:checked');
-    const splitBetween = Array.from(checkboxes).map(cb => cb.value);
+    const splitWith = Array.from(checkboxes).map(cb => cb.value);
 
-    if (splitBetween.length === 0) {
+    if (splitWith.length === 0) {
         alert("Select at least one participant to split between.");
         return;
     }
 
-    ledgerData.expenses.push({ date, category: document.getElementById('expenseCategory')?.value, desc, amount, paidBy, splitBetween });
-    
-    const descInput = document.getElementById('expenseDesc');
-    const amtInput = document.getElementById('expenseAmount');
-    if (descInput) descInput.value = '';
-    if (amtInput) amtInput.value = '';
-    render();
+    const category = document.getElementById('expenseCategory')?.value || "General";
+    const res = await callBackend('addExpense', { date, category, desc, amount, paidBy, splitWith });
+
+    if (res && res.status === "success") {
+        ledgerData.expenses.push({ date, category, desc, amount, paidBy, splitWith });
+        
+        const descInput = document.getElementById('expenseDesc');
+        const amtInput = document.getElementById('expenseAmount');
+        if (descInput) descInput.value = '';
+        if (amtInput) amtInput.value = '';
+        render();
+    } else {
+        alert("Failed to record expense: " + (res?.message || ""));
+    }
 }
 
 function toggleSelectAll(select) {
@@ -376,7 +554,7 @@ function applyTheme(themeName) {
     document.documentElement.setAttribute('data-theme', themeName.toLowerCase());
 }
 
-function saveSettings() {
+async function saveSettings() {
     const langSel = document.getElementById('settingsLangSelect');
     const currSel = document.getElementById('settingsCurrencySelect');
     if (langSel) currentLang = langSel.value;
@@ -386,6 +564,10 @@ function saveSettings() {
     if (selectedThemeRadio) {
         applyTheme(selectedThemeRadio.value);
     }
+
+    const currentOrder = getCurrentCardOrder();
+    await callBackend('updateSettings', { theme: currentTheme, currency: currentCurrency, language: currentLang, cardOrder: currentOrder });
+
     closeSettingsModal();
     render();
 }
@@ -477,13 +659,13 @@ function renderHistory() {
     if (!list) return;
 
     list.innerHTML = ledgerData.expenses.length > 0
-        ? ledgerData.expenses.map((e, idx) => `
+        ? ledgerData.expenses.map((e) => `
             <li class="p-2.5 rounded-xl border border-current/15 flex justify-between items-center bg-current/5">
                 <div>
                     <span class="font-bold">${escapeHTML(e.desc)}</span> (${escapeHTML(e.category)}) — Paid by <span class="font-bold">${escapeHTML(e.paidBy)}</span>
-                    <div class="text-[10px] opacity-70">${e.date} • Split: ${e.splitBetween.join(', ')}</div>
+                    <div class="text-[10px] opacity-70">${e.date} • Split: ${Array.isArray(e.splitWith) ? e.splitWith.join(', ') : (e.splitBetween ? e.splitBetween.join(', ') : '')}</div>
                 </div>
-                <span class="font-extrabold text-sm">${currentCurrency === 'EUR' ? '€' : currentCurrency === 'TRY' ? '₺' : '$'}${e.amount.toFixed(2)}</span>
+                <span class="font-extrabold text-sm">${currentCurrency === 'EUR' ? '€' : currentCurrency === 'TRY' ? '₺' : '$'}${parseFloat(e.amount).toFixed(2)}</span>
             </li>
         `).join('')
         : '<li class="opacity-60 italic text-center py-4">No expenses recorded yet.</li>';
@@ -519,8 +701,8 @@ window.goHome = goHome;
 window.createNewLedger = createNewLedger;
 window.recallLedger = recallLedger;
 window.deleteActiveLedger = deleteActiveLedger;
-window.stageMember = stageMember;
-window.saveStagedMembers = saveStagedMembers;
+window.addMemberDirect = addMemberDirect;
+window.deleteMember = deleteMember;
 window.addExpense = addExpense;
 window.toggleSelectAll = toggleSelectAll;
 window.copySettlementSummary = copySettlementSummary;
@@ -528,11 +710,13 @@ window.generateReport = generateReport;
 window.applyTheme = applyTheme;
 window.saveSettings = saveSettings;
 window.switchLanguage = switchLanguage;
+window.saveCardLayout = saveCardLayout;
 
 // --- Initialization Hook ---
 document.addEventListener('DOMContentLoaded', () => {
     initTaglineCarousel();
     initResizableFrames();
+    initCardDragging();
     
     const dateInput = document.getElementById('expenseDate');
     if (dateInput) {

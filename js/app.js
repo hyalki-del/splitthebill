@@ -1,6 +1,6 @@
 /* ==========================================
    SPENSE - Main Application Logic & Controller
-   Architecture: Explicit Global Binding & Defensive DOM Initialization
+   Architecture: Modular State, UI Management, Carousel, Resizing & Google Sheets Config Integration
    ========================================== */
 
 let currentTab = null;
@@ -11,6 +11,7 @@ let currentTheme = 'Silk';
 let stagedMembersList = [];
 let ledgerData = { members: [], expenses: [] };
 
+// --- 1. Landing Box Tagline Slide Carousel Engine ---
 let taglineInterval = null;
 let currentTaglineIndex = 0;
 
@@ -25,9 +26,9 @@ function initTaglineCarousel() {
 
     const t = (typeof TRANSLATIONS !== 'undefined' && TRANSLATIONS[currentLang]) ? TRANSLATIONS[currentLang] : {
         taglines: [
-            `<strong class="block font-extrabold text-[#0f172a] text-sm sm:text-base">Spend simply.</strong><span class="block text-slate-700 mt-0.5">Enjoy the moment. / Leave the expense tracking to SPENSE.</span>`,
-            `<strong class="block font-extrabold text-[#0f172a] text-sm sm:text-base">Just add what you spent.</strong><span class="block text-slate-700 mt-0.5">Who paid? Who shares it? / SPENSE does the math.</span>`,
-            `<strong class="block font-extrabold text-[#0f172a] text-sm sm:text-base">Settle easily.</strong><span class="block text-slate-700 mt-0.5">See exactly who owes whom — / and how much.</span>`
+            `<strong class="block font-extrabold text-[#0f172a] text-sm sm:text-base">Spend simply.</strong><span class="block text-slate-700 mt-0.5">Enjoy the moment. / Leave tracking to SPENSE.</span>`,
+            `<strong class="block font-extrabold text-[#0f172a] text-sm sm:text-base">Just add what you spent.</strong><span class="block text-slate-700 mt-0.5">Who paid? Who shares? / SPENSE does math.</span>`,
+            `<strong class="block font-extrabold text-[#0f172a] text-sm sm:text-base">Settle easily.</strong><span class="block text-slate-700 mt-0.5">See who owes whom — and how much.</span>`
         ]
     };
     const activeTaglines = t.taglines;
@@ -46,19 +47,20 @@ function initTaglineCarousel() {
             spot.classList.remove('slide-out-left');
             spot.classList.add('slide-in-right');
 
-            void spot.offsetWidth;
+            void spot.offsetWidth; // Force layout reflow tick
 
             setTimeout(() => {
                 spot.classList.remove('slide-in-right');
                 spot.classList.add('slide-reset');
             }, 50);
 
-        }, 400);
+        }, 400); // Matches CSS slide duration
     }
 
-    taglineInterval = setInterval(rotateTagline, 3000);
+    taglineInterval = setInterval(rotateTagline, 3000); // 3 seconds loop
 }
 
+// --- 2. Programmatic Corner-Drag Resizing Engine ---
 function initResizableFrames() {
     const cards = document.querySelectorAll('.theme-card');
 
@@ -124,7 +126,56 @@ function initResizableFrames() {
     });
 }
 
-// --- Modal & Navigation Controllers ---
+// --- 3. Robust Google Sheets Archive Fetcher (via config.json) ---
+async function loadGoogleSheetsArchive() {
+    const select = document.getElementById('archiveSelect');
+    if (!select) return;
+
+    select.innerHTML = `<option value="">-- Reading config.json & fetching Sheets... --</option>`;
+
+    try {
+        const configRes = await fetch('config.json');
+        if (!configRes.ok) {
+            throw new Error(`HTTP error loading config.json: ${configRes.status}`);
+        }
+        const config = await configRes.json();
+        
+        const sheetUrl = config.sheetUrl || config.googleSheetApiUrl || config.apiUrl;
+        if (!sheetUrl) {
+            throw new Error("Missing 'sheetUrl' key inside config.json");
+        }
+
+        const res = await fetch(sheetUrl);
+        if (!res.ok) {
+            throw new Error(`HTTP error from Google Sheet endpoint: ${res.status}`);
+        }
+        
+        const rawData = await res.json();
+
+        let ledgers = [];
+        if (Array.isArray(rawData)) {
+            ledgers = rawData.map(item => typeof item === 'object' ? (item.name || item.ledger || item.title || Object.values(item)[0]) : item);
+        } else if (typeof rawData === 'object' && rawData !== null) {
+            ledgers = rawData.sheets || rawData.ledgers || Object.keys(rawData);
+        }
+
+        ledgers = ledgers.filter(Boolean);
+
+        if (ledgers.length === 0) {
+            select.innerHTML = `<option value="">-- No tabs/ledgers found in Sheet --</option>`;
+            return;
+        }
+
+        select.innerHTML = `<option value="">-- Select a Ledger Tab --</option>` + 
+            ledgers.map(name => `<option value="${name}">${name}</option>`).join('');
+
+    } catch (error) {
+        console.error("Critical error loading Google Sheets archive:", error);
+        select.innerHTML = `<option value="">-- Error: Check Console / CORS / config.json --</option>`;
+    }
+}
+
+// --- 4. Modal & Navigation Controllers ---
 function switchModalTab(tab) {
     const createSec = document.getElementById('createSection');
     const recallSec = document.getElementById('recallSection');
@@ -143,7 +194,8 @@ function switchModalTab(tab) {
         recallSec.classList.remove('hidden');
         if (tabRecallBtn) tabRecallBtn.className = "flex-1 theme-btn py-2 text-xs font-black uppercase tracking-wider bg-amber-300 text-slate-900 rounded-xl cursor-pointer";
         if (tabCreateBtn) tabCreateBtn.className = "flex-1 theme-btn py-2 text-xs font-black uppercase tracking-wider bg-slate-100 text-slate-500 rounded-xl cursor-pointer";
-        loadArchiveList();
+        
+        loadGoogleSheetsArchive();
     }
 }
 
@@ -227,12 +279,7 @@ function recallLedger() {
     const pinInput = document.getElementById('recallLedgerPin');
     if (!pinInput) return;
 
-    let targetLedger = archiveSelect ? archiveSelect.value : '';
-    const directName = document.getElementById('directTabName');
-    if (directName && !directName.closest('#directTabDisplay').classList.contains('hidden')) {
-        targetLedger = directName.value;
-    }
-
+    const targetLedger = archiveSelect ? archiveSelect.value : '';
     const pinVal = pinInput.value.trim();
     if (!targetLedger || pinVal.length !== 4) {
         alert("Please select a ledger and enter your 4-digit PIN.");
@@ -249,12 +296,6 @@ function recallLedger() {
 function deleteActiveLedger() {
     if (!confirm("Are you sure you want to delete this active ledger?")) return;
     goHome();
-}
-
-function loadArchiveList() {
-    const select = document.getElementById('archiveSelect');
-    if (!select) return;
-    select.innerHTML = `<option value="sample-group">sample-group</option>`;
 }
 
 function stageMember() {
@@ -291,7 +332,6 @@ function renderMembers() {
 
 function addExpense() {
     const date = document.getElementById('expenseDate')?.value;
-    const category = document.getElementById('expenseCategory')?.value;
     const desc = document.getElementById('expenseDesc')?.value.trim();
     const amount = parseFloat(document.getElementById('expenseAmount')?.value);
     const paidBy = document.getElementById('expensePaidBy')?.value;
@@ -309,7 +349,7 @@ function addExpense() {
         return;
     }
 
-    ledgerData.expenses.push({ date, category, desc, amount, paidBy, splitBetween });
+    ledgerData.expenses.push({ date, category: document.getElementById('expenseCategory')?.value, desc, amount, paidBy, splitBetween });
     
     const descInput = document.getElementById('expenseDesc');
     const amtInput = document.getElementById('expenseAmount');
@@ -468,7 +508,7 @@ function escapeHTML(str) {
     );
 }
 
-// --- Explicit Global Scope Binding for Window Handlers ---
+// --- Explicit Global Scope Binding ---
 window.switchModalTab = switchModalTab;
 window.openSettingsModal = openSettingsModal;
 window.closeSettingsModal = closeSettingsModal;
@@ -489,7 +529,7 @@ window.applyTheme = applyTheme;
 window.saveSettings = saveSettings;
 window.switchLanguage = switchLanguage;
 
-// --- Initialization Lifecycle Hook ---
+// --- Initialization Hook ---
 document.addEventListener('DOMContentLoaded', () => {
     initTaglineCarousel();
     initResizableFrames();

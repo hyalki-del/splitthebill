@@ -1,10 +1,11 @@
-/* ==========================================
+[cite: 4]/* ==========================================
    SPENSE - Core Design System & Stylesheet
    Architecture: Multi-Theme Modular CSS with Resizable Frames & Slide Transitions
    ========================================== */
 
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700;800&family=Inter:wght@400;600;800&family=Fredoka:wght@500;600;700&display=swap');
 
+/* --- Root & Default Theme: Silk (Minimalist / Professional) --- */
 :root, [data-theme="silk"] {
     --bg-main: #f8fafc;
     --card-bg: #ffffff;
@@ -18,6 +19,7 @@
     --btn-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
+/* --- Theme 2: Toon (Neobrutalist / Comic - Turkish Optimized) --- */
 [data-theme="toon"] {
     --bg-main: #f3f4f6;
     --card-bg: #ffffff;
@@ -31,6 +33,7 @@
     --btn-shadow: 3px 3px 0px #0f172a;
 }
 
+/* --- Theme 3: Neon (Cyberpunk / Dark) --- */
 [data-theme="neon"] {
     --bg-main: #030712;
     --card-bg: #0b0f19;
@@ -44,6 +47,7 @@
     --btn-shadow: 0 0 10px rgba(6, 182, 212, 0.2);
 }
 
+/* --- Global Body & Typography --- */
 body {
     background-color: var(--bg-main);
     color: var(--text-main);
@@ -51,6 +55,11 @@ body {
     transition: background-color 0.3s ease, color 0.3s ease;
 }
 
+.theme-font-head {
+    font-family: var(--font-head);
+}
+
+/* --- Universal Component Base & Resizable Cards --- */
 .theme-card {
     background-color: var(--card-bg);
     border: 2px solid var(--border-color);
@@ -71,33 +80,13 @@ body {
     border-bottom-width: 3px;
 }
 
-/* Keyframe Animations */
-@keyframes animLeft {
-    0% { transform: translateX(-120%); opacity: 0; }
-    15%, 85% { transform: translateX(0); opacity: 1; }
-    100% { transform: translateX(120%); opacity: 0; }
-}
-@keyframes animRight {
-    0% { transform: translateX(120%); opacity: 0; }
-    15%, 85% { transform: translateX(0); opacity: 1; }
-    100% { transform: translateX(-120%); opacity: 0; }
-}
-@keyframes animTop {
-    0% { transform: translateY(-120%); opacity: 0; }
-    15%, 85% { transform: translateY(0); opacity: 1; }
-    100% { transform: translateY(120%); opacity: 0; }
-}
-@keyframes animBottom {
-    0% { transform: translateY(120%); opacity: 0; }
-    15%, 85% { transform: translateY(0); opacity: 1; }
-    100% { transform: translateY(120%); opacity: 0; }
+/* --- Landing Carousel Slide Transition Engine --- */
+#taglineSpot {
+    transition: transform 0.4s ease-in-out, opacity 0.4s ease-in-out;
+    will-change: transform, opacity;
 }
 
-.motion-left   { animation: animLeft 3.2s cubic-bezier(0.4, 0, 0.2, 1) infinite; }
-.motion-right  { animation: animRight 3.2s cubic-bezier(0.4, 0, 0.2, 1) infinite; }
-.motion-top    { animation: animTop 3.2s cubic-bezier(0.4, 0, 0.2, 1) infinite; }
-.motion-bottom { animation: animBottom 3.2s cubic-bezier(0.4, 0, 0.2, 1) infinite; }
-
+/* --- Form Controls & Inputs --- */
 .theme-input {
     background-color: var(--card-bg);
     border: 2px solid var(--border-color);
@@ -117,6 +106,12 @@ body {
     box-shadow: 2px 2px 0px #0f172a;
 }
 
+[data-theme="neon"] .theme-input:focus {
+    box-shadow: 0 0 10px rgba(6, 182, 212, 0.4);
+    border-color: #06b6d4;
+}
+
+/* --- Buttons --- */
 .theme-btn {
     border: 2px solid var(--border-color);
     border-radius: 0.85rem;
@@ -125,49 +120,66 @@ body {
     transition: transform 0.1s ease, filter 0.2s ease;
 }
 
-.theme-btn:hover { filter: brightness(1.05); }
-.theme-btn:active { transform: translateY(2px); box-shadow: none; }
+.theme-btn:hover {
+    filter: brightness(1.05);
+}
+
+.theme-btn:active {
+    transform: translateY(2px);
+    box-shadow: none;
+}
 
 [data-theme="toon"] .theme-btn {
     border: 3px solid var(--border-color);
     box-shadow: 3px 3px 0px #0f172a;
 }
 
-/* Unified Theme Action Buttons (Share, Copy, Report) */
-.theme-action-btn {
-    transition: all 0.2s ease;
-}
-[data-theme="silk"] .theme-action-btn {
-    background-color: #e0f2fe;
-    color: #0369a1;
-    border-color: #bae6fd;
-}
-[data-theme="silk"] .theme-action-btn:hover {
-    background-color: #bae6fd;
-}
-[data-theme="toon"] .theme-action-btn {
-    background-color: #fef08a;
-    color: #0f172a;
-    border: 3px solid #0f172a;
-    box-shadow: 2px 2px 0px #0f172a;
-}
-[data-theme="neon"] .theme-action-btn {
-    background-color: rgba(6, 182, 212, 0.15);
-    color: #22d3ee;
-    border: 2px solid #06b6d4;
-    box-shadow: 0 0 10px rgba(6, 182, 212, 0.25);
+[data-theme="toon"] .theme-btn:active {
+    transform: translate(2px, 2px);
+    box-shadow: 1px 1px 0px #0f172a;
 }
 
-.card-drag-handle {
-    position: absolute; top: 12px; right: 12px; width: 28px; height: 28px; cursor: grab; z-index: 30;
-    background: rgba(0,0,0,0.06); border-radius: 50%; display: flex; align-items: center; justify-content: center;
-    font-size: 14px; opacity: 0.6; transition: opacity 0.2s, background 0.2s; user-select: none;
-}
-.card-drag-handle:hover { opacity: 1; background: rgba(0,0,0,0.12); }
-
+/* --- Settings Active Selection framing --- */
 .option-btn-selected {
     border-color: #0f172a !important;
     background-color: #fef3c7 !important;
     box-shadow: 0 0 0 2px #0f172a !important;
     transform: scale(1.02);
+}
+
+/* ==========================================
+   Settlement Matrix Frame Highlighting (.theme-frame-4)
+   ========================================== */
+[data-theme="silk"] .theme-frame-4 {
+    background-color: #f1f5f9;
+    border: 2.5px solid #64748b;
+    box-shadow: 0 10px 20px -3px rgba(15, 23, 42, 0.12);
+}
+
+[data-theme="toon"] .theme-frame-4 {
+    background-color: #fef08a;
+    border: 4px solid #0f172a;
+    box-shadow: 6px 6px 0px #0f172a;
+}
+
+[data-theme="neon"] .theme-frame-4 {
+    background-color: #0e1424;
+    border: 2.5px solid #f43f5e;
+    box-shadow: 0 0 25px rgba(244, 63, 94, 0.3);
+}
+
+/* --- Processing Scanner Bar Animation --- */
+@keyframes scan {
+    0% { left: -100%; }
+    50% { left: 100%; }
+    100% { left: -100%; }
+}
+
+.scanner-bar {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 50%;
+    background: linear-gradient(90deg, transparent, rgba(56, 189, 248, 0.8), transparent);
+    animation: scan 1.5s infinite ease-in-out;
 }
